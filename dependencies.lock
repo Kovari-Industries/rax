@@ -1,0 +1,34 @@
+# Source pins used by scripts/bootstrap_sources.sh.
+ROBODOJO_URL=https://github.com/RoboDojo-Benchmark/RoboDojo.git
+ROBODOJO_COMMIT=ee67a1468510da7624a089164402359f2afc72c8
+ROBODOJO_PATCH_SHA256=683efe9421851412585517e72712734fc3b4f8760ac73e90caa33ad2c2ee9e8c
+# Hugging Face RoboDojo-Benchmark/RoboDojo dataset commit for Assets/ (scripts/setup_assets.sh).
+ROBODOJO_ASSETS_REVISION=91f76c28d93dd20c5fa46ce6a5a1d96a4f384acd
+# Unmerged upstream PR #48 (487e425), isolated from our robot-control patch.
+ROBODOJO_DRIVE_RESET_PATCH_SHA256=bd1b834b60d19f0948adbf737119f567c87b1b0eeaa1aa9ad34635f1d67bca11
+
+# Known working environments.
+# Miniforge installs the conda that builds runtime/envs/robodojo and runtime/envs/behavior.
+MINIFORGE_VERSION=26.7.2-0
+MINIFORGE_SHA256=281b0ac7d550802efc81af633225a5e6116d29ae72f3ab4eae7168c3931a4c05
+ISAACSIM_VERSION=5.1.0.0
+TORCH_VERSION=2.7.0+cu128
+NUMPY_VERSION=1.26.0
+# Host-side workspace generator templates (services/workspace), bundled with Isaac Sim.
+JINJA2_VERSION=3.1.6
+
+# BEHAVIOR-1K simulator backend (2026 challenge evaluation tag), used only by the
+# simulator subprocess in runtime/envs/behavior.
+BEHAVIOR_URL=https://github.com/StanfordVL/BEHAVIOR-1K.git
+BEHAVIOR_TAG=v3.9.3-post1
+BEHAVIOR_COMMIT=bd049de3119acdcdf2334fe9e1ebe060fa20c108
+BEHAVIOR_ASSETS=behavior-1k-assets-3.9.0
+BEHAVIOR_ROBOT_ASSETS=omnigibson-robot-assets-3.8.2
+BEHAVIOR_TASK_INSTANCES=2026-challenge-task-instances
+# HF behavior-1k/zipped-datasets commit and the sha256 of each zip (setup_behavior_assets.sh).
+BEHAVIOR_DATASETS_REVISION=9f0d57d465726976ed98138d3f8b8ca3e2186775
+BEHAVIOR_ASSETS_SHA256=09e9fce600f841dc611aa96c0b1b9f9074f56f0e67898b37b39bd00c38a0095e
+BEHAVIOR_ROBOT_ASSETS_SHA256=3d813b2181e0581cf2300a40892de70f8475fe59346ceeea4fb9bf7ff21ce126
+BEHAVIOR_TASK_INSTANCES_SHA256=d4ac3d72dd585178e85d542f28d1b48233b886c80e196e2f9d3aa5993ba21f81
+# HF behavior-1k/2026-challenge-demos commit; head-camera keyframes only (setup_behavior_demos.sh).
+BEHAVIOR_DEMOS_REVISION=4f50b44796641a4d526a19d9aeadc8aa51e2f2c2
