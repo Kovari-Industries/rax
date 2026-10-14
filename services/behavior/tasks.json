@@ -1,0 +1,2427 @@
+{
+  "challenge": "BEHAVIOR 2026 (100 tasks)",
+  "schema": "behavior_task_catalog_v2",
+  "source_commit": "bd049de3119acdcdf2334fe9e1ebe060fa20c108",
+  "tasks": {
+    "assembling_gift_baskets": {
+      "gallery_duration_seconds": 869,
+      "gallery_video": "https://player.vimeo.com/video/1114059476",
+      "human_distance_traveled_m": 79.7083,
+      "human_mean_length_steps": 26060.055,
+      "instruction": "Place one candle, one butter cookie, one piece of Swiss cheese, and one bow from the table into each of the four wicker baskets on the floor in the living room.",
+      "results_2025": {
+        "best_q_score": 0.2125,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0844
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 26,
+      "title": "Assembling Gift Baskets",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "attach_a_camera_to_a_tripod": {
+      "gallery_duration_seconds": 130,
+      "gallery_video": "https://player.vimeo.com/video/1114060393",
+      "human_distance_traveled_m": 11.3036,
+      "human_mean_length_steps": 3911.575,
+      "instruction": "Attach the digital camera to the camera tripod in the bedroom.",
+      "results_2025": {
+        "best_q_score": 0.9,
+        "best_success_rate": 0.9,
+        "teams": 15,
+        "top4_mean_q_score": 0.225
+      },
+      "rooms": [
+        "bedroom_0",
+        "bedroom_1",
+        "bedroom_2"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 35,
+      "title": "Attach a Camera to a Tripod",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "boxing_books_up_for_storage": {
+      "gallery_duration_seconds": 808,
+      "gallery_video": "https://player.vimeo.com/video/1114059113",
+      "human_distance_traveled_m": 72.27,
+      "human_mean_length_steps": 24227.5,
+      "instruction": "Put all six books from the bookcases in the living room into the box on the living room floor.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 23,
+      "title": "Boxing Books Up for Storage",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "boxing_food_after_dinner": {
+      "gallery_duration_seconds": 240,
+      "gallery_video": "https://www.youtube.com/embed/OmpbFiXPwMo",
+      "human_distance_traveled_m": 16.1108,
+      "human_mean_length_steps": 6697.715,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 67,
+      "title": "Boxing Food After Dinner",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "bringing_in_wood": {
+      "gallery_duration_seconds": 451,
+      "gallery_video": "https://player.vimeo.com/video/1114058068",
+      "human_distance_traveled_m": 36.3806,
+      "human_mean_length_steps": 13535.655,
+      "instruction": "Bring the three plywood sheets from the garden into the corridor and place them on the floor there.",
+      "results_2025": {
+        "best_q_score": 0.5,
+        "best_success_rate": 0.2,
+        "teams": 15,
+        "top4_mean_q_score": 0.2
+      },
+      "rooms": [
+        "corridor_0",
+        "garage_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 15,
+      "title": "Bringing in Wood",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "bringing_paper_to_recycling": {
+      "gallery_duration_seconds": 318,
+      "gallery_video": "https://www.youtube.com/embed/5OU6Zq9bGG4",
+      "human_distance_traveled_m": 35.2436,
+      "human_mean_length_steps": 11214.26,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 61,
+      "title": "Bringing Paper To Recycling",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "bringing_water": {
+      "gallery_duration_seconds": 315,
+      "gallery_video": "https://player.vimeo.com/video/1114058418",
+      "human_distance_traveled_m": 26.2495,
+      "human_mean_length_steps": 9438.545,
+      "instruction": "Retrieve the two bottles from the refrigerator in the kitchen, bring them to the living room, and place both on the coffee table. Make sure the refrigerator is closed when you finish.",
+      "results_2025": {
+        "best_q_score": 0.9,
+        "best_success_rate": 0.9,
+        "teams": 15,
+        "top4_mean_q_score": 0.6
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 17,
+      "title": "Bringing Water",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "can_meat": {
+      "gallery_duration_seconds": 395,
+      "gallery_video": "https://player.vimeo.com/video/1114054618",
+      "human_distance_traveled_m": 31.6605,
+      "human_mean_length_steps": 11847.075,
+      "instruction": "Open the kitchen cabinet, take out the two hinged jars, open them, place exactly two cooked bratwursts from the chopping board on the countertop into each jar, then close both jars, put them back inside the cabinet, and close the cabinet.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 4,
+      "title": "Can Meat",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "canning_food": {
+      "gallery_duration_seconds": 766,
+      "gallery_video": "https://player.vimeo.com/video/1114061821",
+      "human_distance_traveled_m": 64.4919,
+      "human_mean_length_steps": 22975.49,
+      "instruction": "In the kitchen, open the refrigerator and the cabinet. Take the steak and the pineapple out of the refrigerator and take two bowls from the cabinet. On the chopping board on the countertop, use the carving knife to dice the steak and to dice the pineapple. Put only the diced steak into one bowl and only the diced pineapple into the other bowl - do not mix them. Place both bowls back inside the cabinet, then close the refrigerator and close the cabinet.",
+      "results_2025": {
+        "best_q_score": 0.01,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0025
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 48,
+      "title": "Canning Food",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "carrying_in_groceries": {
+      "gallery_duration_seconds": 476,
+      "gallery_video": "https://player.vimeo.com/video/1114057919",
+      "human_distance_traveled_m": 37.0952,
+      "human_mean_length_steps": 14274.805,
+      "instruction": "Take the sack of groceries out of the car trunk in the garage, bring it to the kitchen, and put both the tomato and the carton of milk into the refrigerator in the kitchen. When you're done, close the car trunk and make sure the refrigerator in the kitchen is closed.",
+      "results_2025": {
+        "best_q_score": 0.25,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.1
+      },
+      "rooms": [
+        "corridor_0",
+        "garage_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 14,
+      "title": "Carrying in Groceries",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "carrying_out_garden_furniture": {
+      "gallery_duration_seconds": 358,
+      "gallery_video": "https://www.youtube.com/embed/NCQc0IIRmos",
+      "human_distance_traveled_m": 61.164,
+      "human_mean_length_steps": 11058.805,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 74,
+      "title": "Carrying Out Garden Furniture",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "chop_an_onion": {
+      "gallery_duration_seconds": 213,
+      "gallery_video": "https://player.vimeo.com/video/1114061062",
+      "human_distance_traveled_m": 16.9982,
+      "human_mean_length_steps": 6399.8,
+      "instruction": "In the kitchen, take the Vidalia onion out of the sink, dice it on the chopping board with the paring knife, put the diced onion into the bowl on the countertop, then place both the paring knife and the chopping board into the sink.",
+      "results_2025": {
+        "best_q_score": 0.3,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.075
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 42,
+      "title": "Chop an Onion",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "chopping_wood": {
+      "gallery_duration_seconds": 358,
+      "gallery_video": "https://player.vimeo.com/video/1114061262",
+      "human_distance_traveled_m": 37.8297,
+      "human_mean_length_steps": 10751.985,
+      "instruction": "Chop the four logs on the driveway in the garden into eight half logs using the axe and the chopping block.",
+      "results_2025": {
+        "best_q_score": 0.925,
+        "best_success_rate": 0.7,
+        "teams": 15,
+        "top4_mean_q_score": 0.2938
+      },
+      "rooms": [
+        "corridor_0",
+        "garage_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 44,
+      "title": "Chopping Wood",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "clean_a_keyboard": {
+      "gallery_duration_seconds": 142,
+      "gallery_video": "https://www.youtube.com/embed/yEV3cFqyu-4",
+      "human_distance_traveled_m": 4.4593,
+      "human_mean_length_steps": 3876.065,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "private_office_0",
+        "private_office_1",
+        "private_office_2",
+        "private_office_3",
+        "shared_office_0",
+        "corridor_0"
+      ],
+      "scene_model": "office_cubicles_right",
+      "task_id": 93,
+      "title": "Clean A Keyboard",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "clean_a_patio": {
+      "gallery_duration_seconds": 402,
+      "gallery_video": "https://player.vimeo.com/video/1114060492",
+      "human_distance_traveled_m": 37.2109,
+      "human_mean_length_steps": 12070.81,
+      "instruction": "Pick up the broom in the garden and sweep the mud off the patio floor until the floor is no longer covered in mud.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 36,
+      "title": "Clean a Patio",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "clean_a_trumpet": {
+      "gallery_duration_seconds": 177,
+      "gallery_video": "https://player.vimeo.com/video/1114060606",
+      "human_distance_traveled_m": 12.3853,
+      "human_mean_length_steps": 5307.16,
+      "instruction": "In the bedroom, pick up the scrub brush from the desk and scrub the cornet (trumpet) on the desk until it's no longer covered in dust.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "bedroom_0",
+        "bedroom_1",
+        "bedroom_2"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 37,
+      "title": "Clean a Trumpet",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "clean_boxing_gloves": {
+      "gallery_duration_seconds": 275,
+      "gallery_video": "https://player.vimeo.com/video/1114060008",
+      "human_distance_traveled_m": 28.582,
+      "human_mean_length_steps": 8235.36,
+      "instruction": "Wash the two dusty boxing gloves from the countertop in the utility room in the washer until they are no longer covered with dust.",
+      "results_2025": {
+        "best_q_score": 0.2,
+        "best_success_rate": 0.2,
+        "teams": 15,
+        "top4_mean_q_score": 0.05
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "utility_room_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 31,
+      "title": "Clean Boxing Gloves",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "clean_up_broken_glass": {
+      "gallery_duration_seconds": 286,
+      "gallery_video": "https://www.youtube.com/embed/qXliGIYzh2w",
+      "human_distance_traveled_m": 29.1154,
+      "human_mean_length_steps": 8691.415,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "dining_room_0",
+        "corridor_0",
+        "bar_0",
+        "kitchen_0",
+        "bathroom_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 80,
+      "title": "Clean Up Broken Glass",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "clean_up_your_desk": {
+      "gallery_duration_seconds": 714,
+      "gallery_video": "https://player.vimeo.com/video/1114059839",
+      "human_distance_traveled_m": 60.5127,
+      "human_mean_length_steps": 21417.875,
+      "instruction": "In the child's room, clean up the desk: put both folders and both paperback books into the bookcase; put the pencil and both pens into the pencil case and leave the case on the desk; take the stapler out of the bookcase and place it on the desk; move the laptop from the bed onto the desk and close it.",
+      "results_2025": {
+        "best_q_score": 0.1273,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0318
+      },
+      "rooms": [
+        "childs_room_0",
+        "childs_room_1",
+        "childs_room_2",
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 29,
+      "title": "Clean Up Your Desk",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "clean_your_rusty_garden_tools": {
+      "gallery_duration_seconds": 484,
+      "gallery_video": "https://www.youtube.com/embed/tHiesuHDgkc",
+      "human_distance_traveled_m": 68.579,
+      "human_mean_length_steps": 15157.91,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "garage_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 71,
+      "title": "Clean Your Rusty Garden Tools",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cleaning_up_branches_and_twigs": {
+      "gallery_duration_seconds": 434,
+      "gallery_video": "https://www.youtube.com/embed/iztsNYYMpv0",
+      "human_distance_traveled_m": 40.8589,
+      "human_mean_length_steps": 12527.07,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "garage_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 68,
+      "title": "Cleaning Up Branches And Twigs",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cleaning_up_plates_and_food": {
+      "gallery_duration_seconds": 457,
+      "gallery_video": "https://player.vimeo.com/video/1114054554",
+      "human_distance_traveled_m": 35.9744,
+      "human_mean_length_steps": 13696.19,
+      "instruction": "From the breakfast table in the kitchen, move both pizzas - keeping each on its plate - into the same refrigerator, put both bowls into one sink, and make sure the refrigerator is closed.",
+      "results_2025": {
+        "best_q_score": 0.6143,
+        "best_success_rate": 0.4,
+        "teams": 15,
+        "top4_mean_q_score": 0.2643
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 3,
+      "title": "Cleaning Up Plates and Food",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "clearing_food_from_table_into_fridge": {
+      "gallery_duration_seconds": 436,
+      "gallery_video": "https://player.vimeo.com/video/1114059394",
+      "human_distance_traveled_m": 31.8313,
+      "human_mean_length_steps": 13068.16,
+      "instruction": "Pack the half chicken and the half apple pie from the plates on the breakfast table into the two tupperware containers from the countertop, then put both tupperware containers inside the refrigerator in the kitchen and make sure the refrigerator is closed at the end.",
+      "results_2025": {
+        "best_q_score": 0.08,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.02
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 25,
+      "title": "Clearing Food from Table into Fridge",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "collecting_aluminum_cans": {
+      "gallery_duration_seconds": 325,
+      "gallery_video": "https://www.youtube.com/embed/QRgCjhEdNzA",
+      "human_distance_traveled_m": 18.5138,
+      "human_mean_length_steps": 10202.875,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "bedroom_0"
+      ],
+      "scene_model": "hotel_suite_large",
+      "task_id": 87,
+      "title": "Collecting Aluminum Cans",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "collecting_childrens_toys": {
+      "gallery_duration_seconds": 640,
+      "gallery_video": "https://player.vimeo.com/video/1114058872",
+      "human_distance_traveled_m": 58.4048,
+      "human_mean_length_steps": 19186.325,
+      "instruction": "Pick up the two dice from the bed, the two teddy bears from the floor, and the two board games (one from the desk and one from the bed), and place them all inside the same bookcase in the child's room.",
+      "results_2025": {
+        "best_q_score": 0.4333,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.2208
+      },
+      "rooms": [
+        "childs_room_0",
+        "childs_room_1",
+        "childs_room_2",
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 21,
+      "title": "Collecting Children's Toys",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "composting_waste": {
+      "gallery_duration_seconds": 115,
+      "gallery_video": "https://www.youtube.com/embed/RR3PLEFcdYg",
+      "human_distance_traveled_m": 6.4352,
+      "human_mean_length_steps": 3638.62,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "entryway_0",
+        "kitchen_0",
+        "bedroom_0",
+        "living_room_0"
+      ],
+      "scene_model": "Rs_int",
+      "task_id": 90,
+      "title": "Composting Waste",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cook_a_brisket": {
+      "gallery_duration_seconds": 251,
+      "gallery_video": "https://www.youtube.com/embed/RCSy8B0_s5Y",
+      "human_distance_traveled_m": 14.2032,
+      "human_mean_length_steps": 7334.995,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 51,
+      "title": "Cook A Brisket",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cook_a_frozen_pie": {
+      "gallery_duration_seconds": 323,
+      "gallery_video": "https://www.youtube.com/embed/H4z3xTJn058",
+      "human_distance_traveled_m": 18.9939,
+      "human_mean_length_steps": 8667.96,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "kitchen_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 72,
+      "title": "Cook A Frozen Pie",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cook_bacon": {
+      "gallery_duration_seconds": 256,
+      "gallery_video": "https://player.vimeo.com/video/1114061497",
+      "human_distance_traveled_m": 20.9167,
+      "human_mean_length_steps": 7679.545,
+      "instruction": "Take the tray with six slices of bacon out of the refrigerator in the kitchen, cook all six slices in the frying pan on the stove until they're cooked, and make sure the refrigerator is closed when you're done.",
+      "results_2025": {
+        "best_q_score": 0.8,
+        "best_success_rate": 0.8,
+        "teams": 15,
+        "top4_mean_q_score": 0.3893
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 46,
+      "title": "Cook Bacon",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "cook_broccolini": {
+      "gallery_duration_seconds": 137,
+      "gallery_video": "https://www.youtube.com/embed/NXoYiAs_KCs",
+      "human_distance_traveled_m": 10.8674,
+      "human_mean_length_steps": 4617.76,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "kitchen_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 96,
+      "title": "Cook Broccolini",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cook_brussels_sprouts": {
+      "gallery_duration_seconds": 687,
+      "gallery_video": "https://www.youtube.com/embed/9XPaPQmWAgI",
+      "human_distance_traveled_m": 34.869,
+      "human_mean_length_steps": 15661.77,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bar_0",
+        "corridor_0",
+        "kitchen_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 95,
+      "title": "Cook Brussels Sprouts",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "cook_cabbage": {
+      "gallery_duration_seconds": 471,
+      "gallery_video": "https://player.vimeo.com/video/1114060935",
+      "human_distance_traveled_m": 39.3143,
+      "human_mean_length_steps": 14144.81,
+      "instruction": "From the kitchen refrigerator, take the cabbage and the chili, dice them on the chopping board with the knife, cook the diced cabbage and diced chili in the frying pan on the stove, and leave the cooked, diced cabbage and cooked, diced chili in the frying pan.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 41,
+      "title": "Cook Cabbage",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "cook_hot_dogs": {
+      "gallery_duration_seconds": 305,
+      "gallery_video": "https://player.vimeo.com/video/1114061371",
+      "human_distance_traveled_m": 25.7822,
+      "human_mean_length_steps": 9144.855,
+      "instruction": "Take the two hot dogs out of the refrigerator in the kitchen and cook them in the microwave until both are cooked.",
+      "results_2025": {
+        "best_q_score": 1.0,
+        "best_success_rate": 1.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.4625
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 45,
+      "title": "Cook Hot Dogs",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "dispose_of_batteries": {
+      "gallery_duration_seconds": 441,
+      "gallery_video": "https://www.youtube.com/embed/TmJ7dNwDyws",
+      "human_distance_traveled_m": 46.6197,
+      "human_mean_length_steps": 14428.39,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "copy_room_0",
+        "corridor_0",
+        "private_office_0",
+        "private_office_1",
+        "private_office_2",
+        "private_office_3",
+        "shared_office_0"
+      ],
+      "scene_model": "office_cubicles_right",
+      "task_id": 94,
+      "title": "Dispose Of Batteries",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "dispose_of_glass": {
+      "gallery_duration_seconds": 240,
+      "gallery_video": "https://www.youtube.com/embed/dzVB9aAmnNU",
+      "human_distance_traveled_m": 18.1259,
+      "human_mean_length_steps": 9195.33,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "bedroom_0"
+      ],
+      "scene_model": "hotel_suite_large",
+      "task_id": 76,
+      "title": "Dispose Of Glass",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "freeze_fruit": {
+      "gallery_duration_seconds": 339,
+      "gallery_video": "https://www.youtube.com/embed/6nM9_B5OoRY",
+      "human_distance_traveled_m": 25.4002,
+      "human_mean_length_steps": 12618.78,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 50,
+      "title": "Freeze Fruit",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "freeze_pies": {
+      "gallery_duration_seconds": 415,
+      "gallery_video": "https://player.vimeo.com/video/1114061625",
+      "human_distance_traveled_m": 35.4388,
+      "human_mean_length_steps": 12455.23,
+      "instruction": "In the kitchen, take the two apple pies from the plates on the countertop, put each pie into a separate tupperware container taken from the cabinet, place both tupperwares inside the refrigerator, close the refrigerator, and leave them until the pies are frozen.",
+      "results_2025": {
+        "best_q_score": 0.1571,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.0429
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 47,
+      "title": "Freeze Pies",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "getting_organized_for_work": {
+      "gallery_duration_seconds": 522,
+      "gallery_video": "https://player.vimeo.com/video/1114059683",
+      "human_distance_traveled_m": 47.3433,
+      "human_mean_length_steps": 15671.01,
+      "instruction": "In the bedroom, organize the workspace by keeping the computer under the desk, ensuring the monitor is on the desk, placing the keyboard on the desk next to the monitor, placing the mouse on the desk next to the keyboard, moving the folder from the swivel chair onto the desk next to the mouse, stacking the notebook on top of the folder with the pen on top of the notebook, and positioning the swivel chair next to the desk.",
+      "results_2025": {
+        "best_q_score": 0.02,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0075
+      },
+      "rooms": [
+        "bedroom_0",
+        "bedroom_1",
+        "bedroom_2"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 28,
+      "title": "Getting Organized For Work",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "halve_an_egg": {
+      "gallery_duration_seconds": 212,
+      "gallery_video": "https://www.youtube.com/embed/c1YJezdD7oM",
+      "human_distance_traveled_m": 14.0643,
+      "human_mean_length_steps": 6377.04,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 62,
+      "title": "Halve An Egg",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "hanging_pictures": {
+      "gallery_duration_seconds": 80,
+      "gallery_video": "https://player.vimeo.com/video/1114060330",
+      "human_distance_traveled_m": 6.6305,
+      "human_mean_length_steps": 2387.415,
+      "instruction": "Pick up the poster from the kitchen countertop and hang it on one of the wall nails in the kitchen.",
+      "results_2025": {
+        "best_q_score": 0.3,
+        "best_success_rate": 0.3,
+        "teams": 15,
+        "top4_mean_q_score": 0.125
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 34,
+      "title": "Hanging Pictures",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "hiding_Easter_eggs": {
+      "gallery_duration_seconds": 254,
+      "gallery_video": "https://player.vimeo.com/video/1114055436",
+      "human_distance_traveled_m": 21.8954,
+      "human_mean_length_steps": 7619.725,
+      "instruction": "Take the three Easter eggs out of the wicker basket on the lawn in the garden, then place them on the lawn next to a single tree (choose any tree) so that all three eggs are next to the same tree and none are left in the basket.",
+      "results_2025": {
+        "best_q_score": 0.9778,
+        "best_success_rate": 0.8,
+        "teams": 15,
+        "top4_mean_q_score": 0.3472
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 6,
+      "title": "Hiding Easter Eggs",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "installing_a_fax_machine": {
+      "gallery_duration_seconds": 148,
+      "gallery_video": "https://www.youtube.com/embed/v1CrUuIN0lY",
+      "human_distance_traveled_m": 10.2326,
+      "human_mean_length_steps": 4076.89,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "private_office_0",
+        "private_office_1",
+        "private_office_2",
+        "private_office_3",
+        "copy_room_0",
+        "shared_office_0"
+      ],
+      "scene_model": "office_cubicles_right",
+      "task_id": 89,
+      "title": "Installing A Fax Machine",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "installing_a_modem": {
+      "gallery_duration_seconds": 63,
+      "gallery_video": "https://www.youtube.com/embed/zHEfUkrCWfc",
+      "human_distance_traveled_m": 2.6609,
+      "human_mean_length_steps": 2412.985,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "entryway_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "Rs_int",
+      "task_id": 77,
+      "title": "Installing A Modem",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "installing_a_scanner": {
+      "gallery_duration_seconds": 122,
+      "gallery_video": "https://www.youtube.com/embed/fVy3dPNOBYk",
+      "human_distance_traveled_m": 6.4139,
+      "human_mean_length_steps": 4258.535,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "private_office_0",
+        "private_office_1",
+        "private_office_2",
+        "private_office_3",
+        "copy_room_0",
+        "shared_office_0"
+      ],
+      "scene_model": "office_cubicles_right",
+      "task_id": 92,
+      "title": "Installing A Scanner",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "installing_smoke_detectors": {
+      "gallery_duration_seconds": 68,
+      "gallery_video": "https://www.youtube.com/embed/gRtLcTllXqQ",
+      "human_distance_traveled_m": 8.6081,
+      "human_mean_length_steps": 2568.77,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "kitchen_0",
+        "living_room_0",
+        "garden_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 63,
+      "title": "Installing Smoke Detectors",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "laying_tile_floors": {
+      "gallery_duration_seconds": 520,
+      "gallery_video": "https://www.youtube.com/embed/a3OjMFaaSs8",
+      "human_distance_traveled_m": 64.8431,
+      "human_mean_length_steps": 14350.96,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "corridor_0",
+        "empty_room_0",
+        "private_office_0",
+        "private_office_1",
+        "private_office_2",
+        "private_office_3",
+        "copy_room_0",
+        "shared_office_0",
+        "conference_hall_0",
+        "meeting_room_0"
+      ],
+      "scene_model": "office_cubicles_right",
+      "task_id": 98,
+      "title": "Laying Tile Floors",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "loading_the_car": {
+      "gallery_duration_seconds": 641,
+      "gallery_video": "https://player.vimeo.com/video/1114057519",
+      "human_distance_traveled_m": 48.3176,
+      "human_mean_length_steps": 19226.37,
+      "instruction": "Put the digital camera from the living room table into the container on the living room floor. Then take the container and the tennis racket to the garage, place both in the car trunk, and close it.",
+      "results_2025": {
+        "best_q_score": 0.2,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.1
+      },
+      "rooms": [
+        "corridor_0",
+        "garage_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 13,
+      "title": "Loading The Car",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "make_cabinet_doors": {
+      "gallery_duration_seconds": 120,
+      "gallery_video": "https://www.youtube.com/embed/rqqgwEPTLwk",
+      "human_distance_traveled_m": 4.4664,
+      "human_mean_length_steps": 3442.525,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "entryway_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "Rs_int",
+      "task_id": 78,
+      "title": "Make Cabinet Doors",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "make_gift_bags_for_baby_showers": {
+      "gallery_duration_seconds": 242,
+      "gallery_video": "https://www.youtube.com/embed/EY42jyNoEh8",
+      "human_distance_traveled_m": 16.7904,
+      "human_mean_length_steps": 9650.92,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "entryway_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "Rs_int",
+      "task_id": 86,
+      "title": "Make Gift Bags For Baby Showers",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "make_microwave_popcorn": {
+      "gallery_duration_seconds": 108,
+      "gallery_video": "https://player.vimeo.com/video/1114060842",
+      "human_distance_traveled_m": 8.6032,
+      "human_mean_length_steps": 3237.775,
+      "instruction": "In the kitchen, take the popcorn bag from the countertop, put it into the microwave, and heat it until the popcorn is cooked so the cooked popcorn ends up inside the bag.",
+      "results_2025": {
+        "best_q_score": 0.9,
+        "best_success_rate": 0.9,
+        "teams": 15,
+        "top4_mean_q_score": 0.75
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 40,
+      "title": "Make Microwave Popcorn",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "make_pizza": {
+      "gallery_duration_seconds": 640,
+      "gallery_video": "https://player.vimeo.com/video/1114061917",
+      "human_distance_traveled_m": 56.8705,
+      "human_mean_length_steps": 19186.925,
+      "instruction": "Make a pizza on the cookie sheet in the kitchen: take the grated cheese, the four pieces of pepperoni, and the two mushrooms from their tupperware containers in the refrigerator; chop the Vidalia onion on the chopping board with the knife, and also chop the two whole mushrooms in half; top the pizza dough that's already on the cookie sheet with the cheese, pepperoni, halved mushrooms, and chopped onion; bake it in the oven until it becomes a pizza, and leave the finished pizza on the cookie sheet.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 49,
+      "title": "Make Pizza",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "make_rose_centerpieces": {
+      "gallery_duration_seconds": 111,
+      "gallery_video": "https://www.youtube.com/embed/Nb8kdrf7c_M",
+      "human_distance_traveled_m": 9.0471,
+      "human_mean_length_steps": 4532.155,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "corridor_0",
+        "garage_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 56,
+      "title": "Make Rose Centerpieces",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "moving_boxes_to_storage": {
+      "gallery_duration_seconds": 487,
+      "gallery_video": "https://player.vimeo.com/video/1114058315",
+      "human_distance_traveled_m": 36.8051,
+      "human_mean_length_steps": 14596.225,
+      "instruction": "Move the two storage containers from the living room to the garage. In the garage, place one container on the floor and stack the other container on top of it (either order is fine).",
+      "results_2025": {
+        "best_q_score": 1.0,
+        "best_success_rate": 1.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.875
+      },
+      "rooms": [
+        "corridor_0",
+        "garage_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 16,
+      "title": "Moving Boxes To Storage",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "organizing_art_supplies": {
+      "gallery_duration_seconds": 228,
+      "gallery_video": "https://www.youtube.com/embed/M1D9oCKBJZg",
+      "human_distance_traveled_m": 11.5079,
+      "human_mean_length_steps": 6194.365,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "bedroom_0",
+        "bedroom_1",
+        "bedroom_2",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 59,
+      "title": "Organizing Art Supplies",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "organizing_school_stuff": {
+      "gallery_duration_seconds": 426,
+      "gallery_video": "https://www.youtube.com/embed/GO2Bw-0OY7M",
+      "human_distance_traveled_m": 26.1584,
+      "human_mean_length_steps": 14591.9,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "closet_0",
+        "closet_1",
+        "garden_0",
+        "corridor_0",
+        "bathroom_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 73,
+      "title": "Organizing School Stuff",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "outfit_a_basic_toolbox": {
+      "gallery_duration_seconds": 355,
+      "gallery_video": "https://player.vimeo.com/video/1114058641",
+      "human_distance_traveled_m": 31.6827,
+      "human_mean_length_steps": 10637.97,
+      "instruction": "In the utility room, put the drill, pliers, flashlight, Allen wrench, and screwdriver from the tabletop into the toolbox, keep the toolbox on the tabletop, and close the toolbox.",
+      "results_2025": {
+        "best_q_score": 0.2571,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.0893
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "utility_room_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 19,
+      "title": "Outfit A Basic Toolbox",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "packing_meal_for_delivery": {
+      "gallery_duration_seconds": 300,
+      "gallery_video": "https://www.youtube.com/embed/DirqFshrOAA",
+      "human_distance_traveled_m": 19.6145,
+      "human_mean_length_steps": 8859.895,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "kitchen_0",
+        "bar_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 81,
+      "title": "Packing Meal For Delivery",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "picking_up_toys": {
+      "gallery_duration_seconds": 630,
+      "gallery_video": "https://player.vimeo.com/video/1114054920",
+      "human_distance_traveled_m": 47.049,
+      "human_mean_length_steps": 18890.55,
+      "instruction": "Put all the toys in the child's room - the three board games (two on the bed and one on the table), the two jigsaw puzzles on the table, and the tennis ball on the table - inside the toy box on the table in the child's room.",
+      "results_2025": {
+        "best_q_score": 0.3,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.075
+      },
+      "rooms": [
+        "childs_room_0",
+        "childs_room_1",
+        "childs_room_2",
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 7,
+      "title": "Picking Up Toys",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "picking_up_trash": {
+      "gallery_duration_seconds": 176,
+      "gallery_video": "https://player.vimeo.com/video/1109202972",
+      "human_distance_traveled_m": 16.1977,
+      "human_mean_length_steps": 5267.75,
+      "instruction": "Put the three cans of soda from the living room inside the trash can in the kitchen.",
+      "results_2025": {
+        "best_q_score": 1.0,
+        "best_success_rate": 1.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.775
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 1,
+      "title": "Picking Up Trash",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "polishing_shoes": {
+      "gallery_duration_seconds": 363,
+      "gallery_video": "https://www.youtube.com/embed/bSCbEvVJykI",
+      "human_distance_traveled_m": 17.158,
+      "human_mean_length_steps": 10737.985,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "bathroom_0"
+      ],
+      "scene_model": "hotel_suite_large",
+      "task_id": 79,
+      "title": "Polishing Shoes",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "preparing_lunch_box": {
+      "gallery_duration_seconds": 275,
+      "gallery_video": "https://player.vimeo.com/video/1114057330",
+      "human_distance_traveled_m": 21.398,
+      "human_mean_length_steps": 8245.3,
+      "instruction": "Put both apple halves, the club sandwich, and the chocolate chip cookie from the chopping board on the kitchen countertop into the packing box on the countertop. Then take the bottle of tea out of the refrigerator, put it into the same box, and close the refrigerator when you're done.",
+      "results_2025": {
+        "best_q_score": 0.5167,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.1292
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 12,
+      "title": "Preparing Lunch Box",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "put_together_a_basic_pruning_kit": {
+      "gallery_duration_seconds": 448,
+      "gallery_video": "https://www.youtube.com/embed/UmGRVx-OCac",
+      "human_distance_traveled_m": 19.4443,
+      "human_mean_length_steps": 11264.475,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "garage_0",
+        "corridor_0",
+        "garden_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 75,
+      "title": "Put Together A Basic Pruning Kit",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "putting_away_Halloween_decorations": {
+      "gallery_duration_seconds": 460,
+      "gallery_video": "https://player.vimeo.com/video/1114054409",
+      "human_distance_traveled_m": 47.1353,
+      "human_mean_length_steps": 13788.06,
+      "instruction": "Place each of the two pumpkins and all three candles from the living room inside a cabinet in the living room (use any cabinet), then make sure every cabinet is closed, and position the cauldron so it is next to a table in the living room.",
+      "results_2025": {
+        "best_q_score": 0.6714,
+        "best_success_rate": 0.3,
+        "teams": 15,
+        "top4_mean_q_score": 0.35
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 2,
+      "title": "Putting Away Halloween Decorations",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "putting_away_toys": {
+      "gallery_duration_seconds": 438,
+      "gallery_video": "https://www.youtube.com/embed/StbSZCTn7D4",
+      "human_distance_traveled_m": 35.1468,
+      "human_mean_length_steps": 11296.755,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 54,
+      "title": "Putting Away Toys",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "putting_dirty_dishes_in_sink": {
+      "gallery_duration_seconds": 337,
+      "gallery_video": "https://www.youtube.com/embed/SCX0NPFlMhI",
+      "human_distance_traveled_m": 57.395,
+      "human_mean_length_steps": 12148.58,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "kitchen_0",
+        "bar_0",
+        "dining_room_0",
+        "corridor_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 85,
+      "title": "Putting Dirty Dishes In Sink",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "putting_dishes_away_after_cleaning": {
+      "gallery_duration_seconds": 365,
+      "gallery_video": "https://player.vimeo.com/video/1114057082",
+      "human_distance_traveled_m": 33.0487,
+      "human_mean_length_steps": 10953.43,
+      "instruction": "In the kitchen, gather all eight plates from the two countertops, place them all inside a single cabinet (either one), and make sure all cabinets are closed when you're done.",
+      "results_2025": {
+        "best_q_score": 0.2714,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.1268
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 11,
+      "title": "Putting Dishes Away After Cleaning",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "putting_shoes_on_rack": {
+      "gallery_duration_seconds": 258,
+      "gallery_video": "https://player.vimeo.com/video/1114058985",
+      "human_distance_traveled_m": 27.0157,
+      "human_mean_length_steps": 7726.145,
+      "instruction": "Pick up the two gym shoes and the two sandals from the corridor floor and place them onto the hallstand (shoe rack) in the corridor, making sure they are on the rack and not on the floor. Arrange them so the two gym shoes are next to each other and the two sandals are next to each other.",
+      "results_2025": {
+        "best_q_score": 1.0,
+        "best_success_rate": 1.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.735
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 22,
+      "title": "Putting Shoes On Rack",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "putting_up_Christmas_decorations_inside": {
+      "gallery_duration_seconds": 457,
+      "gallery_video": "https://player.vimeo.com/video/1114056731",
+      "human_distance_traveled_m": 41.3256,
+      "human_mean_length_steps": 13718.76,
+      "instruction": "In the living room, take the wreath, three candy canes, and two pillar candles out of the wicker basket. Place the wreath and two of the candy canes on the same living-room sofa. Put the remaining candy cane on top of a dining-room table. Put both pillar candles together on top of one dining-room table (they can share the same table). Finally, place all three gift boxes under or right next to the Christmas tree in the living room.",
+      "results_2025": {
+        "best_q_score": 0.4333,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.2139
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 9,
+      "title": "Putting Up Christmas Decorations Inside",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "re_shelving_library_books": {
+      "gallery_duration_seconds": 281,
+      "gallery_video": "https://www.youtube.com/embed/AQdhTrye7NQ",
+      "human_distance_traveled_m": 19.6242,
+      "human_mean_length_steps": 9528.43,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 55,
+      "title": "Re Shelving Library Books",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "rearrange_your_room": {
+      "gallery_duration_seconds": 515,
+      "gallery_video": "https://www.youtube.com/embed/PuP9DeUF4K4",
+      "human_distance_traveled_m": 24.028,
+      "human_mean_length_steps": 12854.955,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "bathroom_0"
+      ],
+      "scene_model": "hotel_suite_large",
+      "task_id": 88,
+      "title": "Rearrange Your Room",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "rearranging_kitchen_furniture": {
+      "gallery_duration_seconds": 298,
+      "gallery_video": "https://player.vimeo.com/video/1114056046",
+      "human_distance_traveled_m": 25.8899,
+      "human_mean_length_steps": 8943.015,
+      "instruction": "Move the toaster, food processor, and French press from the kitchen countertop into the same kitchen cabinet, and make sure that cabinet is closed at the end.",
+      "results_2025": {
+        "best_q_score": 0.375,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.1688
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 8,
+      "title": "Rearranging Kitchen Furniture",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "scrubbing_bathroom_floor": {
+      "gallery_duration_seconds": 123,
+      "gallery_video": "https://www.youtube.com/embed/u9wtUgoB8o8",
+      "human_distance_traveled_m": 5.3838,
+      "human_mean_length_steps": 3153.83,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "bathroom_1",
+        "garden_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 60,
+      "title": "Scrubbing Bathroom Floor",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "set_up_a_coffee_station_in_your_kitchen": {
+      "gallery_duration_seconds": 209,
+      "gallery_video": "https://player.vimeo.com/video/1114056931",
+      "human_distance_traveled_m": 17.3596,
+      "human_mean_length_steps": 6266.215,
+      "instruction": "Set up a coffee station on the kitchen countertop: keep the coffee maker on the countertop, move the bottle of coffee from the kitchen shelf to the counter next to the coffee maker, place a paper coffee filter on top of the coffee maker, put the saucer next to the coffee maker with the coffee cup on the saucer, and place the electric kettle next to the coffee maker.",
+      "results_2025": {
+        "best_q_score": 0.2333,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.1542
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 10,
+      "title": "Set Up A Coffee Station In Your Kitchen",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "setting_mousetraps": {
+      "gallery_duration_seconds": 339,
+      "gallery_video": "https://player.vimeo.com/video/1114054686",
+      "human_distance_traveled_m": 31.6006,
+      "human_mean_length_steps": 10196.11,
+      "instruction": "Take the four mousetraps from the cabinet in the bathroom and place them on the bathroom floor. Make sure all four end up on the same floor surface, and ensure that at least two of them are either under or directly next to the same bathroom sink.",
+      "results_2025": {
+        "best_q_score": 1.0,
+        "best_success_rate": 1.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.5458
+      },
+      "rooms": [
+        "bathroom_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 5,
+      "title": "Setting Mousetraps",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "setting_the_fire": {
+      "gallery_duration_seconds": 304,
+      "gallery_video": "https://player.vimeo.com/video/1114059945",
+      "human_distance_traveled_m": 31.8047,
+      "human_mean_length_steps": 9118.13,
+      "instruction": "In the living room, place the newspaper from the table into the wood fireplace, then put both pieces of firewood from the floor on top of the newspaper. Use the cigar lighter to ignite any one of the items so that the whole pile catches fire, and then turn the lighter off.",
+      "results_2025": {
+        "best_q_score": 0.325,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.1313
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 30,
+      "title": "Setting The Fire",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "setting_the_table": {
+      "gallery_duration_seconds": 727,
+      "gallery_video": "https://www.youtube.com/embed/Tkf34ap-z8U",
+      "human_distance_traveled_m": 55.4631,
+      "human_mean_length_steps": 17808.505,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 64,
+      "title": "Setting The Table",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "setup_a_bar_for_a_cocktail_party": {
+      "gallery_duration_seconds": 350,
+      "gallery_video": "https://www.youtube.com/embed/3V0ySKyGKRw",
+      "human_distance_traveled_m": 22.8071,
+      "human_mean_length_steps": 13418.895,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bar_0",
+        "corridor_0",
+        "kitchen_0",
+        "dining_room_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 97,
+      "title": "Setup A Bar For A Cocktail Party",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "slicing_vegetables": {
+      "gallery_duration_seconds": 495,
+      "gallery_video": "https://player.vimeo.com/video/1114061183",
+      "human_distance_traveled_m": 40.6344,
+      "human_mean_length_steps": 14844.94,
+      "instruction": "From the refrigerator in the kitchen, take out the two bell peppers, the two beets, and the zucchini. Then, on either chopping board on the countertop, use the parer to dice all of them so that only diced bell pepper, diced beet, and diced zucchini remain. Make sure the refrigerator is closed when you finish.",
+      "results_2025": {
+        "best_q_score": 0.1889,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.0472
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 43,
+      "title": "Slicing Vegetables",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "sorting_books_on_shelf": {
+      "gallery_duration_seconds": 200,
+      "gallery_video": "https://www.youtube.com/embed/wXUyDWyvpRA",
+      "human_distance_traveled_m": 10.2308,
+      "human_mean_length_steps": 7739.35,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 99,
+      "title": "Sorting Books On Shelf",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "sorting_bottles_cans_and_paper": {
+      "gallery_duration_seconds": 312,
+      "gallery_video": "https://www.youtube.com/embed/h8-XZ85UxSU",
+      "human_distance_traveled_m": 26.7573,
+      "human_mean_length_steps": 10263.835,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "kitchen_0",
+        "corridor_0",
+        "garden_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 52,
+      "title": "Sorting Bottles Cans And Paper",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "sorting_household_items": {
+      "gallery_duration_seconds": 527,
+      "gallery_video": "https://player.vimeo.com/video/1114059574",
+      "human_distance_traveled_m": 50.9062,
+      "human_mean_length_steps": 15807.755,
+      "instruction": "From the two baskets on the bedroom floor, take out the items and organize them in the bathroom: place both detergent bottles under the bathroom sink next to each other; put the box of sanitary napkins on the bathroom shelf; set the soap dispenser on the sink; make sure the cup remains on the sink; put both the toothpaste tube and the toothbrush inside the cup.",
+      "results_2025": {
+        "best_q_score": 0.0625,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0156
+      },
+      "rooms": [
+        "bathroom_0",
+        "bathroom_1",
+        "bedroom_0",
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 27,
+      "title": "Sorting Household Items",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "sorting_vegetables": {
+      "gallery_duration_seconds": 397,
+      "gallery_video": "https://player.vimeo.com/video/1114058741",
+      "human_distance_traveled_m": 33.9547,
+      "human_mean_length_steps": 11903.7,
+      "instruction": "Sort the vegetables from the two wicker baskets on the kitchen floor into the mixing bowls on the kitchen countertop: put all three bok choy and all three Vidalia onions together into one mixing bowl; put both leeks and both broccoli together into a second mixing bowl; and put all three sweet corn into a third mixing bowl.",
+      "results_2025": {
+        "best_q_score": 0.4769,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.1192
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 20,
+      "title": "Sorting Vegetables",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "spraying_for_bugs": {
+      "gallery_duration_seconds": 216,
+      "gallery_video": "https://player.vimeo.com/video/1114060681",
+      "human_distance_traveled_m": 21.9792,
+      "human_mean_length_steps": 6479.475,
+      "instruction": "Pick up the pesticide atomizer in the garden and spray insectifuge to fully cover both potted plants in the garden.",
+      "results_2025": {
+        "best_q_score": 0.25,
+        "best_success_rate": 0.1,
+        "teams": 15,
+        "top4_mean_q_score": 0.1125
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 38,
+      "title": "Spraying For Bugs",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "spraying_fruit_trees": {
+      "gallery_duration_seconds": 278,
+      "gallery_video": "https://player.vimeo.com/video/1114060748",
+      "human_distance_traveled_m": 23.4965,
+      "human_mean_length_steps": 8345.87,
+      "instruction": "In the garden, pick up the pesticide atomizer on the floor and spray pesticide onto both trees until each tree trunk is fully covered.",
+      "results_2025": {
+        "best_q_score": 0.35,
+        "best_success_rate": 0.3,
+        "teams": 15,
+        "top4_mean_q_score": 0.2125
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 39,
+      "title": "Spraying Fruit Trees",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "stacking_wood": {
+      "gallery_duration_seconds": 447,
+      "gallery_video": "https://www.youtube.com/embed/8MDz0GuPlto",
+      "human_distance_traveled_m": 85.9645,
+      "human_mean_length_steps": 15939.34,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 58,
+      "title": "Stacking Wood",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "store_batteries": {
+      "gallery_duration_seconds": 328,
+      "gallery_video": "https://www.youtube.com/embed/jMSkFQy95FY",
+      "human_distance_traveled_m": 14.1564,
+      "human_mean_length_steps": 7704.235,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "entryway_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "Rs_int",
+      "task_id": 82,
+      "title": "Store Batteries",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "store_honey": {
+      "gallery_duration_seconds": 193,
+      "gallery_video": "https://www.youtube.com/embed/oFu38YPgVEU",
+      "human_distance_traveled_m": 12.0735,
+      "human_mean_length_steps": 6766.84,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "entryway_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "Rs_int",
+      "task_id": 83,
+      "title": "Store Honey",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "store_produce": {
+      "gallery_duration_seconds": 316,
+      "gallery_video": "https://www.youtube.com/embed/jppOziwq7xI",
+      "human_distance_traveled_m": 26.5297,
+      "human_mean_length_steps": 9522.355,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "kitchen_0"
+      ],
+      "scene_model": "restaurant_diner",
+      "task_id": 91,
+      "title": "Store Produce",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "storing_food": {
+      "gallery_duration_seconds": 662,
+      "gallery_video": "https://player.vimeo.com/video/1114059272",
+      "human_distance_traveled_m": 55.6409,
+      "human_mean_length_steps": 19869.12,
+      "instruction": "Put away all the food on the kitchen countertop by storing it inside the kitchen cabinets: move the two boxes of oatmeal, two bags of chips, two bottles of olive oil, and two jars of sugar from the countertop into the kitchen cabinets (each item can go into either cabinet).",
+      "results_2025": {
+        "best_q_score": 0.375,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0938
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 24,
+      "title": "Storing Food",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "sweeping_garage": {
+      "gallery_duration_seconds": 126,
+      "gallery_video": "https://www.youtube.com/embed/0bdsrbEeFEc",
+      "human_distance_traveled_m": 19.0765,
+      "human_mean_length_steps": 4473.03,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "garage_0",
+        "corridor_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 57,
+      "title": "Sweeping Garage",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "thawing_frozen_food": {
+      "gallery_duration_seconds": 348,
+      "gallery_video": "https://www.youtube.com/embed/FF3HiYSHGdc",
+      "human_distance_traveled_m": 17.4536,
+      "human_mean_length_steps": 8229.62,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 70,
+      "title": "Thawing Frozen Food",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "tidying_bathroom": {
+      "gallery_duration_seconds": 541,
+      "gallery_video": "https://www.youtube.com/embed/EdKc0cKLITw",
+      "human_distance_traveled_m": 19.012,
+      "human_mean_length_steps": 13003.15,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bathroom_0",
+        "bedroom_0"
+      ],
+      "scene_model": "hotel_suite_large",
+      "task_id": 84,
+      "title": "Tidying Bathroom",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "tidying_bedroom": {
+      "gallery_duration_seconds": 368,
+      "gallery_video": "https://player.vimeo.com/video/1114058519",
+      "human_distance_traveled_m": 33.3982,
+      "human_mean_length_steps": 11037.445,
+      "instruction": "In the bedroom, move the book from the bed onto either nightstand, and place the two sandals side by side next to the bed.",
+      "results_2025": {
+        "best_q_score": 0.6667,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.2917
+      },
+      "rooms": [
+        "bathroom_1",
+        "bedroom_0",
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 18,
+      "title": "Tidying Bedroom",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "tidying_living_room": {
+      "gallery_duration_seconds": 316,
+      "gallery_video": "https://www.youtube.com/embed/aTCNKnjR03c",
+      "human_distance_traveled_m": 20.6534,
+      "human_mean_length_steps": 12565.88,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 53,
+      "title": "Tidying Living Room",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "turning_on_radio": {
+      "gallery_duration_seconds": 72,
+      "gallery_video": "https://player.vimeo.com/video/1109198872",
+      "human_distance_traveled_m": 5.6955,
+      "human_mean_length_steps": 2149.64,
+      "instruction": "Turn on the radio receiver that's on the table in the living room.",
+      "results_2025": {
+        "best_q_score": 1.0,
+        "best_success_rate": 1.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.925
+      },
+      "rooms": [
+        "corridor_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 0,
+      "title": "Turning On Radio",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "turning_out_all_lights_before_sleep": {
+      "gallery_duration_seconds": 337,
+      "gallery_video": "https://www.youtube.com/embed/AN8l_cduvqU",
+      "human_distance_traveled_m": 40.2489,
+      "human_mean_length_steps": 10006.11,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "corridor_0",
+        "utility_room_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "kitchen_0",
+        "living_room_0",
+        "living_room_1"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 66,
+      "title": "Turning Out All Lights Before Sleep",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "unloading_the_car": {
+      "gallery_duration_seconds": 378,
+      "gallery_video": "https://www.youtube.com/embed/IBV8nn39hTM",
+      "human_distance_traveled_m": 33.706,
+      "human_mean_length_steps": 11323.43,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "garage_0",
+        "corridor_0",
+        "living_room_0",
+        "kitchen_0",
+        "garden_0"
+      ],
+      "scene_model": "house_double_floor_lower",
+      "task_id": 65,
+      "title": "Unloading The Car",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "vacuuming_floors": {
+      "gallery_duration_seconds": 65,
+      "gallery_video": "https://www.youtube.com/embed/RqYuT-aj21A",
+      "human_distance_traveled_m": 4.9572,
+      "human_mean_length_steps": 2411.785,
+      "instruction": null,
+      "results_2025": null,
+      "rooms": [
+        "bedroom_0",
+        "bedroom_1",
+        "bedroom_2",
+        "living_room_0"
+      ],
+      "scene_model": "house_double_floor_upper",
+      "task_id": 69,
+      "title": "Vacuuming Floors",
+      "train_instance_range": [
+        1,
+        300
+      ]
+    },
+    "wash_a_baseball_cap": {
+      "gallery_duration_seconds": 278,
+      "gallery_video": "https://player.vimeo.com/video/1114060147",
+      "human_distance_traveled_m": 28.9362,
+      "human_mean_length_steps": 8349.41,
+      "instruction": "Wash the two baseball caps on the countertop in the utility room using the washer until they are no longer dirty.",
+      "results_2025": {
+        "best_q_score": 0.45,
+        "best_success_rate": 0.3,
+        "teams": 15,
+        "top4_mean_q_score": 0.225
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "utility_room_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 32,
+      "title": "Wash A Baseball Cap",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    },
+    "wash_dog_toys": {
+      "gallery_duration_seconds": 374,
+      "gallery_video": "https://player.vimeo.com/video/1114060219",
+      "human_distance_traveled_m": 46.5824,
+      "human_mean_length_steps": 11222.8,
+      "instruction": "In the utility room, take the two teddy toys, the tennis ball, and the softball out of the cabinet and wash them in the washer so that both teddies are free of dirt and dust, the tennis ball has no debris, and the softball has no dirt.",
+      "results_2025": {
+        "best_q_score": 0.0,
+        "best_success_rate": 0.0,
+        "teams": 15,
+        "top4_mean_q_score": 0.0
+      },
+      "rooms": [
+        "corridor_0",
+        "dining_room_0",
+        "entryway_0",
+        "garden_0",
+        "utility_room_0"
+      ],
+      "scene_model": "house_single_floor",
+      "task_id": 33,
+      "title": "Wash Dog Toys",
+      "train_instance_range": [
+        0,
+        299
+      ]
+    }
+  }
+}

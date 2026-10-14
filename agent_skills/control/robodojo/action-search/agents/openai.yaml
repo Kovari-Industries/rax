@@ -1,0 +1,4 @@
+interface:
+  display_name: "Action Search"
+  short_description: "Preview and select robot action candidates"
+  default_prompt: "Use $action-search to compare candidate robot motions and execute the best supported action."

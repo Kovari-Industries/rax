@@ -1,0 +1,25 @@
+# Machine-local storage and upstream checkouts reconstructed by bootstrap.
+/runtime
+/RoboDojo
+/BEHAVIOR-1K
+/local_tests/*
+!/local_tests/unit/
+!/local_tests/README.md
+!/local_tests/goldens/
+
+# Local orchestration state and caches.
+/.agents
+/.codex
+/.pytest_cache
+/.ruff_cache
+/.local-runtime
+**/__pycache__/
+*.py[cod]
+*.log
+
+# IDE and OS metadata.
+.DS_Store
+.idea/
+.vscode/
+# Isolated local feature checkouts.
+/.worktrees/

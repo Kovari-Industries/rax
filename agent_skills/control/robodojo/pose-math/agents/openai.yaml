@@ -1,0 +1,4 @@
+interface:
+  display_name: "RoboDojo Pose Math"
+  short_description: "Compose and convert exact RoboDojo poses"
+  default_prompt: "Use $pose-math to build an exact end-effector target from this pose change."
