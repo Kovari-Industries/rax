@@ -40,8 +40,9 @@ What the code checks before moving, and how.
 The steps in order, with their tool calls and why each parameter has its value.
 
 ## Code
-How to call the entry; every parameter with its tested range and default; what
-`measured` returns; where it logs.
+How to call the entry; every parameter with its tested range and default; where the
+hyper-parameter list is and which values to calibrate in a new setup; what `measured`
+returns; where it logs.
 
 ## Checks
 Each step's observable completion check and the final success check, with thresholds.
@@ -64,8 +65,8 @@ A table summarizing `evidence/runs.jsonl`, with images of the start and success 
 - Re-localizes everything it acts on from fresh observations.
 - Checks preconditions first and returns `ok: False` with a clear `why` when one fails;
   checks each step before the next; ends in a safe state on failure.
-- Reaches the robot only through `ctx`; keeps named constants with tested ranges at the
-  top; uses no paths outside the workspace.
+- Reaches the robot only through `ctx` and reads the setup from it; keeps its
+  hyper-parameters in one list; uses no paths outside the workspace.
 
 ## `evidence/runs.jsonl`
 

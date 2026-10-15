@@ -28,7 +28,8 @@ changes a limit, a safety rule or what a tool does.
    skills they declare in `uses:`. Prefer `verified` over `draft`; read `deprecated`
    only to learn why it was retired.
 3. Check a skill's preconditions against a fresh observation and its tested ranges
-   against your scene before running it.
+   against your scene before running it. In a setup it was not tested in, calibrate the
+   values its hyper-parameter list marks for calibration.
 4. Run its entry, read the returned `{ok, measured, why}`, and confirm the result with
    your own observation. A failure here is information: record it as a run.
 5. A skill may predate the current tools. Where a newer tool does a step better,
@@ -71,9 +72,17 @@ Your controller may import library skills the same way.
   `uses:`. Keep a changed primitive's signature and contract, or add a new function.
 - Prefer the robot's own tools (IK, planners, Cartesian moves) inside primitives over
   hand-written solvers.
-- Store the invariant motion in the object's frame and take the scene description as
-  input from a perception function callers may replace; say which variations the
-  evidence covers.
+- Expect reuse on the same robot with other camera setups, in other environments and
+  for other tasks. Keep the manipulation logic in the skill, with the motion in the
+  object's frame and the scene description as input from a perception function callers
+  may replace; read the environment setup (camera parameters, the robot's postures,
+  limits and workspace) from the harness at run time, never from values your session
+  saw, and perceive what the harness does not report; say which setups and variations
+  the evidence covers.
+- Keep the hyper-parameters in one list, separate from the logic, each with what it
+  controls, its unit, its tested range and how it was set. Mark the values that depend
+  on the setup as values to calibrate, with how to measure them, so a new task or setup
+  knows what to check and where to adjust it.
 - Leave room for the agent's perception: each primitive re-observes what it acts on,
   returns the frames it used, and documents its perception checkpoints
   ([autonomous-control](../autonomous-control/references/checkpoints.md)).
