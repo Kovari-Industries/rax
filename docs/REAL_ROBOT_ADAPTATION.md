@@ -375,11 +375,15 @@ session, so nothing it learns has to be imported later.
   its own `session/<session>` branch. A harness tool (`<library_merge>`) runs the checker
   and merges that branch into the local library; the agent never pushes on its own.
   Publish the merged library to skills-lib as a pull request into the robot's branch.
+- **The setup skills read.** A skill is reused on the same robot with other cameras,
+  layouts and tasks, so it reads the setup from the harness instead of copying it. Give
+  every frame its camera intrinsics and extrinsics (Principle 4), and report limits, the
+  workspace and named postures (such as home) through the tools.
 - **Skill layout and sandbox.** Render `continual-learning` into `.agents/skills/` and
   gate it with a `SkillRule` on the library being present. The sandbox lets the agent write
   its workspace clone, never the local library or the remote.
 - **Adding the robot to skills-lib.** Create its embodiment branch as described in
-  [Adding an embodiment](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md#7-adding-an-embodiment).
+  [NEW_ROBOT.md](https://github.com/robot-agent-exploration/skills-lib/blob/main/NEW_ROBOT.md).
 
 `real/rainbow` is the reference: `skill_library_merge` and its `continual-learning`
 skill.
