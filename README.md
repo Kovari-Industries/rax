@@ -4,7 +4,7 @@
 
 # RAX: Scaling Online Exploration for Robot Agents
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![Videos](https://img.shields.io/badge/Robot-videos-blue)](https://robot-agent-exploration.com/#tasks)
+[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![Videos](https://img.shields.io/badge/Robot-videos-blue)](https://robot-agent-exploration.com/#tasks) [![Skill Library](https://img.shields.io/badge/Skill-library-6f42c1)](https://github.com/robot-agent-exploration/skills-lib)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/scaling_dark.svg">
