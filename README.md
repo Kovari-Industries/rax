@@ -200,5 +200,20 @@ pins.
 
 ## 📝 Citation
 
-BibTeX is coming soon. Until then, please cite the paper as listed on the
-[project website](https://robot-agent-exploration.com/).
+If you find RAX useful, please cite:
+
+```bibtex
+@misc{huang2026scaling,
+  title        = {Scaling Online Exploration for Robot Agents},
+  author       = {Huang, Runhan and Zhang, Xiangcheng and Chen, Haoyu
+                  and Li, Yitong and Wang, Yen-Jen and Lyu, Bohan
+                  and Ye, Haotian and Hong, Chuye and Wang, Yixuan
+                  and Su, Chloe and Xiong, Haoyu and Wu, Yangzhen
+                  and Xie, Enze and Manderson, Travis and Ermon, Stefano
+                  and Abbeel, Pieter and Torralba, Antonio and Song, Dawn
+                  and Ye, Weirui and Du, Yilun},
+  year         = {2026},
+  howpublished = {Preprint},
+  url          = {https://robot-agent-exploration.com/}
+}
+```
