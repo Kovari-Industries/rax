@@ -382,9 +382,7 @@ session, so nothing it learns has to be imported later.
   [Adding an embodiment](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md#7-adding-an-embodiment).
 
 `real/rainbow` is the reference: `skill_library_merge` and its `continual-learning`
-skill. `real/franka` ran its sessions before the library existed; its procedures are
-being refactored into skills-lib by the import path in
-[Importing skills from earlier sessions](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md#6-importing-skills-from-earlier-sessions).
+skill.
 
 ### The sandbox
 

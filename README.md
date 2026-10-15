@@ -175,8 +175,7 @@ harness; skills-lib is what its agents learned with it.
   skill, the agent reads it, runs or composes the skills that match, and merges back what
   it improves. Every new real robot should get one; the
   [adaptation guide](docs/REAL_ROBOT_ADAPTATION.md#a-skill-library-that-persists-across-sessions)
-  shows how. The Franka sessions ran before the library existed, and their skills are being
-  refactored into it.
+  shows how.
 
 ## 🦾 Bring RAX to your robot
 
