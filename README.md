@@ -150,10 +150,10 @@ demonstrations, transfer handoff, continual learning, multi-env and multi-agent
 exploration, VLM perception, camera inspection, object localization and the live
 stream.
 
-- 🔌 **Robot-agnostic.** Skills name tools by role; a table maps each role to the tools
+- 🔌 **Robot-agnostic.** Skills name tools by role; a [table](skills/README.md#tool-roles) maps each role to the tools
   of RoboDojo, BEHAVIOR-1K, Franka and RB-Y1.
-- 🌿 **Reflects each branch.** A matrix links every skill to its version on each branch
-  and says how simulation and real robots differ.
+- 🌿 **Reflects each branch.** A [matrix](skills/README.md#skills-on-each-branch) links every skill to its version on each
+  branch and says [how simulation and real robots differ](skills/README.md#simulation-and-real-robots).
 - 🦾 **Ready to port.** A [`robot-interface` template](skills/templates/robot-interface/SKILL.md)
   holds the facts a new robot fills in.
 
