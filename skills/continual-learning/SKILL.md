@@ -46,7 +46,8 @@ with Context() as ctx:
     print(json.dumps(skill.main(ctx, **params), indent=1))
 ```
 
-Your controller may import library skills the same way.
+Your controller may run library skills the same way, or put a skill's `code/` on
+`sys.path` and import its package.
 
 ## What to contribute
 
@@ -79,11 +80,15 @@ Your controller may import library skills the same way.
   limits and workspace) from the harness at run time, never from values your session
   saw, and perceive what the harness does not report; say which setups and variations
   the evidence covers.
-- Keep the hyper-parameters in one list, separate from the logic, in a module named
-  after the skill (skills import each other's code, so a generic name can load another
-  skill's file), each with what it controls, its unit, its tested range and how it was
-  set. Mark the values that depend on the setup with a `# CALIBRATE:` comment saying how
-  to measure them, so a new task or setup knows what to check and where to adjust it.
+- Put the modules in a package named after the skill (the slug with `_` for `-`), importing
+  each other relatively; `code/` holds only the entry and stand-alone scripts. Python keeps
+  one module per name in a process, so plain module names from two skills collide. To
+  reuse a skill, list it in `uses:`, have your package's `__init__.py` put its `code/` on
+  `sys.path`, and import its package; never load its files by path.
+- Keep the hyper-parameters in one list, separate from the logic, in the package's
+  `params.py`, each with what it controls, its unit, its tested range and how it was set.
+  Mark the values that depend on the setup with a `# CALIBRATE:` comment saying how to
+  measure them, so a new task or setup knows what to check and where to adjust it.
 - Leave room for the agent's perception: each primitive re-observes what it acts on,
   returns the frames it used, and documents its perception checkpoints
   ([autonomous-control](../autonomous-control/references/checkpoints.md)).

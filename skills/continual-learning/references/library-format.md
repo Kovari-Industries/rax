@@ -6,7 +6,8 @@ skill-library/
   skills/<slug>/
     SKILL.md                  frontmatter + the sections below
     code/run.py               the entry: main(ctx, **params) -> {ok, measured, why}
-    code/*.py                 helpers it imports
+    code/<package>/           its modules: a package named after the slug (`-` -> `_`),
+                              with params.py, the hyper-parameter list
     evidence/runs.jsonl       one JSON object per run of the code
     evidence/images/*.jpg     downscaled visual references
 ```
@@ -24,7 +25,7 @@ status: draft                # draft | verified | deprecated
 robot: <robot name>
 entry: code/run.py
 version: 1                   # bump when behaviour changes
-uses: [<other-slug>]         # optional: library skills it imports
+uses: [<other-slug>]         # optional: library skills whose packages it imports
 ---
 
 # <Title>
