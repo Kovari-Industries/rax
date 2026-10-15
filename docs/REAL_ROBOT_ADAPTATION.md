@@ -374,7 +374,9 @@ session, so nothing it learns has to be imported later.
   Each session gets a git clone of it as `skill-library/` in its workspace and works on
   its own `session/<session>` branch. A harness tool (`<library_merge>`) runs the checker
   and merges that branch into the local library; the agent never pushes on its own.
-  Publish the merged library to skills-lib as a pull request into the robot's branch.
+  Publish the merged library to skills-lib as a pull request into the robot's branch,
+  and merge that branch back in before sessions so the robot starts from what other labs
+  learned ([CONTRIBUTING.md section 5](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md#5-commit-and-merge)).
 - **The setup skills read.** A skill is reused on the same robot with other cameras,
   layouts and tasks, so it reads the setup from the harness instead of copying it. Give
   every frame its camera intrinsics and extrinsics (Principle 4), and report limits, the
