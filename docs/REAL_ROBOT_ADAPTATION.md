@@ -38,10 +38,11 @@ real-robot branches.
 2. **Measure before you advise.** Test every control mode on the hardware for accuracy
    and efficiency. The skills then tell the agent which mode suits which kind of motion,
    quoting the measured numbers.
-3. **Give the agent universal skills and a sandbox.** Manual control, autonomous control
-   and experience memory are written once. They are robot-neutral and contain no
-   task-specific advice. The agent works in a sandboxed workspace with its own Python
-   environment.
+3. **Give the agent universal skills and a sandbox.** Manual control, autonomous control,
+   experience memory and continual learning are written once. They are robot-neutral and
+   contain no task-specific advice. The agent works in a sandboxed workspace with its own
+   Python environment, and what it learns accumulates in a skill library that persists
+   across sessions.
 4. **Observe on request; record continuously.** One tool returns a fresh, saved frame
    with its geometry described. A recorder keeps a high-rate sliding window on disk, and
    the agent can only read it.
@@ -308,7 +309,7 @@ without branching on the robot.
 
 | Layer | Skills | Robot-specific? |
 |---|---|---|
-| `task/` | `manual-robot-control`, `autonomous-control`, `experience-memory` | no |
+| `task/` | `manual-robot-control`, `autonomous-control`, `experience-memory`, `continual-learning` | no |
 | `perception/common/` | `live-stream`, `wrist-camera-inspection` | no |
 | `perception/<depth\|rgb-only>-<robot>/` | `object-localization` | yes |
 | `control/<robot>/` | `robot-interface`, plus `whole-body-control`, `base-navigation` and `grasping` where they apply | yes |
@@ -334,6 +335,7 @@ copy, with a `robot-interface` template and each branch's version linked.
 | `manual-robot-control` | Solve the task by hand from observations. Read `TASK.md` into a completion checklist, then inspect status and images. Ground each target in fresh perception, and take small steps that can be inspected. Distinguish commanded from measured state, and treat refusals as walls. After any error, observe before the next motion. Confirm every condition from fresh images of more than one view. Record the strategy in memory. |
 | `autonomous-control` | Turn what worked by hand into `code/<project>/controller.py:main(ctx)`. It is built from step functions with observable preconditions and completion checks that return `{ok, measured, why}`. It re-localizes on every run, keeps tested ranges as named constants, can resume, and leaves a safe stop state on failure. Test it end to end: start from the neutral pose, ask for a `request_operator` reset, run unattended once per committed version, and log every run in `memory/RUNS.md`. Runs finished by hand do not count. |
 | `experience-memory` | Task-scoped memory in `memory/`. Record a tip in `TIPS.md` as soon as an action visibly succeeds: observable preconditions, phase, tool and arguments or pose relation, effect, and frame paths. Refine the same row later. Promote reusable procedures to `memory/skills/<slug>/` with `evidence.json`, and index them in `INDEX.md`. Retrieve only the tips that match. Live perception and tool schemas override memory. On real robots, record the conditions under which a tip held, since the scene drifts. |
+| `continual-learning` | Read, run and grow the robot's skill library (below). At the start, load only the library skills that match `TASK.md`, check their preconditions and run them. Before the session ends, contribute what worked as skills with code and evidence, and merge them so the next session finds them. Library skills never override a limit, a safety rule or a tool. |
 | `live-stream` | When and how to read the recording (Principle 4). |
 | `robot-interface` | Read first. The robot's tool map by level, its frames, the enforced limits with their values, the error contract, arming, vendor safety rules and script access. |
 | `object-localization` | Pixels to metric points for the observation profile. Surface points are not grasp centres. Re-observe instead of guessing. |
@@ -353,6 +355,36 @@ workflow:
 3. Automate it.
 4. Test end to end with operator resets.
 5. Keep `memory/PROGRESS.md` current, so the agent can continue after context compaction.
+
+### A skill library that persists across sessions
+
+`memory/` lives as long as one task. What an agent learns about the robot should outlive
+it, so every real robot gets a **skill library**: verified, executable sub-task skills
+that later sessions read, run, compose and improve. Give a new robot one from its first
+session, so nothing it learns has to be imported later.
+
+- **Where it lives.** The shared libraries are in
+  [skills-lib](https://github.com/robot-agent-exploration/skills-lib), one branch per
+  embodiment. Its [CONTRIBUTING.md](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md)
+  defines the skill format (`SKILL.md` with seven sections, `code/` with an entry
+  `main(ctx, ...) -> {ok, measured, why}`, and `evidence/` with run records and frames),
+  the status rules and the checker `scripts/check_skills.py`.
+- **How the harness wires it.** Keep a local library per robot under the artifact root
+  (`<artifact root>/skill-library/<robot>/`), cloned from the robot's skills-lib branch.
+  Each session gets a git clone of it as `skill-library/` in its workspace and works on
+  its own `session/<session>` branch. A harness tool (`<library_merge>`) runs the checker
+  and merges that branch into the local library; the agent never pushes on its own.
+  Publish the merged library to skills-lib as a pull request into the robot's branch.
+- **Skill layout and sandbox.** Render `continual-learning` into `.agents/skills/` and
+  gate it with a `SkillRule` on the library being present. The sandbox lets the agent write
+  its workspace clone, never the local library or the remote.
+- **Adding the robot to skills-lib.** Create its embodiment branch as described in
+  [Adding an embodiment](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md#7-adding-an-embodiment).
+
+`real/rainbow` is the reference: `skill_library_merge` and its `continual-learning`
+skill. `real/franka` ran its sessions before the library existed; its procedures are
+being refactored into skills-lib by the import path in
+[Importing skills from earlier sessions](https://github.com/robot-agent-exploration/skills-lib/blob/main/CONTRIBUTING.md#6-importing-skills-from-earlier-sessions).
 
 ### The sandbox
 
@@ -601,10 +633,13 @@ out.
    see the `problems` text. Execute small clean plans.
 9. **Write the skills.** Write `robot-interface` and the robot's control and localization
    skills from the measured numbers. Render a workspace and read it as the agent will.
-10. **Audit the sandbox.** From inside an agent session, confirm that the agent cannot
+10. **Set up the skill library.** Create the robot's branch in skills-lib, clone it as the
+    local library, render `continual-learning`, and check that a session can merge a
+    `draft` skill through `<library_merge>` (Principle 3).
+11. **Audit the sandbox.** From inside an agent session, confirm that the agent cannot
     read the repository, credentials or SDK configurations, cannot reach vendor sockets or
-    loopback bridges, and cannot write the arming file.
-11. **Run a dry agent session** with a person at the e-stop, then move on to real tasks.
+    loopback bridges, and cannot write the arming file or the local skill library.
+12. **Run a dry agent session** with a person at the e-stop, then move on to real tasks.
 
 ## Keeping robot branches in sync
 
@@ -617,7 +652,7 @@ branch falls into two groups:
 - **Harness improvements**, which are robot-neutral and can move between branches: the
   launcher and sandbox, operator requests and handled-stop semantics, the workspace
   generator, robot-neutral `ROBOT_FACTS` keys, the stream layout and readers, dashboard
-  telemetry, the runtime shipper, and the generic skills.
+  telemetry, the runtime shipper, the skill-library merge tool, and the generic skills.
 
 Start a new robot from the reference port closest to it: `real/franka` for a single arm,
 and `real/rainbow` for a mobile or multi-limb robot. Remove the other

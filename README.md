@@ -69,6 +69,7 @@ its own README, setup guide and usage guide.
 | Run RAX on a Franka or an RB-Y1 | [`real/franka`](https://github.com/robot-agent-exploration/rax/tree/real/franka) or [`real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow) |
 | Bring RAX to a new robot | [Real-robot adaptation guide](docs/REAL_ROBOT_ADAPTATION.md), then fork the closest real-robot branch |
 | Port the agent skills to a new robot | [`skills/`](skills/README.md) |
+| Reuse task skills agents learned on a real robot | [`skills-lib`](https://github.com/robot-agent-exploration/skills-lib) |
 
 ## 🧠 How RAX works
 
@@ -156,17 +157,39 @@ stream.
 - 🦾 **Ready to port.** A [`robot-interface` template](skills/templates/robot-interface/SKILL.md)
   holds the facts a new robot fills in.
 
+## 📚 Skill library
+
+[**skills-lib**](https://github.com/robot-agent-exploration/skills-lib) is a companion
+repository holding the **task skills agents wrote on real robots**. RAX is the general
+harness; skills-lib is what its agents learned with it.
+
+- 🦾 **One library per embodiment.** Each robot has its own branch:
+  [`rby1`](https://github.com/robot-agent-exploration/skills-lib/tree/rby1) (box, bucket and
+  chair moves, cup stacking, whole-body hand reach, a six-step room tidy) and
+  [`franka`](https://github.com/robot-agent-exploration/skills-lib/tree/franka).
+- 🧾 **Skills with evidence.** Every skill keeps its code, preconditions, checks, failure
+  modes, run records and camera frames; it is `verified` only after two unattended
+  successful runs.
+- 🔁 **Grows across sessions.** The harness clones the robot's library into each
+  session's workspace. Guided by the [`continual-learning`](skills/continual-learning/SKILL.md)
+  skill, the agent reads it, runs or composes the skills that match, and merges back what
+  it improves. Every new real robot should get one; the
+  [adaptation guide](docs/REAL_ROBOT_ADAPTATION.md#a-skill-library-that-persists-across-sessions)
+  shows how. The Franka sessions ran before the library existed, and their skills are being
+  refactored into it.
+
 ## 🦾 Bring RAX to your robot
 
 A new robot needs a backend, not a dataset. The
 [real-robot adaptation guide](docs/REAL_ROBOT_ADAPTATION.md) walks through it:
 
 - **Five design principles:** wire the vendor stack without modifying it, measure every
-  control mode before advising the agent, universal skills in a sandbox, observe on request
-  and record continuously, and keep the harness separate from the robot.
+  control mode before advising the agent, universal skills in a sandbox with a skill
+  library that persists across sessions, observe on request and record continuously, and
+  keep the harness separate from the robot.
 - **The backend contract,** layered safety and the shared error shape.
 - **The characterization protocol** and how to turn its numbers into skills.
-- **An 11-step bring-up checklist,** from mapping the system to a dry agent session with
+- **A 12-step bring-up checklist,** from mapping the system to a dry agent session with
   a person at the e-stop.
 
 ## 🙏 Acknowledgements
