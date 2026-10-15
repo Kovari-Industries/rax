@@ -79,10 +79,11 @@ Your controller may import library skills the same way.
   limits and workspace) from the harness at run time, never from values your session
   saw, and perceive what the harness does not report; say which setups and variations
   the evidence covers.
-- Keep the hyper-parameters in one list, separate from the logic, each with what it
-  controls, its unit, its tested range and how it was set. Mark the values that depend
-  on the setup as values to calibrate, with how to measure them, so a new task or setup
-  knows what to check and where to adjust it.
+- Keep the hyper-parameters in one list, separate from the logic, in a module named
+  after the skill (skills import each other's code, so a generic name can load another
+  skill's file), each with what it controls, its unit, its tested range and how it was
+  set. Mark the values that depend on the setup with a `# CALIBRATE:` comment saying how
+  to measure them, so a new task or setup knows what to check and where to adjust it.
 - Leave room for the agent's perception: each primitive re-observes what it acts on,
   returns the frames it used, and documents its perception checkpoints
   ([autonomous-control](../autonomous-control/references/checkpoints.md)).
