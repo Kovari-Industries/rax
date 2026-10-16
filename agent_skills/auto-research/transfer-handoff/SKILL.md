@@ -35,7 +35,7 @@ example reach, grasp, lift, carry, place, push or release):
   camera, which visible feature, which skill or tool), and what to locate again after
   each move.
 - **Motion plan**: the ordered moves, each relative to something observed (for
-  example "<distance> above <observed feature>, <orientation>"), with the arm, the tool
+  example "\<distance> above \<observed feature>, \<orientation>"), with the arm, the tool
 {% if behavior %}
   that plans or executes it (`behavior_base_move`, `behavior_step_eef`,
   `behavior_free_space_move` or `behavior_step`), the orientation, the gripper opening,
