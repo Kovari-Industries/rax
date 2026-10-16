@@ -22,7 +22,7 @@ lift, carry, place, push, release, ...):
   camera, which visible feature, which skill or tool), and what to locate again after
   each move.
 - **Motion plan:** the ordered moves, each relative to something observed (for example
-  "<distance> above <observed feature>, <orientation>"), with the arm, the tool that
+  "\<distance> above \<observed feature>, \<orientation>"), with the arm, the tool that
   plans or executes each move, the gripper opening, approach and retreat directions,
   and the step sizes that worked.
 - **Parameters:** each value with its unit, what it is measured from, the range tried
