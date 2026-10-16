@@ -4,7 +4,7 @@
 
 # RAX: Scaling Online Exploration for Robot Agents
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![Videos](https://img.shields.io/badge/Robot-videos-blue)](https://robot-agent-exploration.com/#tasks) [![Skill Library](https://img.shields.io/badge/Skill-library-6f42c1)](https://github.com/robot-agent-exploration/skills-lib)
+[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![Videos](https://img.shields.io/badge/Robot-videos-blue)](https://robot-agent-exploration.com/#tasks) [![Skill Library](https://img.shields.io/badge/Skill-library-6f42c1)](https://github.com/robot-agent-exploration/skills-lib) [![Session Logs](https://img.shields.io/badge/%F0%9F%A4%97%20Session-logs-ffd21e)](https://huggingface.co/datasets/robot-agent-exploration/robot-session-logs)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/scaling_dark.svg">
@@ -176,6 +176,14 @@ harness; skills-lib is what its agents learned with it.
   it improves. Every new real robot should get one; the
   [adaptation guide](docs/REAL_ROBOT_ADAPTATION.md#a-skill-library-that-persists-across-sessions)
   shows how.
+
+## 🗂️ Session logs
+
+The raw logs of the real-robot sessions are on Hugging Face:
+[**robot-session-logs**](https://huggingface.co/datasets/robot-agent-exploration/robot-session-logs).
+It holds 5 Franka and 7 RB-Y1 sessions. Each one keeps the agent's full transcripts, every
+robot tool call with its result, the robot state log and camera recordings, the operator's
+instructions, and the code, notes and skills the agent wrote.
 
 ## 🦾 Bring RAX to your robot
 
