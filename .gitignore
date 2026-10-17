@@ -1,0 +1,23 @@
+# Private local state and credentials.
+.git/
+.claude/
+.codex/
+.agents/
+secrets/
+.env
+.env.*
+!.env.example
+!.env.sample
+.netrc
+.npmrc
+.pypirc
+*.key
+*.pem
+
+# Local caches and editor state.
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+.idea/
+.vscode/
