@@ -215,6 +215,14 @@ The simulation branches build on [RoboDojo](https://github.com/RoboDojo-Benchmar
 NVIDIA Isaac Sim and Isaac Lab, and [cuRobo](https://github.com/NVlabs/curobo).
 Each branch lists the exact versions it pins.
 
+## 📄 License
+
+RAX's original source code and accompanying documentation are licensed under the
+[Apache License 2.0](LICENSE). Copyright 2026 RAX contributors.
+
+Third-party code, simulator software, assets, model weights and datasets retain their
+own licenses. See [NOTICE](NOTICE) and the relevant upstream releases.
+
 ## 📝 Citation
 
 If you find RAX useful, please cite:
