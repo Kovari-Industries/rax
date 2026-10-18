@@ -1,6 +1,6 @@
 ---
 name: in-context-action-learning
-description: Infer task goals and a useful strategy from supplied visual demonstrations (an image sequence of a human or robot completing the task, or a terminal-state image). Use when TASK.md lists demonstrations, before acting.
+description: Infer task goals and a useful strategy from visual demonstrations (an image sequence of a human or robot completing the task, or a terminal-state image), and from videos of similar tasks and descriptions of the objects found on the internet. Use before acting.
 ---
 
 # In-context action learning
@@ -20,6 +20,9 @@ Satisfy every condition in `TASK.md` in the current scene.
   phases.
 - For a terminal-state image, infer only the desired end relationships; devise the
   intermediate behavior yourself.
+- Search the internet for videos of similar tasks and descriptions of the objects (size,
+  weight, material, how their parts move), and sample a video's frames with OpenCV.
+  Record what you used, with its URL, in memory.
 
 ## Adapt
 

@@ -49,8 +49,8 @@ returns; where it logs.
 Each step's observable completion check and the final success check, with thresholds.
 
 ### Perception checkpoints
-| Step | Subagent | Frames | Question | Expected answer | Pass if | On fail |
-|---|---|---|---|---|---|---|
+| Step | Frames | Question | Expected answer | Pass if | On fail |
+|---|---|---|---|---|---|
 (write "None" if the skill has none)
 
 ## Failure modes
@@ -64,8 +64,9 @@ A table summarizing `evidence/runs.jsonl`, with images of the start and success 
 ## The code
 
 - Re-localizes everything it acts on from fresh observations.
-- Checks preconditions first and returns `ok: False` with a clear `why` when one fails;
-  checks each step before the next; ends in a safe state on failure.
+- Checks preconditions first and each step before the next. When a check fails or is
+  ambiguous it throws an exception, never failing silently: it ends in a safe state and
+  returns `ok: False` with a clear `why` and the frames to look at.
 - Reaches the robot only through `ctx` and reads the setup from it; keeps its
   hyper-parameters in one list; uses no paths outside the workspace.
 

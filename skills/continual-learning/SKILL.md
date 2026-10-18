@@ -31,7 +31,9 @@ changes a limit, a safety rule or what a tool does.
    against your scene before running it. In a setup it was not tested in, calibrate the
    values its hyper-parameter list marks for calibration.
 4. Run its entry, read the returned `{ok, measured, why}`, and confirm the result with
-   your own observation. A failure here is information: record it as a run.
+   your own observation. In a scene its evidence does not cover, look at its perception
+   checkpoints yourself and adapt the code where the scene differs, until its own checks
+   have proved reliable there. A failure here is information: record it as a run.
 5. A skill may predate the current tools. Where a newer tool does a step better,
    upgrade the skill on your branch, bump its version and re-verify it.
 
@@ -90,8 +92,9 @@ Your controller may run library skills the same way, or put a skill's `code/` on
   Mark the values that depend on the setup with a `# CALIBRATE:` comment saying how to
   measure them, so a new task or setup knows what to check and where to adjust it.
 - Leave room for the agent's perception: each primitive re-observes what it acts on,
-  returns the frames it used, and documents its perception checkpoints
-  ([autonomous-control](../autonomous-control/references/checkpoints.md)).
+  returns the frames it used, throws an exception instead of guessing when a check fails
+  or is ambiguous, and documents its perception checkpoints for running it in a new
+  scene ([autonomous-control](../autonomous-control/references/checkpoints.md)).
 
 ## Format, evidence and merging
 

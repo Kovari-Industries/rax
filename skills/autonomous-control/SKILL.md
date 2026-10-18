@@ -1,13 +1,14 @@
 ---
 name: autonomous-control
-description: Turn what worked by hand into a step-wise Python controller, controller.py:main(ctx), that re-perceives the scene and completes the task from a fresh start; develop, debug and test it end to end. Use after a confirmed manual success, for closed-loop scripts, and when switching between your code and direct control.
+description: Turn what worked by hand into a step-wise Python controller, controller.py:main(ctx), that re-perceives the scene, completes the task from a fresh start and throws an exception you handle with your own perception when a step fails; develop, debug and test it end to end. Use after a confirmed manual success, for closed-loop scripts, and when switching between your code and direct control.
 ---
 
 # Autonomous control
 
 The deliverable is a controller that completes the task from a fresh scene: the code
 does the motions and measurements, re-localizes everything it acts on, checks each
-step, and stops with a clear report when the scene is not what it was built for.
+step, and throws an exception when the scene is not what it was built for, never
+failing silently.
 AGENTS.md says how it is judged: run alone on unseen scenes, or run by you with your
 perception checking the decisive points.
 
@@ -29,8 +30,9 @@ A new layout should need new perception and parameters, not new motion code.
 - **A perception layer with a fixed output.** One function turns the current scene
   into a small description the motions consume (target pose and size, support height,
   obstacles). Geometry comes from depth, camera geometry and kinematics; semantic
-  judgements (which object, is it held, did it tip) come from images, through you, a
-  [VLM](../vlm-perception/SKILL.md) or a perception subagent.
+  judgements (which object, is it held, did it tip) come from images: in code through
+  a [VLM](../vlm-perception/SKILL.md), asked with structured prompts and clear
+  references, and through you when a step throws an exception.
 - **Three layers.** Perception, motion primitives (each with its own checks) and a
   short task script that chains them, in separate modules.
 - **Parameters as data.** Object descriptions, tolerances and per-scene settings live
@@ -40,7 +42,9 @@ A new layout should need new perception and parameters, not new motion code.
   scene: reason out a few candidates, check them with the robot's dry-run tools
   (`<preview>`), and take the first that passes. Do not grid-search.
 - Prefer simple motion functions and rules; use the VLM where simple rules break on
-  new views.
+  new views. A step acts on its answers alone only once that call is pressure-tested on
+  varied views and repeated frames; a failed call or an answer that disagrees with the
+  geometry is an exception.
 
 ## Steps you can read, resume and supervise
 
@@ -48,9 +52,13 @@ A new layout should need new perception and parameters, not new motion code.
   check.
 - Each step `fn(ctx, ...)` checks its preconditions from fresh observations, acts,
   verifies the result and returns `{"ok": bool, "measured": {...}, "why": str}` plus
-  the frames it used. Outside what it was tested on, it returns instead of
-  improvising, leaving the robot safe: nothing held dropped mid-air, arm clear,
-  nothing moving.
+  the frames it used. When a check fails or is ambiguous, or the scene is outside what
+  it was tested on, it throws an exception instead of improvising: it leaves the robot
+  safe (nothing held dropped mid-air, arm clear, nothing moving) and returns `ok: False`
+  with `why`, its measurements and the frames to look at.
+- Handle each exception with your own perception: look at its frames and fresh ones,
+  then rerun the step with corrected inputs, recover by hand, or stop. Fold an
+  exception that recurs, with its fix, into the step.
 - Make the pipeline resumable at any step, and give every motion that can fail a
   fallback.
 - Keep tunable values as named constants at the top of a module, with their tested
@@ -59,10 +67,11 @@ A new layout should need new perception and parameters, not new motion code.
   report. `code/<project>/README.md` says how to run the whole controller and each
   step, with their preconditions.
 
-When AGENTS.md keeps you in the loop, each step that ends where a mistake would drop,
-crush or knock something returns a checkpoint for you or a subagent to settle from the
-frames alone; see [references/checkpoints.md](references/checkpoints.md). Chain steps
-without looking only where their own checks have caught the failures you saw.
+Mark perception checkpoints where a step's success depends on what the scene looks
+like. When the controller, or a skill made from it, runs in a new scene, the agent
+running it looks there itself and adapts the code where the scene differs, until the
+code's own checks have proved reliable there; see
+[references/checkpoints.md](references/checkpoints.md).
 
 ## Ordinary Python
 
@@ -118,9 +127,10 @@ with Context() as ctx:
    operator reset after you bring the robot to its neutral state
    ([robot-interface](../robot-interface/SKILL.md)).
 2. Commit the controller version and run it once, unattended: no direct robot calls
-   while it runs. A run you finished by hand is debugging, not a success.
+   while it runs. A run you finished by hand, or one that needed an operator request
+   beyond the reset, is debugging, not a success.
 3. Record every run in memory: code version, scene, outcome, duration, failing step
-   and cause, and where you looked if you supervised it.
+   and cause, and each exception and how you handled it.
 4. Vary what the invariants claim not to depend on (position, orientation, distance,
    side, distractors, lighting). A variation that breaks the code shows which quantity
    was not perceived. Do not claim untested generalization.

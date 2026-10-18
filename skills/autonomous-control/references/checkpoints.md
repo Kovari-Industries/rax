@@ -2,7 +2,10 @@
 
 A checkpoint is a point in the controller where the next motion depends on a judgement
 from images: before first contact, before closing or opening a gripper, before releasing
-or placing, after a base move, after any pause.
+or placing, after a base move, after any pause. Code proven on one scene is unproven on
+the next: when the controller, or a skill made from it, runs in a new scene, the agent
+running it looks at these points itself and reads and adapts the code where the scene
+differs, until the code's own checks have proved reliable there.
 
 ## Who perceives what
 
@@ -12,17 +15,16 @@ or placing, after a base move, after any pause.
   the gripper is around the object, whether it slipped or tipped, whether the scene
   still matches what the step assumes, why a step failed.
 
-Hand image questions to a subagent where AGENTS.md allows them: a fast model for checks
-with a fixed answer form (visible or not, where, how many, is the path clear), a
-stronger one for open-ended diagnosis. Their answers are evidence; you decide. When an
-answer and the geometry disagree, observe again before acting. A perception subagent
-only looks: tell it not to call motion tools.
+In code, ask a [VLM](../../vlm-perception/SKILL.md) with structured prompts (one precise
+question per call, the answer's form fixed by a schema, a short reason next to the
+verdict) and clear references (what each image is, exactly which object or feature,
+a labelled reference image for a comparison). When a step fails, it throws an exception
+and you judge its frames yourself.
 
 ## The brief a step returns
 
 ```python
 "checkpoint": {
-    "subagent": "<fast | strong>",
     "frames": ["<saved frame path>"],
     "question": "<one question a reader can answer from these frames alone>",
     "answer": "<the answer form, e.g. yes | no, plus a pixel>",
@@ -39,8 +41,8 @@ say what to look at, not what you hope to hear.
 `code/<project>/README.md` keeps a **Perception checkpoints** table, one row per
 checkpoint:
 
-| Step | Subagent | Frames | Question | Expected answer | Pass if | On fail |
-|---|---|---|---|---|---|---|
+| Step | Frames | Question | Expected answer | Pass if | On fail |
+|---|---|---|---|---|---|
 
 Record in the run log where you looked, what you saw and what you decided, so the
 checkpoints that matter become visible and the reliable ones can later run unattended.
