@@ -1,0 +1,52 @@
+# Pins of every external source and environment. Sourced by the setup scripts.
+
+# Miniforge installs the conda that builds runtime/envs/host and the simulator environments.
+MINIFORGE_VERSION=26.7.2-0
+MINIFORGE_SHA256=281b0ac7d550802efc81af633225a5e6116d29ae72f3ab4eae7168c3931a4c05
+# The host environment (scripts/setup_host_env.sh): the harness's own packages.
+HOST_PYTHON_VERSION=3.12
+HOST_NUMPY_VERSION=2.5.2
+HOST_PILLOW_VERSION=12.3.0
+HOST_JINJA2_VERSION=3.1.6
+HOST_MSGPACK_VERSION=1.2.3
+HOST_PYYAML_VERSION=6.0.3
+HOST_IMAGEIO_VERSION=2.38.0
+HOST_IMAGEIO_FFMPEG_VERSION=0.6.0
+HOST_SCIPY_VERSION=1.18.1
+HOST_PYTEST_VERSION=9.1.1
+# OpenCV decodes and writes the HumanoidArena expert previews (scripts/setup_humanoid_demos.py).
+HOST_OPENCV_VERSION=5.0.0.93
+
+# HumanoidArena simulator backend (Unitree G1 + Dex3 under the frozen SONIC controller),
+# used only by the simulator subprocess (HUMANOID_PYTHON).
+HUMANOID_ARENA_URL=https://github.com/William-wAng618/HumanoidArena.git
+HUMANOID_ARENA_BRANCH=release/open-source-prep
+HUMANOID_ARENA_COMMIT=68479287a784a69be9ce6ad739311d2f11f75ef9
+# Released simulation assets (README "Simulation assets"), extracted under isaaclab_twist2_g1/assets.
+HUMANOID_ARENA_ASSETS_URL='https://drive.usercontent.google.com/download?id=1TCa_aVRmFrZs_l4wlxkqanNebvDtChNk&export=download&confirm=t'
+HUMANOID_ARENA_ASSETS_SHA256=d0a0c6be2e47ac9a3b161ec9ca11a9d67908ef755fe0fd96445404938376447b
+# Its simulator image (scripts/build_humanoid_image.sh, docker/humanoid/Dockerfile): Isaac Sim 6.1 with
+# Isaac Lab patched for 6.1 (patches/isaaclab-isaacsim61.patch) and cuRobo.
+HUMANOID_IMAGE=rax-humanoid:isaacsim6.1
+ISAACSIM_IMAGE=nvcr.io/nvidia/isaac-sim:6.1.0
+ISAACLAB_URL=https://github.com/yuechen0614/IsaacLab.git
+ISAACLAB_COMMIT=afca7b09d60d8beb9c1cb28b43066499940b969b
+ISAACLAB_PATCH_SHA256=31de9e4cb49c2e1ab69d489647b306e3f7bb024f80e2dfde3ce0a54b53ddf9b6
+CUROBO_URL=https://github.com/yuechen0614/curobo.git
+CUROBO_COMMIT=d17b54ce32cba095c0b000c4c58777075d11de0e
+# Released SONIC whole-body controller (Hugging Face nvidia/GEAR-SONIC).
+SONIC_REPOSITORY=nvidia/GEAR-SONIC
+SONIC_REVISION=6733128a3d8a523b1418b06bca3cdf61c8b0987f
+SONIC_ENCODER_SHA256=013ab0287236aa2721e13f1e936d699db982302d0de0bfcdae76d5c3245362d3
+SONIC_DECODER_SHA256=c7241a123eaa36b5d64bad19540efde93cac1ad443bd4572fd12ca99898118ed
+SONIC_OBSERVATION_CONFIG_SHA256=466d05947c78af6c76388adfb86e3a2a77b2a1d921a64883ed3d085ebf58de1b
+SONIC_LICENSE_SHA256=24ab66be50d1aca4fc5e029ef76ce4ceaac6557ea21665caf4b140695a76ffee
+# Expert episodes (scripts/setup_humanoid_demos.py): the raw SONIC release on ModelScope (episodes
+# pinned in services/humanoid/expert_sources.json) and the released G1 MuJoCo description their
+# derived virtual points use.
+HUMANOID_EXPERTS_REPOSITORY=Twang2026/HumanoidArena_raw
+HUMANOID_EXPERTS_REVISION=374a41192e61b89b0ccbeaeb525dadad2715ba96
+SONIC_CODE_REPOSITORY=NVlabs/GR00T-WholeBodyControl
+SONIC_CODE_COMMIT=7f151314d4d1606544bf249d2a7a1cb754c64582
+SONIC_MJCF_PATH=gear_sonic/data/assets/robot_description/mjcf/g1_29dof_rev_1_0.xml
+SONIC_MJCF_SHA256=15a330f1dbff68cdbeb8284be6162a857bdcd21a858f65a8617fb32d5115f209

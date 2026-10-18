@@ -1,0 +1,5050 @@
+{
+ "schema": "g1_dex3_robot_model_v1",
+ "robot": "Unitree G1, 29 body joints, two Dex3 hands (7 joints each)",
+ "source": {
+  "usd": {
+   "asset": "isaaclab_twist2_g1/assets/robots/g1-29dof_wholebody_dex3/g1_29dof_with_dex3_rev_1_0.usd",
+   "sha256": "412d29efc409e844c0df64abb8401ef86b0e1159a70cf6a126ac749186f62edd",
+   "bytes": 40584407
+  },
+  "probes": [
+   {
+    "task": "Isaac-Move-Open-Door-G129-Dex3-Wholebody",
+    "seed": 987654321,
+    "samples": 10
+   },
+   {
+    "task": "Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody",
+    "seed": 987654321,
+    "samples": 10
+   }
+  ]
+ },
+ "units": {
+  "length": "m",
+  "angle": "rad",
+  "quaternion": "wxyz",
+  "mass": "kg"
+ },
+ "root_link": "pelvis",
+ "canonical29": [
+  "left_hip_pitch_joint",
+  "right_hip_pitch_joint",
+  "waist_yaw_joint",
+  "left_hip_roll_joint",
+  "right_hip_roll_joint",
+  "waist_roll_joint",
+  "left_hip_yaw_joint",
+  "right_hip_yaw_joint",
+  "waist_pitch_joint",
+  "left_knee_joint",
+  "right_knee_joint",
+  "left_shoulder_pitch_joint",
+  "right_shoulder_pitch_joint",
+  "left_ankle_pitch_joint",
+  "right_ankle_pitch_joint",
+  "left_shoulder_roll_joint",
+  "right_shoulder_roll_joint",
+  "left_ankle_roll_joint",
+  "right_ankle_roll_joint",
+  "left_shoulder_yaw_joint",
+  "right_shoulder_yaw_joint",
+  "left_elbow_joint",
+  "right_elbow_joint",
+  "left_wrist_roll_joint",
+  "right_wrist_roll_joint",
+  "left_wrist_pitch_joint",
+  "right_wrist_pitch_joint",
+  "left_wrist_yaw_joint",
+  "right_wrist_yaw_joint"
+ ],
+ "hand_joints": {
+  "left": [
+   "left_hand_thumb_0_joint",
+   "left_hand_thumb_1_joint",
+   "left_hand_thumb_2_joint",
+   "left_hand_middle_0_joint",
+   "left_hand_middle_1_joint",
+   "left_hand_index_0_joint",
+   "left_hand_index_1_joint"
+  ],
+  "right": [
+   "right_hand_thumb_0_joint",
+   "right_hand_thumb_1_joint",
+   "right_hand_thumb_2_joint",
+   "right_hand_middle_0_joint",
+   "right_hand_middle_1_joint",
+   "right_hand_index_0_joint",
+   "right_hand_index_1_joint"
+  ]
+ },
+ "hand_poses": {
+  "open": {
+   "left": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "right": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "closed": {
+   "left": [
+    0.0,
+    1.0,
+    1.74,
+    -1.57,
+    -1.74,
+    -1.57,
+    -1.74
+   ],
+   "right": [
+    0.0,
+    -1.0,
+    -1.74,
+    1.57,
+    1.74,
+    1.57,
+    1.74
+   ]
+  }
+ },
+ "joints": [
+  {
+   "name": "imu_in_pelvis_joint",
+   "type": "fixed",
+   "parent": "pelvis",
+   "child": "imu_in_pelvis",
+   "origin_m": [
+    0.045249999,
+    0.0,
+    -0.083389997
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "left_hip_pitch_joint",
+   "type": "revolute",
+   "parent": "pelvis",
+   "child": "left_hip_pitch_link",
+   "origin_m": [
+    0.0,
+    0.064452,
+    -0.102700002
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -2.530699718516441,
+    2.879799923693369
+   ],
+   "limits_rad": [
+    -2.5307,
+    2.8798
+   ],
+   "velocity_limit_rad_s": 31.999998,
+   "effort_limit_Nm": 100.0,
+   "pd_stiffness_Nm_per_rad": 130.0,
+   "pd_damping_Nm_s_per_rad": 3.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "pelvis_contour_joint",
+   "type": "fixed",
+   "parent": "pelvis",
+   "child": "pelvis_contour_link",
+   "origin_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "right_hip_pitch_joint",
+   "type": "revolute",
+   "parent": "pelvis",
+   "child": "right_hip_pitch_link",
+   "origin_m": [
+    0.0,
+    -0.064452,
+    -0.102700002
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -2.530699718516441,
+    2.879799923693369
+   ],
+   "limits_rad": [
+    -2.5307,
+    2.8798
+   ],
+   "velocity_limit_rad_s": 31.999998,
+   "effort_limit_Nm": 100.0,
+   "pd_stiffness_Nm_per_rad": 130.0,
+   "pd_damping_Nm_s_per_rad": 3.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "waist_yaw_joint",
+   "type": "revolute",
+   "parent": "pelvis",
+   "child": "waist_yaw_link",
+   "origin_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -2.6180000032620017,
+    2.6180000032620017
+   ],
+   "limits_rad": [
+    -2.618,
+    2.618
+   ],
+   "velocity_limit_rad_s": 31.999998,
+   "effort_limit_Nm": 150.0,
+   "pd_stiffness_Nm_per_rad": 150.0,
+   "pd_damping_Nm_s_per_rad": 4.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hip_roll_joint",
+   "type": "revolute",
+   "parent": "left_hip_pitch_link",
+   "child": "left_hip_roll_link",
+   "origin_m": [
+    0.0,
+    0.052000001,
+    -0.030464999
+   ],
+   "origin_quaternion_wxyz": [
+    0.996178687,
+    0.0,
+    -0.087338574,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.5235999407312758,
+    2.9670996758067116
+   ],
+   "limits_rad": [
+    -0.5236,
+    2.9671
+   ],
+   "velocity_limit_rad_s": 19.999998,
+   "effort_limit_Nm": 110.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 3.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hip_roll_joint",
+   "type": "revolute",
+   "parent": "right_hip_pitch_link",
+   "child": "right_hip_roll_link",
+   "origin_m": [
+    0.0,
+    -0.052000001,
+    -0.030464999
+   ],
+   "origin_quaternion_wxyz": [
+    0.996178687,
+    0.0,
+    -0.087338574,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -2.9670996758067116,
+    0.5235999407312758
+   ],
+   "limits_rad": [
+    -2.9671,
+    0.5236
+   ],
+   "velocity_limit_rad_s": 19.999998,
+   "effort_limit_Nm": 110.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 3.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "waist_roll_joint",
+   "type": "revolute",
+   "parent": "waist_yaw_link",
+   "child": "waist_roll_link",
+   "origin_m": [
+    -0.0039635,
+    0.0,
+    0.044
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.5199999461487339,
+    0.5199999461487339
+   ],
+   "limits_rad": [
+    -0.52,
+    0.52
+   ],
+   "velocity_limit_rad_s": 29.999998,
+   "effort_limit_Nm": 150.0,
+   "pd_stiffness_Nm_per_rad": 150.0,
+   "pd_damping_Nm_s_per_rad": 4.5,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hip_yaw_joint",
+   "type": "revolute",
+   "parent": "left_hip_roll_link",
+   "child": "left_hip_yaw_link",
+   "origin_m": [
+    0.025001001,
+    0.0,
+    -0.124119997
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -2.757599978126756,
+    2.757599978126756
+   ],
+   "limits_rad": [
+    -2.7576,
+    2.7576
+   ],
+   "velocity_limit_rad_s": 31.999998,
+   "effort_limit_Nm": 100.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 2.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hip_yaw_joint",
+   "type": "revolute",
+   "parent": "right_hip_roll_link",
+   "child": "right_hip_yaw_link",
+   "origin_m": [
+    0.025001001,
+    0.0,
+    -0.124119997
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -2.757599978126756,
+    2.757599978126756
+   ],
+   "limits_rad": [
+    -2.7576,
+    2.7576
+   ],
+   "velocity_limit_rad_s": 31.999998,
+   "effort_limit_Nm": 100.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 2.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "waist_pitch_joint",
+   "type": "revolute",
+   "parent": "waist_roll_link",
+   "child": "torso_link",
+   "origin_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.5199999461487339,
+    0.5199999461487339
+   ],
+   "limits_rad": [
+    -0.52,
+    0.52
+   ],
+   "velocity_limit_rad_s": 29.999998,
+   "effort_limit_Nm": 150.0,
+   "pd_stiffness_Nm_per_rad": 150.0,
+   "pd_damping_Nm_s_per_rad": 8.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_knee_joint",
+   "type": "revolute",
+   "parent": "left_hip_yaw_link",
+   "child": "left_knee_link",
+   "origin_m": [
+    -0.078272998,
+    0.0021489,
+    -0.177340001
+   ],
+   "origin_quaternion_wxyz": [
+    0.996178687,
+    0.0,
+    0.087338574,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.0872669952319345,
+    2.879799923693369
+   ],
+   "limits_rad": [
+    -0.087267,
+    2.8798
+   ],
+   "velocity_limit_rad_s": 19.999998,
+   "effort_limit_Nm": 150.0,
+   "pd_stiffness_Nm_per_rad": 160.0,
+   "pd_damping_Nm_s_per_rad": 4.5,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_knee_joint",
+   "type": "revolute",
+   "parent": "right_hip_yaw_link",
+   "child": "right_knee_link",
+   "origin_m": [
+    -0.078272998,
+    -0.0021489,
+    -0.177340001
+   ],
+   "origin_quaternion_wxyz": [
+    0.996178687,
+    0.0,
+    0.087338574,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.0872669952319345,
+    2.879799923693369
+   ],
+   "limits_rad": [
+    -0.087267,
+    2.8798
+   ],
+   "velocity_limit_rad_s": 19.999998,
+   "effort_limit_Nm": 150.0,
+   "pd_stiffness_Nm_per_rad": 160.0,
+   "pd_damping_Nm_s_per_rad": 4.5,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "d435_joint",
+   "type": "fixed",
+   "parent": "torso_link",
+   "child": "d435_link",
+   "origin_m": [
+    0.057623498,
+    0.01753,
+    0.429870009
+   ],
+   "origin_quaternion_wxyz": [
+    0.914959669,
+    0.0,
+    0.40354532,
+    0.0
+   ]
+  },
+  {
+   "name": "head_joint",
+   "type": "fixed",
+   "parent": "torso_link",
+   "child": "head_link",
+   "origin_m": [
+    0.0039635,
+    0.0,
+    -0.044
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "imu_in_torso_joint",
+   "type": "fixed",
+   "parent": "torso_link",
+   "child": "imu_in_torso",
+   "origin_m": [
+    -0.039590001,
+    -0.00224,
+    0.147919998
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "left_shoulder_pitch_joint",
+   "type": "revolute",
+   "parent": "torso_link",
+   "child": "left_shoulder_pitch_link",
+   "origin_m": [
+    0.0039563,
+    0.100220002,
+    0.247779995
+   ],
+   "origin_quaternion_wxyz": [
+    0.990264058,
+    0.139201477,
+    1.3872e-05,
+    -9.8687e-05
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -3.0891997528324464,
+    2.6703998282381827
+   ],
+   "limits_rad": [
+    -3.0892,
+    2.6704
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "logo_joint",
+   "type": "fixed",
+   "parent": "torso_link",
+   "child": "logo_link",
+   "origin_m": [
+    0.0039635,
+    0.0,
+    -0.044
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "mid360_joint",
+   "type": "fixed",
+   "parent": "torso_link",
+   "child": "mid360_link",
+   "origin_m": [
+    0.0002835,
+    3e-05,
+    0.416180015
+   ],
+   "origin_quaternion_wxyz": [
+    0.999798596,
+    0.0,
+    0.02006994,
+    0.0
+   ]
+  },
+  {
+   "name": "right_shoulder_pitch_joint",
+   "type": "revolute",
+   "parent": "torso_link",
+   "child": "right_shoulder_pitch_link",
+   "origin_m": [
+    0.0039563,
+    -0.100210004,
+    0.247779995
+   ],
+   "origin_quaternion_wxyz": [
+    0.990264058,
+    -0.139201477,
+    1.3872e-05,
+    9.8687e-05
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -3.0891997528324464,
+    2.6703998282381827
+   ],
+   "limits_rad": [
+    -3.0892,
+    2.6704
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_ankle_pitch_joint",
+   "type": "revolute",
+   "parent": "left_knee_link",
+   "child": "left_ankle_pitch_link",
+   "origin_m": [
+    0.0,
+    -9.4445e-05,
+    -0.300009996
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.872669952319345,
+    0.5235999407312758
+   ],
+   "limits_rad": [
+    -0.87267,
+    0.5236
+   ],
+   "velocity_limit_rad_s": 29.999998,
+   "effort_limit_Nm": 40.0,
+   "pd_stiffness_Nm_per_rad": 60.0,
+   "pd_damping_Nm_s_per_rad": 6.5,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_ankle_pitch_joint",
+   "type": "revolute",
+   "parent": "right_knee_link",
+   "child": "right_ankle_pitch_link",
+   "origin_m": [
+    0.0,
+    9.4445e-05,
+    -0.300009996
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.872669952319345,
+    0.5235999407312758
+   ],
+   "limits_rad": [
+    -0.87267,
+    0.5236
+   ],
+   "velocity_limit_rad_s": 29.999998,
+   "effort_limit_Nm": 40.0,
+   "pd_stiffness_Nm_per_rad": 60.0,
+   "pd_damping_Nm_s_per_rad": 6.5,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_shoulder_roll_joint",
+   "type": "revolute",
+   "parent": "left_shoulder_pitch_link",
+   "child": "left_shoulder_roll_link",
+   "origin_m": [
+    0.0,
+    0.037999999,
+    -0.013831
+   ],
+   "origin_quaternion_wxyz": [
+    0.99026823,
+    -0.139171779,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.5881999513605098,
+    2.251499768786932
+   ],
+   "limits_rad": [
+    -1.5882,
+    2.2515
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_shoulder_roll_joint",
+   "type": "revolute",
+   "parent": "right_shoulder_pitch_link",
+   "child": "right_shoulder_roll_link",
+   "origin_m": [
+    0.0,
+    -0.037999999,
+    -0.013831
+   ],
+   "origin_quaternion_wxyz": [
+    0.99026823,
+    0.139171779,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -2.251499768786932,
+    1.5881999513605098
+   ],
+   "limits_rad": [
+    -2.2515,
+    1.5882
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_ankle_roll_joint",
+   "type": "revolute",
+   "parent": "left_ankle_pitch_link",
+   "child": "left_ankle_roll_link",
+   "origin_m": [
+    0.0,
+    0.0,
+    -0.017557999
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.2617999703656379,
+    0.2617999703656379
+   ],
+   "limits_rad": [
+    -0.2618,
+    0.2618
+   ],
+   "velocity_limit_rad_s": 29.999998,
+   "effort_limit_Nm": 40.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 2.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_ankle_roll_joint",
+   "type": "revolute",
+   "parent": "right_ankle_pitch_link",
+   "child": "right_ankle_roll_link",
+   "origin_m": [
+    0.0,
+    0.0,
+    -0.017557999
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -0.2617999703656379,
+    0.2617999703656379
+   ],
+   "limits_rad": [
+    -0.2618,
+    0.2618
+   ],
+   "velocity_limit_rad_s": 29.999998,
+   "effort_limit_Nm": 40.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 2.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_shoulder_yaw_joint",
+   "type": "revolute",
+   "parent": "left_shoulder_roll_link",
+   "child": "left_shoulder_yaw_link",
+   "origin_m": [
+    0.0,
+    0.00624,
+    -0.103200004
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -2.6180000032620017,
+    2.6180000032620017
+   ],
+   "limits_rad": [
+    -2.618,
+    2.618
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_shoulder_yaw_joint",
+   "type": "revolute",
+   "parent": "right_shoulder_roll_link",
+   "child": "right_shoulder_yaw_link",
+   "origin_m": [
+    0.0,
+    -0.00624,
+    -0.103200004
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -2.6180000032620017,
+    2.6180000032620017
+   ],
+   "limits_rad": [
+    -2.618,
+    2.618
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_elbow_joint",
+   "type": "revolute",
+   "parent": "left_shoulder_yaw_link",
+   "child": "left_elbow_link",
+   "origin_m": [
+    0.015783001,
+    0.0,
+    -0.080518
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.0471998814625516,
+    2.094399762925103
+   ],
+   "limits_rad": [
+    -1.0472,
+    2.0944
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_elbow_joint",
+   "type": "revolute",
+   "parent": "right_shoulder_yaw_link",
+   "child": "right_elbow_link",
+   "origin_m": [
+    0.015783001,
+    0.0,
+    -0.080518
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.0471998814625516,
+    2.094399762925103
+   ],
+   "limits_rad": [
+    -1.0472,
+    2.0944
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 40.0,
+   "pd_damping_Nm_s_per_rad": 5.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_wrist_roll_joint",
+   "type": "revolute",
+   "parent": "left_elbow_link",
+   "child": "left_wrist_roll_link",
+   "origin_m": [
+    0.100000001,
+    0.00188791,
+    -0.01
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.9722219215955379,
+    1.9722219215955379
+   ],
+   "limits_rad": [
+    -1.972222,
+    1.972222
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 20.0,
+   "pd_damping_Nm_s_per_rad": 1.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_wrist_roll_joint",
+   "type": "revolute",
+   "parent": "right_elbow_link",
+   "child": "right_wrist_roll_link",
+   "origin_m": [
+    0.100000001,
+    -0.00188791,
+    -0.01
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.9722219215955379,
+    1.9722219215955379
+   ],
+   "limits_rad": [
+    -1.972222,
+    1.972222
+   ],
+   "velocity_limit_rad_s": 37.0,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 20.0,
+   "pd_damping_Nm_s_per_rad": 1.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_wrist_pitch_joint",
+   "type": "revolute",
+   "parent": "left_wrist_roll_link",
+   "child": "left_wrist_pitch_link",
+   "origin_m": [
+    0.037999999,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.6144295580947547,
+    1.6144295580947547
+   ],
+   "limits_rad": [
+    -1.61443,
+    1.61443
+   ],
+   "velocity_limit_rad_s": 21.999998,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 20.0,
+   "pd_damping_Nm_s_per_rad": 1.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_wrist_pitch_joint",
+   "type": "revolute",
+   "parent": "right_wrist_roll_link",
+   "child": "right_wrist_pitch_link",
+   "origin_m": [
+    0.037999999,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.6144295580947547,
+    1.6144295580947547
+   ],
+   "limits_rad": [
+    -1.61443,
+    1.61443
+   ],
+   "velocity_limit_rad_s": 21.999998,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 20.0,
+   "pd_damping_Nm_s_per_rad": 1.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_wrist_yaw_joint",
+   "type": "revolute",
+   "parent": "left_wrist_pitch_link",
+   "child": "left_wrist_yaw_link",
+   "origin_m": [
+    0.046,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.6144295580947547,
+    1.6144295580947547
+   ],
+   "limits_rad": [
+    -1.61443,
+    1.61443
+   ],
+   "velocity_limit_rad_s": 21.999998,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 20.0,
+   "pd_damping_Nm_s_per_rad": 1.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "right_wrist_yaw_joint",
+   "type": "revolute",
+   "parent": "right_wrist_pitch_link",
+   "child": "right_wrist_yaw_link",
+   "origin_m": [
+    0.046,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.6144295580947547,
+    1.6144295580947547
+   ],
+   "limits_rad": [
+    -1.61443,
+    1.61443
+   ],
+   "velocity_limit_rad_s": 21.999998,
+   "effort_limit_Nm": 60.0,
+   "pd_stiffness_Nm_per_rad": 20.0,
+   "pd_damping_Nm_s_per_rad": 1.0,
+   "armature_kg_m2": 0.0,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_camera_base_joint",
+   "type": "fixed",
+   "parent": "left_wrist_yaw_link",
+   "child": "left_hand_camera_base_link",
+   "origin_m": [
+    0.041499998,
+    0.003,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "left_hand_palm_joint",
+   "type": "fixed",
+   "parent": "left_wrist_yaw_link",
+   "child": "left_hand_palm_link",
+   "origin_m": [
+    0.041499998,
+    0.003,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "right_hand_camera_base_joint",
+   "type": "fixed",
+   "parent": "right_wrist_yaw_link",
+   "child": "right_hand_camera_base_link",
+   "origin_m": [
+    0.041499998,
+    -0.003,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "right_hand_palm_joint",
+   "type": "fixed",
+   "parent": "right_wrist_yaw_link",
+   "child": "right_hand_palm_link",
+   "origin_m": [
+    0.041499998,
+    -0.003,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "name": "left_hand_index_0_joint",
+   "type": "revolute",
+   "parent": "left_hand_palm_link",
+   "child": "left_hand_index_0_link",
+   "origin_m": [
+    0.077699997,
+    0.0016,
+    0.0285
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.5707963267948966,
+    0.0
+   ],
+   "limits_rad": [
+    -1.570796,
+    0.0
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_middle_0_joint",
+   "type": "revolute",
+   "parent": "left_hand_palm_link",
+   "child": "left_hand_middle_0_link",
+   "origin_m": [
+    0.077699997,
+    0.0016,
+    -0.0285
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.5707963267948966,
+    0.0
+   ],
+   "limits_rad": [
+    -1.570796,
+    0.0
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_thumb_0_joint",
+   "type": "revolute",
+   "parent": "left_hand_palm_link",
+   "child": "left_hand_thumb_0_link",
+   "origin_m": [
+    0.0255,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.0471975511965976,
+    1.0471975511965976
+   ],
+   "limits_rad": [
+    -1.047198,
+    1.047198
+   ],
+   "velocity_limit_rad_s": 3.14,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_index_0_joint",
+   "type": "revolute",
+   "parent": "right_hand_palm_link",
+   "child": "right_hand_index_0_link",
+   "origin_m": [
+    0.077699997,
+    -0.0016,
+    0.0285
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    0.0,
+    1.5707963267948966
+   ],
+   "limits_rad": [
+    0.0,
+    1.570796
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_middle_0_joint",
+   "type": "revolute",
+   "parent": "right_hand_palm_link",
+   "child": "right_hand_middle_0_link",
+   "origin_m": [
+    0.077699997,
+    -0.0016,
+    -0.0285
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    0.0,
+    1.5707963267948966
+   ],
+   "limits_rad": [
+    0.0,
+    1.570796
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_thumb_0_joint",
+   "type": "revolute",
+   "parent": "right_hand_palm_link",
+   "child": "right_hand_thumb_0_link",
+   "origin_m": [
+    0.0255,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "usd_limits_rad": [
+    -1.0471975511965976,
+    1.0471975511965976
+   ],
+   "limits_rad": [
+    -1.047198,
+    1.047198
+   ],
+   "velocity_limit_rad_s": 3.14,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_index_1_joint",
+   "type": "revolute",
+   "parent": "left_hand_index_0_link",
+   "child": "left_hand_index_1_link",
+   "origin_m": [
+    0.0458,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.745329118836275,
+    0.0
+   ],
+   "limits_rad": [
+    -1.745329,
+    0.0
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_middle_1_joint",
+   "type": "revolute",
+   "parent": "left_hand_middle_0_link",
+   "child": "left_hand_middle_1_link",
+   "origin_m": [
+    0.0458,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.745329118836275,
+    0.0
+   ],
+   "limits_rad": [
+    -1.745329,
+    0.0
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_thumb_1_joint",
+   "type": "revolute",
+   "parent": "left_hand_thumb_0_link",
+   "child": "left_hand_thumb_1_link",
+   "origin_m": [
+    -0.0025,
+    -0.019300001,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -0.6108651716189881,
+    1.0471975511965976
+   ],
+   "limits_rad": [
+    -0.610865,
+    1.047198
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_index_1_joint",
+   "type": "revolute",
+   "parent": "right_hand_index_0_link",
+   "child": "right_hand_index_1_link",
+   "origin_m": [
+    0.0458,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    0.0,
+    1.745329118836275
+   ],
+   "limits_rad": [
+    0.0,
+    1.745329
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_middle_1_joint",
+   "type": "revolute",
+   "parent": "right_hand_middle_0_link",
+   "child": "right_hand_middle_1_link",
+   "origin_m": [
+    0.0458,
+    0.0,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    0.0,
+    1.745329118836275
+   ],
+   "limits_rad": [
+    0.0,
+    1.745329
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_thumb_1_joint",
+   "type": "revolute",
+   "parent": "right_hand_thumb_0_link",
+   "child": "right_hand_thumb_1_link",
+   "origin_m": [
+    -0.0025,
+    0.019300001,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.0471975511965976,
+    0.6108651716189881
+   ],
+   "limits_rad": [
+    -1.047198,
+    0.610865
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "left_hand_thumb_2_joint",
+   "type": "revolute",
+   "parent": "left_hand_thumb_1_link",
+   "child": "left_hand_thumb_2_link",
+   "origin_m": [
+    0.0,
+    -0.0458,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    0.0,
+    1.745329118836275
+   ],
+   "limits_rad": [
+    0.0,
+    1.745329
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  },
+  {
+   "name": "right_hand_thumb_2_joint",
+   "type": "revolute",
+   "parent": "right_hand_thumb_1_link",
+   "child": "right_hand_thumb_2_link",
+   "origin_m": [
+    0.0,
+    0.0458,
+    0.0
+   ],
+   "origin_quaternion_wxyz": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "usd_limits_rad": [
+    -1.745329118836275,
+    0.0
+   ],
+   "limits_rad": [
+    -1.745329,
+    0.0
+   ],
+   "velocity_limit_rad_s": 11.999999,
+   "effort_limit_Nm": 300.0,
+   "pd_stiffness_Nm_per_rad": 100.0,
+   "pd_damping_Nm_s_per_rad": 10.0,
+   "armature_kg_m2": 0.1,
+   "friction": 0.0
+  }
+ ],
+ "links": {
+  "pelvis": {
+   "mass_kg": 3.813,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    -0.07605
+   ],
+   "inertia_kg_m2": [
+    [
+     0.010549002,
+     0.0,
+     2.1e-06
+    ],
+    [
+     0.0,
+     0.0093089,
+     0.0
+    ],
+    [
+     2.1e-06,
+     0.0,
+     0.007918398
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 3.812999963760376,
+    "center_of_mass_m": [
+     0.0,
+     0.0,
+     -0.07604999840259552
+    ],
+    "principal_inertia_kg_m2": [
+     0.010549003258347511,
+     0.009308899752795696,
+     0.007918396964669228
+    ],
+    "principal_axes_wxyz": [
+     0.99999994,
+     0.0,
+     -0.00039914803,
+     0.0
+    ]
+   }
+  },
+  "imu_in_pelvis": {
+   "mass_kg": 1.0,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0001,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0001,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "principal_inertia_kg_m2": [
+     9.999999747378752e-05,
+     9.999999747378752e-05,
+     9.999999747378752e-05
+    ]
+   }
+  },
+  "left_hip_pitch_link": {
+   "mass_kg": 1.35,
+   "center_of_mass_m": [
+    0.002741,
+    0.047791,
+    -0.02606
+   ],
+   "inertia_kg_m2": [
+    [
+     0.001811,
+     3.68e-05,
+     -3.44e-05
+    ],
+    [
+     3.68e-05,
+     0.0014193,
+     0.000171
+    ],
+    [
+     -3.44e-05,
+     0.000171,
+     0.0012812
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.350000023841858,
+    "center_of_mass_m": [
+     0.0027409999165683985,
+     0.047791000455617905,
+     -0.02606000006198883
+    ],
+    "principal_inertia_kg_m2": [
+     0.0018151651602238417,
+     0.0015342169208452106,
+     0.0011621179291978478
+    ],
+    "principal_axes_wxyz": [
+     0.9548625,
+     0.29396442,
+     0.030255565,
+     0.030122153
+    ]
+   }
+  },
+  "pelvis_contour_link": {
+   "mass_kg": 0.001,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     1e-07,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     1e-07,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     1e-07
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.0010000000474974513,
+    "center_of_mass_m": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "principal_inertia_kg_m2": [
+     1.0000000116860974e-07,
+     1.0000000116860974e-07,
+     1.0000000116860974e-07
+    ],
+    "principal_axes_wxyz": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "right_hip_pitch_link": {
+   "mass_kg": 1.35,
+   "center_of_mass_m": [
+    0.002741,
+    -0.047791,
+    -0.02606
+   ],
+   "inertia_kg_m2": [
+    [
+     0.001811,
+     -3.68e-05,
+     -3.44e-05
+    ],
+    [
+     -3.68e-05,
+     0.0014193,
+     -0.000171
+    ],
+    [
+     -3.44e-05,
+     -0.000171,
+     0.0012812
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.350000023841858,
+    "center_of_mass_m": [
+     0.0027409999165683985,
+     -0.047791000455617905,
+     -0.02606000006198883
+    ],
+    "principal_inertia_kg_m2": [
+     0.0018151651602238417,
+     0.0015342169208452106,
+     0.0011621179291978478
+    ],
+    "principal_axes_wxyz": [
+     0.9548625,
+     -0.29396442,
+     0.030255565,
+     -0.030122153
+    ]
+   }
+  },
+  "waist_yaw_link": {
+   "mass_kg": 0.214,
+   "center_of_mass_m": [
+    0.003494,
+    0.000233,
+    0.018034
+   ],
+   "inertia_kg_m2": [
+    [
+     0.00010673,
+     2.703e-06,
+     -7.631e-06
+    ],
+    [
+     2.703e-06,
+     0.00010422,
+     -2.01e-07
+    ],
+    [
+     -7.631e-06,
+     -2.01e-07,
+     0.0001625
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.21400000154972076,
+    "center_of_mass_m": [
+     0.0034940000623464584,
+     0.00023299999884329736,
+     0.01803399994969368
+    ],
+    "principal_inertia_kg_m2": [
+     0.00010771441884571686,
+     0.00010220503463642672,
+     0.0001635305816307664
+    ],
+    "principal_axes_wxyz": [
+     0.9456574,
+     -0.016860604,
+     -0.06495886,
+     0.31816387
+    ]
+   }
+  },
+  "left_hip_roll_link": {
+   "mass_kg": 1.52,
+   "center_of_mass_m": [
+    0.029812,
+    -0.001045,
+    -0.087934
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0023773,
+     -3.8e-06,
+     -0.0003908
+    ],
+    [
+     -3.8e-06,
+     0.0024123,
+     1.84e-05
+    ],
+    [
+     -0.0003908,
+     1.84e-05,
+     0.0016595
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.5199999809265137,
+    "center_of_mass_m": [
+     0.029812000691890717,
+     -0.0010450000409036875,
+     -0.08793400228023529
+    ],
+    "principal_inertia_kg_m2": [
+     0.0025498594623059034,
+     0.002411691937595606,
+     0.0014875484630465508
+    ],
+    "principal_axes_wxyz": [
+     0.9778078,
+     -1.9716219e-05,
+     0.20557573,
+     -0.04037929
+    ]
+   }
+  },
+  "right_hip_roll_link": {
+   "mass_kg": 1.52,
+   "center_of_mass_m": [
+    0.029812,
+    0.001045,
+    -0.087934
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0023773,
+     3.8e-06,
+     -0.0003908
+    ],
+    [
+     3.8e-06,
+     0.0024123,
+     -1.84e-05
+    ],
+    [
+     -0.0003908,
+     -1.84e-05,
+     0.0016595
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.5199999809265137,
+    "center_of_mass_m": [
+     0.029812000691890717,
+     0.0010450000409036875,
+     -0.08793400228023529
+    ],
+    "principal_inertia_kg_m2": [
+     0.0025498594623059034,
+     0.002411691937595606,
+     0.0014875484630465508
+    ],
+    "principal_axes_wxyz": [
+     0.9778078,
+     1.9716219e-05,
+     0.20557573,
+     0.04037929
+    ]
+   }
+  },
+  "waist_roll_link": {
+   "mass_kg": 0.086,
+   "center_of_mass_m": [
+    0.0,
+    2.3e-05,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     7.079e-06,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     6.339e-06,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     8.245e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.0860000029206276,
+    "center_of_mass_m": [
+     0.0,
+     2.300000051036477e-05,
+     0.0
+    ],
+    "principal_inertia_kg_m2": [
+     7.079000170051586e-06,
+     6.338999810395762e-06,
+     8.244999662565533e-06
+    ],
+    "principal_axes_wxyz": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "left_hip_yaw_link": {
+   "mass_kg": 1.702,
+   "center_of_mass_m": [
+    -0.057709,
+    -0.010981,
+    -0.15078
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0057774,
+     -0.0005411,
+     -0.002394801
+    ],
+    [
+     -0.0005411,
+     0.0076124,
+     -0.0007072
+    ],
+    [
+     -0.002394801,
+     -0.0007072,
+     0.003149001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.7020000219345093,
+    "center_of_mass_m": [
+     -0.05770900100469589,
+     -0.010981000028550625,
+     -0.15078000724315643
+    ],
+    "principal_inertia_kg_m2": [
+     0.00717574916779995,
+     0.007761657703667879,
+     0.0016013936838135123
+    ],
+    "principal_axes_wxyz": [
+     0.95585203,
+     -0.04607616,
+     0.2699745,
+     0.106478944
+    ]
+   }
+  },
+  "right_hip_yaw_link": {
+   "mass_kg": 1.702,
+   "center_of_mass_m": [
+    -0.057709,
+    0.010981,
+    -0.15078
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0057774,
+     0.0005411,
+     -0.002394801
+    ],
+    [
+     0.0005411,
+     0.0076124,
+     0.0007072
+    ],
+    [
+     -0.002394801,
+     0.0007072,
+     0.003149001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.7020000219345093,
+    "center_of_mass_m": [
+     -0.05770900100469589,
+     0.010981000028550625,
+     -0.15078000724315643
+    ],
+    "principal_inertia_kg_m2": [
+     0.00717574916779995,
+     0.007761657703667879,
+     0.0016013936838135123
+    ],
+    "principal_axes_wxyz": [
+     0.95585203,
+     0.04607616,
+     0.2699745,
+     -0.106478944
+    ]
+   }
+  },
+  "torso_link": {
+   "mass_kg": 6.78,
+   "center_of_mass_m": [
+    0.000931,
+    0.000346,
+    0.15082
+   ],
+   "inertia_kg_m2": [
+    [
+     0.059049994,
+     3.3302e-05,
+     -0.0017715
+    ],
+    [
+     3.3302e-05,
+     0.047014002,
+     -2.2399e-05
+    ],
+    [
+     -0.0017715,
+     -2.2399e-05,
+     0.025652001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 6.78000020980835,
+    "center_of_mass_m": [
+     0.0009309999877586961,
+     0.0003459999861661345,
+     0.15082000195980072
+    ],
+    "principal_inertia_kg_m2": [
+     0.0591437965631485,
+     0.04701392725110054,
+     0.02555827982723713
+    ],
+    "principal_axes_wxyz": [
+     0.9996499,
+     -0.00044259068,
+     0.026419315,
+     0.0014317776
+    ]
+   }
+  },
+  "left_knee_link": {
+   "mass_kg": 1.932,
+   "center_of_mass_m": [
+    0.005457,
+    0.003964,
+    -0.12074
+   ],
+   "inertia_kg_m2": [
+    [
+     0.011329001,
+     4.82e-05,
+     -4.49e-05
+    ],
+    [
+     4.82e-05,
+     0.011277001,
+     -0.0007146
+    ],
+    [
+     -4.49e-05,
+     -0.0007146,
+     0.0015168
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.9320000410079956,
+    "center_of_mass_m": [
+     0.005456999875605106,
+     0.003963999915868044,
+     -0.12073999643325806
+    ],
+    "principal_inertia_kg_m2": [
+     0.011277774348855019,
+     0.011380440555512905,
+     0.001464584725908935
+    ],
+    "principal_axes_wxyz": [
+     0.923118,
+     -0.03436149,
+     -0.011982056,
+     -0.38279116
+    ]
+   }
+  },
+  "right_knee_link": {
+   "mass_kg": 1.932,
+   "center_of_mass_m": [
+    0.005457,
+    -0.003964,
+    -0.12074
+   ],
+   "inertia_kg_m2": [
+    [
+     0.011329001,
+     -4.8199e-05,
+     4.49e-05
+    ],
+    [
+     -4.8199e-05,
+     0.011277,
+     0.0007146
+    ],
+    [
+     4.49e-05,
+     0.0007146,
+     0.0015168
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.9320000410079956,
+    "center_of_mass_m": [
+     0.005456999875605106,
+     -0.003963999915868044,
+     -0.12073999643325806
+    ],
+    "principal_inertia_kg_m2": [
+     0.01137395016849041,
+     0.011284329928457737,
+     0.0014645212795585394
+    ],
+    "principal_axes_wxyz": [
+     0.92343646,
+     0.034527507,
+     0.011633517,
+     -0.38201788
+    ]
+   }
+  },
+  "d435_link": {
+   "mass_kg": 1.0,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0001,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0001,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "principal_inertia_kg_m2": [
+     9.999999747378752e-05,
+     9.999999747378752e-05,
+     9.999999747378752e-05
+    ]
+   }
+  },
+  "head_link": {
+   "mass_kg": 1.036,
+   "center_of_mass_m": [
+    0.005267,
+    0.000299,
+    0.449869
+   ],
+   "inertia_kg_m2": [
+    [
+     0.004085051,
+     -2.543e-06,
+     -6.9455e-05
+    ],
+    [
+     -2.543e-06,
+     0.004185212,
+     -3.726e-06
+    ],
+    [
+     -6.9455e-05,
+     -3.726e-06,
+     0.001807911
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 1.0360000133514404,
+    "center_of_mass_m": [
+     0.005266999825835228,
+     0.000299000006634742,
+     0.4498690068721771
+    ],
+    "principal_inertia_kg_m2": [
+     0.0040871077217161655,
+     0.004185277968645096,
+     0.0018057884881272912
+    ],
+    "principal_axes_wxyz": [
+     0.99980706,
+     -0.00061026384,
+     0.015240591,
+     0.012383358
+    ]
+   }
+  },
+  "imu_in_torso": {
+   "mass_kg": 1.0,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0001,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0001,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "principal_inertia_kg_m2": [
+     9.999999747378752e-05,
+     9.999999747378752e-05,
+     9.999999747378752e-05
+    ]
+   }
+  },
+  "left_shoulder_pitch_link": {
+   "mass_kg": 0.718,
+   "center_of_mass_m": [
+    0.0,
+    0.035892,
+    -0.011628
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0004291,
+     -9.2e-06,
+     6.4e-06
+    ],
+    [
+     -9.2e-06,
+     0.000453,
+     2.26e-05
+    ],
+    [
+     6.4e-06,
+     2.26e-05,
+     0.000423
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.7179999947547913,
+    "center_of_mass_m": [
+     0.0,
+     0.035891998559236526,
+     -0.011628000065684319
+    ],
+    "principal_inertia_kg_m2": [
+     0.0004328424111008644,
+     0.0004658636753447354,
+     0.00040639389771968126
+    ],
+    "principal_axes_wxyz": [
+     0.94497895,
+     0.2399304,
+     -0.22148046,
+     0.019868286
+    ]
+   }
+  },
+  "logo_link": {
+   "mass_kg": 0.001,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     1e-07,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     1e-07,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     1e-07
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.0010000000474974513,
+    "center_of_mass_m": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "principal_inertia_kg_m2": [
+     1.0000000116860974e-07,
+     1.0000000116860974e-07,
+     1.0000000116860974e-07
+    ],
+    "principal_axes_wxyz": [
+     1.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "mid360_link": {
+   "mass_kg": 1.0,
+   "center_of_mass_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0001,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0001,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0001
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "principal_inertia_kg_m2": [
+     9.999999747378752e-05,
+     9.999999747378752e-05,
+     9.999999747378752e-05
+    ]
+   }
+  },
+  "right_shoulder_pitch_link": {
+   "mass_kg": 0.718,
+   "center_of_mass_m": [
+    0.0,
+    -0.035892,
+    -0.011628
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0004291,
+     9.2e-06,
+     6.4e-06
+    ],
+    [
+     9.2e-06,
+     0.000453,
+     -2.26e-05
+    ],
+    [
+     6.4e-06,
+     -2.26e-05,
+     0.000423
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.7179999947547913,
+    "center_of_mass_m": [
+     0.0,
+     -0.035891998559236526,
+     -0.011628000065684319
+    ],
+    "principal_inertia_kg_m2": [
+     0.0004328424111008644,
+     0.0004658636753447354,
+     0.00040639389771968126
+    ],
+    "principal_axes_wxyz": [
+     0.94497895,
+     -0.2399304,
+     -0.22148046,
+     -0.019868286
+    ]
+   }
+  },
+  "left_ankle_pitch_link": {
+   "mass_kg": 0.074,
+   "center_of_mass_m": [
+    -0.007269,
+    0.0,
+    0.011137
+   ],
+   "inertia_kg_m2": [
+    [
+     8.4e-06,
+     0.0,
+     -2.9e-06
+    ],
+    [
+     0.0,
+     1.89e-05,
+     0.0
+    ],
+    [
+     -2.9e-06,
+     0.0,
+     1.26e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.07400000095367432,
+    "center_of_mass_m": [
+     -0.007269000168889761,
+     0.0,
+     0.011137000285089016
+    ],
+    "principal_inertia_kg_m2": [
+     6.919497536728159e-06,
+     1.8900000213761814e-05,
+     1.4080503206059802e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9722779,
+     0.0,
+     -0.23382829,
+     0.0
+    ]
+   }
+  },
+  "right_ankle_pitch_link": {
+   "mass_kg": 0.074,
+   "center_of_mass_m": [
+    -0.007269,
+    0.0,
+    0.011137
+   ],
+   "inertia_kg_m2": [
+    [
+     8.4e-06,
+     0.0,
+     -2.9e-06
+    ],
+    [
+     0.0,
+     1.89e-05,
+     0.0
+    ],
+    [
+     -2.9e-06,
+     0.0,
+     1.26e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.07400000095367432,
+    "center_of_mass_m": [
+     -0.007269000168889761,
+     0.0,
+     0.011137000285089016
+    ],
+    "principal_inertia_kg_m2": [
+     6.919497536728159e-06,
+     1.8900000213761814e-05,
+     1.4080503206059802e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9722779,
+     0.0,
+     -0.23382829,
+     0.0
+    ]
+   }
+  },
+  "left_shoulder_roll_link": {
+   "mass_kg": 0.643,
+   "center_of_mass_m": [
+    -0.000227,
+    0.00727,
+    -0.063243
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0006177,
+     -1e-06,
+     8.7e-06
+    ],
+    [
+     -1e-06,
+     0.0006912,
+     -5.3e-06
+    ],
+    [
+     8.7e-06,
+     -5.3e-06,
+     0.0003894
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.6430000066757202,
+    "center_of_mass_m": [
+     -0.00022699999681208283,
+     0.007269999943673611,
+     -0.06324300169944763
+    ],
+    "principal_inertia_kg_m2": [
+     0.0006180113996379077,
+     0.0006913112010806799,
+     0.00038897746708244085
+    ],
+    "principal_axes_wxyz": [
+     0.99975014,
+     -0.00885183,
+     -0.018897789,
+     0.008023638
+    ]
+   }
+  },
+  "right_shoulder_roll_link": {
+   "mass_kg": 0.643,
+   "center_of_mass_m": [
+    -0.000227,
+    -0.00727,
+    -0.063243
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0006177,
+     1e-06,
+     8.7e-06
+    ],
+    [
+     1e-06,
+     0.0006912,
+     5.3e-06
+    ],
+    [
+     8.7e-06,
+     5.3e-06,
+     0.0003894
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.6430000066757202,
+    "center_of_mass_m": [
+     -0.00022699999681208283,
+     -0.007269999943673611,
+     -0.06324300169944763
+    ],
+    "principal_inertia_kg_m2": [
+     0.0006180113996379077,
+     0.0006913112010806799,
+     0.00038897746708244085
+    ],
+    "principal_axes_wxyz": [
+     0.99975014,
+     0.00885183,
+     -0.018897789,
+     -0.008023638
+    ]
+   }
+  },
+  "left_ankle_roll_link": {
+   "mass_kg": 0.608,
+   "center_of_mass_m": [
+    0.026505,
+    0.0,
+    -0.016425
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0002231,
+     2e-07,
+     8.91e-05
+    ],
+    [
+     2e-07,
+     0.0016161,
+     -1e-07
+    ],
+    [
+     8.91e-05,
+     -1e-07,
+     0.0016667
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.6079999804496765,
+    "center_of_mass_m": [
+     0.0265050008893013,
+     0.0,
+     -0.01642500050365925
+    ],
+    "principal_inertia_kg_m2": [
+     0.0002176214475184679,
+     0.0016160998493432999,
+     0.00167217873968184
+    ],
+    "principal_axes_wxyz": [
+     0.99952835,
+     0.00077785755,
+     0.030700134,
+     -9.749271e-05
+    ]
+   }
+  },
+  "right_ankle_roll_link": {
+   "mass_kg": 0.608,
+   "center_of_mass_m": [
+    0.026505,
+    0.0,
+    -0.016425
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0002231,
+     -2e-07,
+     8.91e-05
+    ],
+    [
+     -2e-07,
+     0.0016161,
+     1e-07
+    ],
+    [
+     8.91e-05,
+     1e-07,
+     0.0016667
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.6079999804496765,
+    "center_of_mass_m": [
+     0.0265050008893013,
+     0.0,
+     -0.01642500050365925
+    ],
+    "principal_inertia_kg_m2": [
+     0.0002176214475184679,
+     0.0016160998493432999,
+     0.00167217873968184
+    ],
+    "principal_axes_wxyz": [
+     0.99952835,
+     -0.00077785755,
+     0.030700134,
+     9.749271e-05
+    ]
+   }
+  },
+  "left_shoulder_yaw_link": {
+   "mass_kg": 0.734,
+   "center_of_mass_m": [
+    0.010773,
+    -0.002949,
+    -0.072009
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0009988,
+     7.9e-06,
+     0.0001412
+    ],
+    [
+     7.9e-06,
+     0.0010605,
+     -2.86e-05
+    ],
+    [
+     0.0001412,
+     -2.86e-05,
+     0.0004354
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.734000027179718,
+    "center_of_mass_m": [
+     0.010773000307381153,
+     -0.0029490001033991575,
+     -0.07200899720191956
+    ],
+    "principal_inertia_kg_m2": [
+     0.0010321659501641989,
+     0.0010618733940646052,
+     0.00040066076326183975
+    ],
+    "principal_axes_wxyz": [
+     0.99278677,
+     -0.020144561,
+     -0.116302885,
+     -0.021032615
+    ]
+   }
+  },
+  "right_shoulder_yaw_link": {
+   "mass_kg": 0.734,
+   "center_of_mass_m": [
+    0.010773,
+    0.002949,
+    -0.072009
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0009988,
+     -7.9e-06,
+     0.0001412
+    ],
+    [
+     -7.9e-06,
+     0.0010605,
+     2.86e-05
+    ],
+    [
+     0.0001412,
+     2.86e-05,
+     0.0004354
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.734000027179718,
+    "center_of_mass_m": [
+     0.010773000307381153,
+     0.0029490001033991575,
+     -0.07200899720191956
+    ],
+    "principal_inertia_kg_m2": [
+     0.0010321659501641989,
+     0.0010618733940646052,
+     0.00040066076326183975
+    ],
+    "principal_axes_wxyz": [
+     0.99278677,
+     0.020144561,
+     -0.116302885,
+     0.021032615
+    ]
+   }
+  },
+  "left_elbow_link": {
+   "mass_kg": 0.6,
+   "center_of_mass_m": [
+    0.064956,
+    0.004454,
+    -0.010062
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0002891,
+     6.53e-05,
+     1.72e-05
+    ],
+    [
+     6.53e-05,
+     0.0004152,
+     -5.6e-06
+    ],
+    [
+     1.72e-05,
+     -5.6e-06,
+     0.0004197
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.6000000238418579,
+    "center_of_mass_m": [
+     0.06495600193738937,
+     0.004453999921679497,
+     -0.010061999782919884
+    ],
+    "principal_inertia_kg_m2": [
+     0.0002593534591142088,
+     0.00044303497998043895,
+     0.0004216115630697459
+    ],
+    "principal_axes_wxyz": [
+     0.9774239,
+     0.04683774,
+     0.04752936,
+     -0.20047362
+    ]
+   }
+  },
+  "right_elbow_link": {
+   "mass_kg": 0.6,
+   "center_of_mass_m": [
+    0.064956,
+    -0.004454,
+    -0.010062
+   ],
+   "inertia_kg_m2": [
+    [
+     0.0002891,
+     -6.53e-05,
+     1.72e-05
+    ],
+    [
+     -6.53e-05,
+     0.0004152,
+     5.6e-06
+    ],
+    [
+     1.72e-05,
+     5.6e-06,
+     0.0004197
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.6000000238418579,
+    "center_of_mass_m": [
+     0.06495600193738937,
+     -0.004453999921679497,
+     -0.010061999782919884
+    ],
+    "principal_inertia_kg_m2": [
+     0.0002593534591142088,
+     0.00044303497998043895,
+     0.0004216115630697459
+    ],
+    "principal_axes_wxyz": [
+     0.9774239,
+     -0.04683774,
+     0.04752936,
+     0.20047362
+    ]
+   }
+  },
+  "left_wrist_roll_link": {
+   "mass_kg": 0.085445,
+   "center_of_mass_m": [
+    0.017139,
+    0.000538,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     4.8215e-05,
+     -4.245e-06,
+     5e-09
+    ],
+    [
+     -4.245e-06,
+     3.7229e-05,
+     -1e-09
+    ],
+    [
+     5e-09,
+     -1e-09,
+     5.4821e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.08544497936964035,
+    "center_of_mass_m": [
+     0.01713944785296917,
+     0.0005375909386202693,
+     4.886400120085455e-07
+    ],
+    "principal_inertia_kg_m2": [
+     4.9664584366837516e-05,
+     3.5779848985839635e-05,
+     5.482107007992454e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9865032,
+     7.0609574e-05,
+     0.0005024695,
+     -0.16374138
+    ]
+   }
+  },
+  "right_wrist_roll_link": {
+   "mass_kg": 0.085445,
+   "center_of_mass_m": [
+    0.017139,
+    -0.000538,
+    0.0
+   ],
+   "inertia_kg_m2": [
+    [
+     4.8215e-05,
+     4.245e-06,
+     5e-09
+    ],
+    [
+     4.245e-06,
+     3.7229e-05,
+     1e-09
+    ],
+    [
+     5e-09,
+     1e-09,
+     5.4821e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.08544497936964035,
+    "center_of_mass_m": [
+     0.01713944785296917,
+     -0.0005375909386202693,
+     4.886400120085455e-07
+    ],
+    "principal_inertia_kg_m2": [
+     4.9664584366837516e-05,
+     3.5779848985839635e-05,
+     5.482107007992454e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9865032,
+     -7.0609574e-05,
+     0.0005024695,
+     0.16374138
+    ]
+   }
+  },
+  "left_wrist_pitch_link": {
+   "mass_kg": 0.48405,
+   "center_of_mass_m": [
+    0.023,
+    -0.001117,
+    -0.001117
+   ],
+   "inertia_kg_m2": [
+    [
+     0.000165796,
+     -1.2312e-05,
+     1.2317e-05
+    ],
+    [
+     -1.2312e-05,
+     0.000429541,
+     8.14e-07
+    ],
+    [
+     1.2317e-05,
+     8.14e-07,
+     0.000429537
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.48404955863952637,
+    "center_of_mass_m": [
+     0.022999897599220276,
+     -0.0011168530909344554,
+     -0.001116580911912024
+    ],
+    "principal_inertia_kg_m2": [
+     0.00016464795044157654,
+     0.0004303529567550868,
+     0.0004298731219023466
+    ],
+    "principal_axes_wxyz": [
+     0.9240113,
+     0.38094535,
+     0.030396223,
+     0.012642258
+    ]
+   }
+  },
+  "right_wrist_pitch_link": {
+   "mass_kg": 0.48405,
+   "center_of_mass_m": [
+    0.023,
+    0.001117,
+    -0.001117
+   ],
+   "inertia_kg_m2": [
+    [
+     0.000165796,
+     1.2312e-05,
+     1.2317e-05
+    ],
+    [
+     1.2312e-05,
+     0.000429541,
+     -8.14e-07
+    ],
+    [
+     1.2317e-05,
+     -8.14e-07,
+     0.000429537
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.48404955863952637,
+    "center_of_mass_m": [
+     0.022999897599220276,
+     0.0011168530909344554,
+     -0.001116580911912024
+    ],
+    "principal_inertia_kg_m2": [
+     0.00016464795044157654,
+     0.0004303529567550868,
+     0.0004298731219023466
+    ],
+    "principal_axes_wxyz": [
+     0.9240113,
+     -0.38094535,
+     0.030396223,
+     -0.012642258
+    ]
+   }
+  },
+  "left_wrist_yaw_link": {
+   "mass_kg": 0.084576,
+   "center_of_mass_m": [
+    0.022004,
+    0.000495,
+    0.000539
+   ],
+   "inertia_kg_m2": [
+    [
+     4.9291e-05,
+     -4.57e-07,
+     4.459e-06
+    ],
+    [
+     -4.57e-07,
+     5.9733e-05,
+     4.32e-07
+    ],
+    [
+     4.459e-06,
+     4.32e-07,
+     3.9281e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.08457647264003754,
+    "center_of_mass_m": [
+     0.022003816440701485,
+     0.0004948509740643203,
+     0.0005386112025007606
+    ],
+    "principal_inertia_kg_m2": [
+     5.0980670494027436e-05,
+     5.975639942334965e-05,
+     3.7568435800494626e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9832136,
+     0.009745565,
+     -0.18134142,
+     0.017643262
+    ]
+   }
+  },
+  "right_wrist_yaw_link": {
+   "mass_kg": 0.084576,
+   "center_of_mass_m": [
+    0.022004,
+    -0.000495,
+    0.000539
+   ],
+   "inertia_kg_m2": [
+    [
+     4.9291e-05,
+     4.57e-07,
+     4.459e-06
+    ],
+    [
+     4.57e-07,
+     5.9733e-05,
+     -4.32e-07
+    ],
+    [
+     4.459e-06,
+     -4.32e-07,
+     3.9281e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.08457647264003754,
+    "center_of_mass_m": [
+     0.022003816440701485,
+     -0.0004948509740643203,
+     0.0005386112025007606
+    ],
+    "principal_inertia_kg_m2": [
+     5.0980670494027436e-05,
+     5.975639942334965e-05,
+     3.7568435800494626e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9832136,
+     -0.009745565,
+     -0.18134142,
+     -0.017643262
+    ]
+   }
+  },
+  "left_hand_camera_base_link": {
+   "mass_kg": 0.11,
+   "center_of_mass_m": [
+    0.000118,
+    0.036886,
+    0.008097
+   ],
+   "inertia_kg_m2": [
+    [
+     4.9533e-05,
+     5.9e-08,
+     -3.2e-08
+    ],
+    [
+     5.9e-08,
+     6.8944e-05,
+     -1.706e-06
+    ],
+    [
+     -3.2e-08,
+     -1.706e-06,
+     3.4443e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.10999999940395355,
+    "center_of_mass_m": [
+     0.00011780000204453245,
+     0.03688599914312363,
+     0.008097399957478046
+    ],
+    "principal_inertia_kg_m2": [
+     4.953285679221153e-05,
+     6.902838504174724e-05,
+     3.4358752600383013e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9996946,
+     -0.024646802,
+     0.000917045,
+     -0.00158698
+    ]
+   }
+  },
+  "left_hand_palm_link": {
+   "mass_kg": 0.372839,
+   "center_of_mass_m": [
+    0.062146,
+    -0.000509,
+    -0.000582
+   ],
+   "inertia_kg_m2": [
+    [
+     0.000275352,
+     -1.5955e-05,
+     -2.422e-06
+    ],
+    [
+     -1.5955e-05,
+     0.000539518,
+     -4.23e-07
+    ],
+    [
+     -2.422e-06,
+     -4.23e-07,
+     0.000396234
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.3728385269641876,
+    "center_of_mass_m": [
+     0.062146347016096115,
+     -0.0005086965393275023,
+     -0.0005817109486088157
+    ],
+    "principal_inertia_kg_m2": [
+     0.00027434268849901855,
+     0.0005404789699241519,
+     0.00039628229569643736
+    ],
+    "principal_axes_wxyz": [
+     0.9994979,
+     -0.00065736886,
+     -0.01004257,
+     0.03004828
+    ]
+   }
+  },
+  "right_hand_camera_base_link": {
+   "mass_kg": 0.11,
+   "center_of_mass_m": [
+    0.000118,
+    -0.036886,
+    0.008097
+   ],
+   "inertia_kg_m2": [
+    [
+     4.9533e-05,
+     -5.9e-08,
+     -3.2e-08
+    ],
+    [
+     -5.9e-08,
+     6.8944e-05,
+     1.706e-06
+    ],
+    [
+     -3.2e-08,
+     1.706e-06,
+     3.4443e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.10999999940395355,
+    "center_of_mass_m": [
+     0.00011780000204453245,
+     -0.03688599914312363,
+     0.008097399957478046
+    ],
+    "principal_inertia_kg_m2": [
+     4.953285679221153e-05,
+     6.902838504174724e-05,
+     3.4358752600383013e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9996946,
+     0.024646802,
+     0.000917045,
+     0.00158698
+    ]
+   }
+  },
+  "right_hand_palm_link": {
+   "mass_kg": 0.372839,
+   "center_of_mass_m": [
+    0.062146,
+    0.000509,
+    -0.000582
+   ],
+   "inertia_kg_m2": [
+    [
+     0.000275352,
+     1.5955e-05,
+     -2.422e-06
+    ],
+    [
+     1.5955e-05,
+     0.000539518,
+     4.23e-07
+    ],
+    [
+     -2.422e-06,
+     4.23e-07,
+     0.000396234
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.3728385269641876,
+    "center_of_mass_m": [
+     0.062146347016096115,
+     0.0005086965393275023,
+     -0.0005817109486088157
+    ],
+    "principal_inertia_kg_m2": [
+     0.00027434268849901855,
+     0.0005404789699241519,
+     0.00039628229569643736
+    ],
+    "principal_axes_wxyz": [
+     0.9994979,
+     0.00065736886,
+     -0.01004257,
+     -0.03004828
+    ]
+   }
+  },
+  "left_hand_index_0_link": {
+   "mass_kg": 0.058851,
+   "center_of_mass_m": [
+    0.035474,
+    0.000828,
+    0.000381
+   ],
+   "inertia_kg_m2": [
+    [
+     6.016e-06,
+     -5.08e-07,
+     -2.78e-07
+    ],
+    [
+     -5.08e-07,
+     1.2747e-05,
+     1.61e-07
+    ],
+    [
+     -2.78e-07,
+     1.61e-07,
+     1.2345e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.05885069817304611,
+    "center_of_mass_m": [
+     0.03547435626387596,
+     0.0008278876775875688,
+     0.00038089961162768304
+    ],
+    "principal_inertia_kg_m2": [
+     5.966594926576363e-06,
+     1.285136204387527e-05,
+     1.2290216545807198e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9836343,
+     0.17513436,
+     -0.014052318,
+     0.03992575
+    ]
+   }
+  },
+  "left_hand_middle_0_link": {
+   "mass_kg": 0.058851,
+   "center_of_mass_m": [
+    0.035474,
+    0.000828,
+    0.000381
+   ],
+   "inertia_kg_m2": [
+    [
+     6.016e-06,
+     -5.08e-07,
+     -2.78e-07
+    ],
+    [
+     -5.08e-07,
+     1.2747e-05,
+     1.61e-07
+    ],
+    [
+     -2.78e-07,
+     1.61e-07,
+     1.2345e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.05885069817304611,
+    "center_of_mass_m": [
+     0.03547435626387596,
+     0.0008278876775875688,
+     0.00038089961162768304
+    ],
+    "principal_inertia_kg_m2": [
+     5.966594926576363e-06,
+     1.285136204387527e-05,
+     1.2290216545807198e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9836343,
+     0.17513436,
+     -0.014052318,
+     0.03992575
+    ]
+   }
+  },
+  "left_hand_thumb_0_link": {
+   "mass_kg": 0.086237,
+   "center_of_mass_m": [
+    -0.000884,
+    -0.008634,
+    0.000944
+   ],
+   "inertia_kg_m2": [
+    [
+     1.6029e-05,
+     1.07e-07,
+     1.67e-07
+    ],
+    [
+     1.07e-07,
+     1.4518e-05,
+     -5.11e-07
+    ],
+    [
+     1.67e-07,
+     -5.11e-07,
+     1.6379e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.08623656630516052,
+    "center_of_mass_m": [
+     -0.0008842457900755107,
+     -0.008634070865809917,
+     0.0009442933369427919
+    ],
+    "principal_inertia_kg_m2": [
+     1.6005766156013124e-05,
+     1.437410719518084e-05,
+     1.654604602663312e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9830572,
+     0.12108061,
+     0.12389836,
+     0.059893306
+    ]
+   }
+  },
+  "right_hand_index_0_link": {
+   "mass_kg": 0.058851,
+   "center_of_mass_m": [
+    0.035474,
+    -0.000828,
+    0.000381
+   ],
+   "inertia_kg_m2": [
+    [
+     6.016e-06,
+     5.08e-07,
+     -2.78e-07
+    ],
+    [
+     5.08e-07,
+     1.2747e-05,
+     -1.61e-07
+    ],
+    [
+     -2.78e-07,
+     -1.61e-07,
+     1.2345e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.05885069817304611,
+    "center_of_mass_m": [
+     0.03547435626387596,
+     -0.0008278876775875688,
+     0.00038089961162768304
+    ],
+    "principal_inertia_kg_m2": [
+     5.966594926576363e-06,
+     1.285136204387527e-05,
+     1.2290216545807198e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9836343,
+     -0.17513436,
+     -0.014052318,
+     -0.03992575
+    ]
+   }
+  },
+  "right_hand_middle_0_link": {
+   "mass_kg": 0.058851,
+   "center_of_mass_m": [
+    0.035474,
+    -0.000828,
+    0.000381
+   ],
+   "inertia_kg_m2": [
+    [
+     6.016e-06,
+     5.08e-07,
+     -2.78e-07
+    ],
+    [
+     5.08e-07,
+     1.2747e-05,
+     -1.61e-07
+    ],
+    [
+     -2.78e-07,
+     -1.61e-07,
+     1.2345e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.05885069817304611,
+    "center_of_mass_m": [
+     0.03547435626387596,
+     -0.0008278876775875688,
+     0.00038089961162768304
+    ],
+    "principal_inertia_kg_m2": [
+     5.966594926576363e-06,
+     1.285136204387527e-05,
+     1.2290216545807198e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9836343,
+     -0.17513436,
+     -0.014052318,
+     -0.03992575
+    ]
+   }
+  },
+  "right_hand_thumb_0_link": {
+   "mass_kg": 0.086237,
+   "center_of_mass_m": [
+    -0.000884,
+    0.008634,
+    0.000944
+   ],
+   "inertia_kg_m2": [
+    [
+     1.6029e-05,
+     -1.07e-07,
+     1.67e-07
+    ],
+    [
+     -1.07e-07,
+     1.4518e-05,
+     5.11e-07
+    ],
+    [
+     1.67e-07,
+     5.11e-07,
+     1.6379e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.08623656630516052,
+    "center_of_mass_m": [
+     -0.0008842457900755107,
+     0.008634070865809917,
+     0.0009442933369427919
+    ],
+    "principal_inertia_kg_m2": [
+     1.6005766156013124e-05,
+     1.437410719518084e-05,
+     1.654604602663312e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9830572,
+     -0.12108061,
+     0.12389836,
+     -0.059893306
+    ]
+   }
+  },
+  "left_hand_index_1_link": {
+   "mass_kg": 0.020306,
+   "center_of_mass_m": [
+    0.026282,
+    0.001717,
+    -0.000108
+   ],
+   "inertia_kg_m2": [
+    [
+     1.536e-06,
+     -3.4e-08,
+     -2.5e-08
+    ],
+    [
+     -3.4e-08,
+     4.613e-06,
+     -8e-09
+    ],
+    [
+     -2.5e-08,
+     -8e-09,
+     3.866e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.020306259393692017,
+    "center_of_mass_m": [
+     0.02628192864358425,
+     0.001717352424748242,
+     -0.00010778878640849143
+    ],
+    "principal_inertia_kg_m2": [
+     1.5349522755059297e-06,
+     4.613143119058805e-06,
+     3.866453425871441e-06
+    ],
+    "principal_axes_wxyz": [
+     0.9999555,
+     -0.005296152,
+     -0.0055174306,
+     0.005544547
+    ]
+   }
+  },
+  "left_hand_middle_1_link": {
+   "mass_kg": 0.020306,
+   "center_of_mass_m": [
+    0.026282,
+    0.001717,
+    -0.000108
+   ],
+   "inertia_kg_m2": [
+    [
+     1.536e-06,
+     -3.4e-08,
+     -2.5e-08
+    ],
+    [
+     -3.4e-08,
+     4.613e-06,
+     -8e-09
+    ],
+    [
+     -2.5e-08,
+     -8e-09,
+     3.866e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.020306259393692017,
+    "center_of_mass_m": [
+     0.02628192864358425,
+     0.001717352424748242,
+     -0.00010778878640849143
+    ],
+    "principal_inertia_kg_m2": [
+     1.5349522755059297e-06,
+     4.613143119058805e-06,
+     3.866453425871441e-06
+    ],
+    "principal_axes_wxyz": [
+     0.9999555,
+     -0.005296152,
+     -0.0055174306,
+     0.005544547
+    ]
+   }
+  },
+  "left_hand_thumb_1_link": {
+   "mass_kg": 0.058851,
+   "center_of_mass_m": [
+    -0.000828,
+    -0.035474,
+    -0.000381
+   ],
+   "inertia_kg_m2": [
+    [
+     1.2747e-05,
+     -5.08e-07,
+     1.61e-07
+    ],
+    [
+     -5.08e-07,
+     6.016e-06,
+     -2.78e-07
+    ],
+    [
+     1.61e-07,
+     -2.78e-07,
+     1.2345e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.05885069817304611,
+    "center_of_mass_m": [
+     -0.0008278876775875688,
+     -0.03547435626387596,
+     -0.00038089961162768304
+    ],
+    "principal_inertia_kg_m2": [
+     1.285136204387527e-05,
+     5.966594926576363e-06,
+     1.2290216545807198e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9836343,
+     0.014052316,
+     -0.17513436,
+     -0.039925754
+    ]
+   }
+  },
+  "right_hand_index_1_link": {
+   "mass_kg": 0.020306,
+   "center_of_mass_m": [
+    0.026282,
+    -0.001717,
+    -0.000108
+   ],
+   "inertia_kg_m2": [
+    [
+     1.536e-06,
+     3.4e-08,
+     -2.5e-08
+    ],
+    [
+     3.4e-08,
+     4.613e-06,
+     8e-09
+    ],
+    [
+     -2.5e-08,
+     8e-09,
+     3.866e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.020306259393692017,
+    "center_of_mass_m": [
+     0.02628192864358425,
+     -0.001717352424748242,
+     -0.00010778878640849143
+    ],
+    "principal_inertia_kg_m2": [
+     1.5349522755059297e-06,
+     4.613143119058805e-06,
+     3.866453425871441e-06
+    ],
+    "principal_axes_wxyz": [
+     0.9999555,
+     0.005296152,
+     -0.0055174306,
+     -0.005544547
+    ]
+   }
+  },
+  "right_hand_middle_1_link": {
+   "mass_kg": 0.020306,
+   "center_of_mass_m": [
+    0.026282,
+    -0.001717,
+    -0.000108
+   ],
+   "inertia_kg_m2": [
+    [
+     1.536e-06,
+     3.4e-08,
+     -2.5e-08
+    ],
+    [
+     3.4e-08,
+     4.613e-06,
+     8e-09
+    ],
+    [
+     -2.5e-08,
+     8e-09,
+     3.866e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.020306259393692017,
+    "center_of_mass_m": [
+     0.02628192864358425,
+     -0.001717352424748242,
+     -0.00010778878640849143
+    ],
+    "principal_inertia_kg_m2": [
+     1.5349522755059297e-06,
+     4.613143119058805e-06,
+     3.866453425871441e-06
+    ],
+    "principal_axes_wxyz": [
+     0.9999555,
+     0.005296152,
+     -0.0055174306,
+     -0.005544547
+    ]
+   }
+  },
+  "right_hand_thumb_1_link": {
+   "mass_kg": 0.058851,
+   "center_of_mass_m": [
+    -0.000828,
+    0.035474,
+    -0.000381
+   ],
+   "inertia_kg_m2": [
+    [
+     1.2747e-05,
+     5.08e-07,
+     1.61e-07
+    ],
+    [
+     5.08e-07,
+     6.016e-06,
+     2.78e-07
+    ],
+    [
+     1.61e-07,
+     2.78e-07,
+     1.2345e-05
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.05885069817304611,
+    "center_of_mass_m": [
+     -0.0008278876775875688,
+     0.03547435626387596,
+     -0.00038089961162768304
+    ],
+    "principal_inertia_kg_m2": [
+     1.285136204387527e-05,
+     5.966594926576363e-06,
+     1.2290216545807198e-05
+    ],
+    "principal_axes_wxyz": [
+     0.9836343,
+     -0.014052316,
+     -0.17513436,
+     0.039925754
+    ]
+   }
+  },
+  "left_hand_thumb_2_link": {
+   "mass_kg": 0.020306,
+   "center_of_mass_m": [
+    -0.001717,
+    -0.026282,
+    0.000108
+   ],
+   "inertia_kg_m2": [
+    [
+     4.613e-06,
+     -3.4e-08,
+     -8e-09
+    ],
+    [
+     -3.4e-08,
+     1.536e-06,
+     -2.5e-08
+    ],
+    [
+     -8e-09,
+     -2.5e-08,
+     3.866e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.020306259393692017,
+    "center_of_mass_m": [
+     -0.001717352424748242,
+     -0.02628192864358425,
+     0.00010778878640849143
+    ],
+    "principal_inertia_kg_m2": [
+     4.613143119058805e-06,
+     1.5349522755059297e-06,
+     3.866453425871441e-06
+    ],
+    "principal_axes_wxyz": [
+     0.9999555,
+     0.00551743,
+     0.0052961498,
+     -0.005544548
+    ]
+   }
+  },
+  "right_hand_thumb_2_link": {
+   "mass_kg": 0.020306,
+   "center_of_mass_m": [
+    -0.001717,
+    0.026282,
+    0.000108
+   ],
+   "inertia_kg_m2": [
+    [
+     4.613e-06,
+     3.4e-08,
+     -8e-09
+    ],
+    [
+     3.4e-08,
+     1.536e-06,
+     2.5e-08
+    ],
+    [
+     -8e-09,
+     2.5e-08,
+     3.866e-06
+    ]
+   ],
+   "inertia_frame": "about the centre of mass, axes parallel to the link frame (PhysX runtime)",
+   "usd_authored": {
+    "mass_kg": 0.020306259393692017,
+    "center_of_mass_m": [
+     -0.001717352424748242,
+     0.02628192864358425,
+     0.00010778878640849143
+    ],
+    "principal_inertia_kg_m2": [
+     4.613143119058805e-06,
+     1.5349522755059297e-06,
+     3.866453425871441e-06
+    ],
+    "principal_axes_wxyz": [
+     0.9999555,
+     -0.00551743,
+     0.0052961498,
+     0.005544548
+    ]
+   }
+  }
+ },
+ "frames": {
+  "left_virtual_point": {
+   "link": "left_wrist_yaw_link",
+   "position_m": [
+    0.18,
+    -0.025,
+    0.0
+   ],
+   "description": "SONIC tracking point (released motion.yaml offset); not a gripper TCP"
+  },
+  "right_virtual_point": {
+   "link": "right_wrist_yaw_link",
+   "position_m": [
+    0.18,
+    0.025,
+    0.0
+   ],
+   "description": "SONIC tracking point (released motion.yaml offset); not a gripper TCP"
+  },
+  "head_virtual_point": {
+   "link": "torso_link",
+   "position_m": [
+    0.0,
+    0.0,
+    0.35
+   ],
+   "description": "SONIC tracking point (released motion.yaml offset); not a gripper TCP"
+  },
+  "camera_optical": {
+   "link": "d435_link",
+   "position_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "quaternion_wxyz": [
+    0.5,
+    -0.5,
+    0.5,
+    -0.5
+   ],
+   "description": "front camera image/depth frame: x right, y down, z forward (ROS optical)"
+  },
+  "camera": {
+   "link": "d435_link",
+   "position_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "description": "front camera mount, d435_link: x along the optical axis, y left, z up"
+  },
+  "left_palm": {
+   "link": "left_hand_palm_link",
+   "position_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "description": "palm link origin (palm base); x toward the fingertips, the fingers curl toward -y"
+  },
+  "left_index_tip": {
+   "link": "left_hand_index_1_link",
+   "position_m": [
+    0.05194,
+    0.0038,
+    -0.00217
+   ],
+   "stick": true,
+   "description": "fingertip: the collision vertex farthest from the finger's last joint (geometric, not a contact sensor)"
+  },
+  "left_middle_tip": {
+   "link": "left_hand_middle_1_link",
+   "position_m": [
+    0.05194,
+    0.0038,
+    -0.00217
+   ],
+   "stick": true,
+   "description": "fingertip: the collision vertex farthest from the finger's last joint (geometric, not a contact sensor)"
+  },
+  "left_thumb_tip": {
+   "link": "left_hand_thumb_2_link",
+   "position_m": [
+    -0.0038,
+    -0.05194,
+    0.00217
+   ],
+   "stick": true,
+   "description": "fingertip: the collision vertex farthest from the finger's last joint (geometric, not a contact sensor)"
+  },
+  "left_hand_center": {
+   "link": "left_hand_palm_link",
+   "position_m": [
+    0.09103,
+    -0.04953,
+    -0.0
+   ],
+   "description": "between the open fingers and the thumb: midpoint of the index/middle distal centroid and the thumb distal centroid at zero finger angles"
+  },
+  "left_sole_center": {
+   "link": "left_ankle_roll_link",
+   "position_m": [
+    0.038,
+    0.0,
+    -0.035
+   ],
+   "stick": true,
+   "description": "centre of the lowest collision face of the foot"
+  },
+  "right_palm": {
+   "link": "right_hand_palm_link",
+   "position_m": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "description": "palm link origin (palm base); x toward the fingertips, the fingers curl toward +y"
+  },
+  "right_index_tip": {
+   "link": "right_hand_index_1_link",
+   "position_m": [
+    0.05194,
+    -0.0038,
+    0.00217
+   ],
+   "stick": true,
+   "description": "fingertip: the collision vertex farthest from the finger's last joint (geometric, not a contact sensor)"
+  },
+  "right_middle_tip": {
+   "link": "right_hand_middle_1_link",
+   "position_m": [
+    0.05194,
+    -0.0038,
+    0.00217
+   ],
+   "stick": true,
+   "description": "fingertip: the collision vertex farthest from the finger's last joint (geometric, not a contact sensor)"
+  },
+  "right_thumb_tip": {
+   "link": "right_hand_thumb_2_link",
+   "position_m": [
+    -0.0038,
+    0.05194,
+    -0.00217
+   ],
+   "stick": true,
+   "description": "fingertip: the collision vertex farthest from the finger's last joint (geometric, not a contact sensor)"
+  },
+  "right_hand_center": {
+   "link": "right_hand_palm_link",
+   "position_m": [
+    0.09103,
+    0.04953,
+    -0.0
+   ],
+   "description": "between the open fingers and the thumb: midpoint of the index/middle distal centroid and the thumb distal centroid at zero finger angles"
+  },
+  "right_sole_center": {
+   "link": "right_ankle_roll_link",
+   "position_m": [
+    0.038,
+    0.0,
+    -0.035
+   ],
+   "stick": true,
+   "description": "centre of the lowest collision face of the foot"
+  },
+  "head_center": {
+   "link": "head_link",
+   "position_m": [
+    0.00381,
+    2e-05,
+    0.42768
+   ],
+   "stick": true,
+   "description": "centre of the head collision bounding box"
+  }
+ },
+ "stick_skip": [
+  "imu_in_pelvis",
+  "imu_in_torso",
+  "logo_link",
+  "mid360_link",
+  "pelvis_contour_link",
+  "left_hand_camera_base_link",
+  "right_hand_camera_base_link"
+ ],
+ "camera": {
+  "intrinsics": {
+   "fx": 243.1999969482422,
+   "fy": 243.1999969482422,
+   "cx": 320.0,
+   "cy": 240.0,
+   "width": 640,
+   "height": 480
+  },
+  "distortion": null,
+  "depth": "distance to the image plane (optical z), metres; NaN invalid",
+  "mount_in_torso": {
+   "parent": "torso_link",
+   "via": "d435_joint (fixed)",
+   "position_m": [
+    0.05762,
+    0.01753,
+    0.42987
+   ],
+   "quaternion_wxyz_camera_link": [
+    0.91496,
+    2e-06,
+    0.403545,
+    -4e-06
+   ],
+   "pitch_down_deg": 47.6
+  },
+  "usd_camera": {
+   "focalLength": 7.599999904632568,
+   "horizontalAperture": 20.0,
+   "verticalAperture": 15.0,
+   "clippingRange": [
+    0.10000000149011612,
+    100000.0
+   ]
+  },
+  "frames": {
+   "camera": "d435_link: x optical axis, y left, z up",
+   "camera_optical": "x right, y down, z forward"
+  }
+ },
+ "summary_points": [
+  "left_hand_center",
+  "right_hand_center",
+  "left_palm",
+  "right_palm",
+  "left_thumb_tip",
+  "left_index_tip",
+  "left_middle_tip",
+  "right_thumb_tip",
+  "right_index_tip",
+  "right_middle_tip",
+  "left_virtual_point",
+  "right_virtual_point",
+  "head_virtual_point",
+  "left_sole_center",
+  "right_sole_center",
+  "head_center",
+  "camera"
+ ],
+ "markers": [
+  "left_hand_center",
+  "right_hand_center",
+  "left_sole_center",
+  "right_sole_center",
+  "left_thumb_tip",
+  "right_thumb_tip",
+  "left_index_tip",
+  "right_index_tip"
+ ],
+ "hand": {
+  "command": "binary per hand (semantic40 dims 38/39): open = every finger joint 0; closed = the fixed closing pose below. There is no partial or per-finger command. Fingers stop where they meet an object; the PD drives keep pushing toward the target.",
+  "joint_order": "per hand: thumb_0, thumb_1, thumb_2, middle_0, middle_1, index_0, index_1 (proprio.hand_state uses this order, left hand first)",
+  "sides": {
+   "left": {
+    "joints": [
+     {
+      "name": "left_hand_thumb_0_joint",
+      "closed_target_rad": 0.0,
+      "limits_rad": [
+       -1.047198,
+       1.047198
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "left_hand_thumb_1_joint",
+      "closed_target_rad": 1.0,
+      "limits_rad": [
+       -0.610865,
+       1.047198
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "left_hand_thumb_2_joint",
+      "closed_target_rad": 1.74,
+      "limits_rad": [
+       0.0,
+       1.745329
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "left_hand_middle_0_joint",
+      "closed_target_rad": -1.57,
+      "limits_rad": [
+       -1.570796,
+       0.0
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "left_hand_middle_1_joint",
+      "closed_target_rad": -1.74,
+      "limits_rad": [
+       -1.745329,
+       0.0
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "left_hand_index_0_joint",
+      "closed_target_rad": -1.57,
+      "limits_rad": [
+       -1.570796,
+       0.0
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "left_hand_index_1_joint",
+      "closed_target_rad": -1.74,
+      "limits_rad": [
+       -1.745329,
+       0.0
+      ],
+      "effort_limit_Nm": 300.0
+     }
+    ],
+    "fingertips_in_palm_frame_m": {
+     "open": {
+      "thumb": [
+       0.0192,
+       -0.117,
+       0.0022
+      ],
+      "index": [
+       0.1754,
+       0.0054,
+       0.0263
+      ],
+      "middle": [
+       0.1754,
+       0.0054,
+       -0.0307
+      ]
+     },
+     "closed": {
+      "thumb": [
+       0.0853,
+       0.0023,
+       0.0022
+      ],
+      "index": [
+       0.0259,
+       -0.0392,
+       0.0263
+      ],
+      "middle": [
+       0.0259,
+       -0.0392,
+       -0.0307
+      ]
+     }
+    },
+    "thumb_gap_m": {
+     "open": {
+      "thumb_to_index_m": 0.1999,
+      "thumb_to_middle_m": 0.2012
+     },
+     "closed": {
+      "thumb_to_index_m": 0.0764,
+      "thumb_to_middle_m": 0.0796
+     }
+    },
+    "measured_closed_free_space_rad": [
+     0.0002,
+     0.9999,
+     1.74,
+     -1.5699,
+     -1.74,
+     -1.5699,
+     -1.74
+    ]
+   },
+   "right": {
+    "joints": [
+     {
+      "name": "right_hand_thumb_0_joint",
+      "closed_target_rad": 0.0,
+      "limits_rad": [
+       -1.047198,
+       1.047198
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "right_hand_thumb_1_joint",
+      "closed_target_rad": -1.0,
+      "limits_rad": [
+       -1.047198,
+       0.610865
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "right_hand_thumb_2_joint",
+      "closed_target_rad": -1.74,
+      "limits_rad": [
+       -1.745329,
+       0.0
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "right_hand_middle_0_joint",
+      "closed_target_rad": 1.57,
+      "limits_rad": [
+       0.0,
+       1.570796
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "right_hand_middle_1_joint",
+      "closed_target_rad": 1.74,
+      "limits_rad": [
+       0.0,
+       1.745329
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "right_hand_index_0_joint",
+      "closed_target_rad": 1.57,
+      "limits_rad": [
+       0.0,
+       1.570796
+      ],
+      "effort_limit_Nm": 300.0
+     },
+     {
+      "name": "right_hand_index_1_joint",
+      "closed_target_rad": 1.74,
+      "limits_rad": [
+       0.0,
+       1.745329
+      ],
+      "effort_limit_Nm": 300.0
+     }
+    ],
+    "fingertips_in_palm_frame_m": {
+     "open": {
+      "thumb": [
+       0.0192,
+       0.117,
+       -0.0022
+      ],
+      "index": [
+       0.1754,
+       -0.0054,
+       0.0307
+      ],
+      "middle": [
+       0.1754,
+       -0.0054,
+       -0.0263
+      ]
+     },
+     "closed": {
+      "thumb": [
+       0.0853,
+       -0.0023,
+       -0.0022
+      ],
+      "index": [
+       0.0259,
+       0.0392,
+       0.0307
+      ],
+      "middle": [
+       0.0259,
+       0.0392,
+       -0.0263
+      ]
+     }
+    },
+    "thumb_gap_m": {
+     "open": {
+      "thumb_to_index_m": 0.2012,
+      "thumb_to_middle_m": 0.1999
+     },
+     "closed": {
+      "thumb_to_index_m": 0.0796,
+      "thumb_to_middle_m": 0.0764
+     }
+    },
+    "measured_closed_free_space_rad": [
+     0.0002,
+     -0.9999,
+     -1.74,
+     1.5699,
+     1.74,
+     1.5699,
+     1.74
+    ]
+   }
+  },
+  "note": "A closed hand is a fist: thumb, index and middle all fold to the targets. Grip comes from where the object sits in the closing fingers; use fingertips_in_palm_frame_m and the stick figure to place the object between the thumb and the two fingers before closing. proprio.hand_state shows where each finger actually stopped."
+ },
+ "control": {
+  "semantic40": {
+   "dimensions": [
+    {
+     "index": 0,
+     "name": "root_xy_delta.x",
+     "unit": "m per tick",
+     "meaning": "reference root displacement this 50 Hz tick along the reference root's own x (forward)"
+    },
+    {
+     "index": 1,
+     "name": "root_xy_delta.y",
+     "unit": "m per tick",
+     "meaning": "reference root displacement this tick along the reference root's own y (left)"
+    },
+    {
+     "index": 2,
+     "name": "root_height",
+     "unit": "m",
+     "meaning": "reference pelvis height above the floor (standing reference 0.788740)"
+    },
+    {
+     "index": 3,
+     "name": "root_rot6d.r00",
+     "unit": "",
+     "meaning": "reference root rotation relative to the episode's initial heading: first two columns of the rotation matrix, row-major (identity = 1,0,0,1,0,0)"
+    },
+    {
+     "index": 4,
+     "name": "root_rot6d.r01",
+     "unit": "",
+     "meaning": "reference root rotation relative to the episode's initial heading: first two columns of the rotation matrix, row-major (identity = 1,0,0,1,0,0)"
+    },
+    {
+     "index": 5,
+     "name": "root_rot6d.r10",
+     "unit": "",
+     "meaning": "reference root rotation relative to the episode's initial heading: first two columns of the rotation matrix, row-major (identity = 1,0,0,1,0,0)"
+    },
+    {
+     "index": 6,
+     "name": "root_rot6d.r11",
+     "unit": "",
+     "meaning": "reference root rotation relative to the episode's initial heading: first two columns of the rotation matrix, row-major (identity = 1,0,0,1,0,0)"
+    },
+    {
+     "index": 7,
+     "name": "root_rot6d.r20",
+     "unit": "",
+     "meaning": "reference root rotation relative to the episode's initial heading: first two columns of the rotation matrix, row-major (identity = 1,0,0,1,0,0)"
+    },
+    {
+     "index": 8,
+     "name": "root_rot6d.r21",
+     "unit": "",
+     "meaning": "reference root rotation relative to the episode's initial heading: first two columns of the rotation matrix, row-major (identity = 1,0,0,1,0,0)"
+    },
+    {
+     "index": 9,
+     "name": "left_hip_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 10,
+     "name": "right_hip_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 11,
+     "name": "waist_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 12,
+     "name": "left_hip_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 13,
+     "name": "right_hip_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 14,
+     "name": "waist_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 15,
+     "name": "left_hip_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 16,
+     "name": "right_hip_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 17,
+     "name": "waist_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 18,
+     "name": "left_knee_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 19,
+     "name": "right_knee_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 20,
+     "name": "left_shoulder_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 21,
+     "name": "right_shoulder_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 22,
+     "name": "left_ankle_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 23,
+     "name": "right_ankle_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 24,
+     "name": "left_shoulder_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 25,
+     "name": "right_shoulder_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 26,
+     "name": "left_ankle_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 27,
+     "name": "right_ankle_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 28,
+     "name": "left_shoulder_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 29,
+     "name": "right_shoulder_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 30,
+     "name": "left_elbow_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 31,
+     "name": "right_elbow_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 32,
+     "name": "left_wrist_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 33,
+     "name": "right_wrist_roll_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 34,
+     "name": "left_wrist_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 35,
+     "name": "right_wrist_pitch_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 36,
+     "name": "left_wrist_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 37,
+     "name": "right_wrist_yaw_joint",
+     "unit": "rad",
+     "meaning": "absolute joint angle reference (canonical29 order = proprio.joint_names_canonical29)"
+    },
+    {
+     "index": 38,
+     "name": "left_hand_closed",
+     "unit": "0/1",
+     "meaning": "left Dex3 command: 0 open (all finger joints 0), 1 closed (the closed pose)"
+    },
+    {
+     "index": 39,
+     "name": "right_hand_closed",
+     "unit": "0/1",
+     "meaning": "right Dex3 command: 0 open, 1 closed"
+    }
+   ],
+   "standing_root_height_m": 0.78874,
+   "rate_hz": 50,
+   "frames_per_action": "one frame per row; humanoid_step takes 1..100 rows (up to 2 s)",
+   "controller": "frozen SONIC release, encoder mode 0 (joint29 references)",
+   "physics_hz": 200,
+   "joint_pd": "simulator PD drives: see joints[].pd_stiffness"
+  }
+ }
+}
