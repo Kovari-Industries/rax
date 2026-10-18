@@ -1,0 +1,23 @@
+# Pins of every external source and environment. Sourced by the setup scripts.
+
+# Miniforge installs the conda that builds runtime/envs/host and the simulator environments.
+MINIFORGE_VERSION=26.7.2-0
+MINIFORGE_SHA256=281b0ac7d550802efc81af633225a5e6116d29ae72f3ab4eae7168c3931a4c05
+# The host environment (scripts/setup_host_env.sh): the harness's own packages.
+HOST_PYTHON_VERSION=3.12
+HOST_NUMPY_VERSION=2.5.2
+HOST_PILLOW_VERSION=12.3.0
+HOST_JINJA2_VERSION=3.1.6
+HOST_MSGPACK_VERSION=1.2.3
+HOST_PYYAML_VERSION=6.0.3
+HOST_IMAGEIO_VERSION=2.38.0
+HOST_IMAGEIO_FFMPEG_VERSION=0.6.0
+HOST_SCIPY_VERSION=1.18.1
+HOST_PYTEST_VERSION=9.1.1
+
+# DexJoCo simulator backend (official, unmodified), used only by the simulator subprocess in
+# runtime/envs/dexjoco, built from the official environment-dexjoco.yaml.
+DEXJOCO_URL=https://github.com/brave-eai/dexjoco.git
+DEXJOCO_COMMIT=8d23b0fab23b17a58c4b55f3942e17013aaf8267
+# HF DexJoCo/DexJoCo-Datasets-Raw commit: official raw demonstrations (scripts/setup_dexjoco_demos.py).
+DEXJOCO_DEMOS_REVISION=125df5c1019e97503929ef1a0ad8f90373436afa
