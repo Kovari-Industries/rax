@@ -1,0 +1,361 @@
+{
+  "source_url": "https://www.modelscope.cn/datasets/Twang2026/HumanoidArena_raw",
+  "license": "CC-BY-NC-4.0",
+  "selection": "First three lexicographic episodes of the pinned raw SONIC branch; multicam rerecordings excluded.",
+  "tasks": {
+    "boxing_bag": [
+      {
+        "trajectory_id": "sonic_1777016928632071",
+        "files": [
+          {
+            "remote_path": "HSI_boxing/sonic/zz/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016928632071.npz",
+            "local_path": "episode.npz",
+            "bytes": 80417331,
+            "sha256": "5cbf0939f3ddac05b74609a4ba36e665aa863e25c1aab39f6f17245744f255f0"
+          },
+          {
+            "remote_path": "HSI_boxing/sonic/zz/videos/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016928632071_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016928632071_front_rgb.mp4",
+            "bytes": 4843696,
+            "sha256": "b62502ce08deb20258bc810147dfaca2f79e42b9377bf208d2b02d1064d06212"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1777016953906676",
+        "files": [
+          {
+            "remote_path": "HSI_boxing/sonic/zz/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016953906676.npz",
+            "local_path": "episode.npz",
+            "bytes": 53114083,
+            "sha256": "5ba30cf66f0a308d86f60fbc14b7a1e73dbecbd0106fa49faf825e388b5cdcfa"
+          },
+          {
+            "remote_path": "HSI_boxing/sonic/zz/videos/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016953906676_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016953906676_front_rgb.mp4",
+            "bytes": 3108813,
+            "sha256": "386f77e6f2950721dc012faf32bbfc5b0978beea0c3317cad5d386a97bfe7468"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1777016968816652",
+        "files": [
+          {
+            "remote_path": "HSI_boxing/sonic/zz/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016968816652.npz",
+            "local_path": "episode.npz",
+            "bytes": 56187569,
+            "sha256": "c5c06d93188a8a47228c79f159071c8658eb274a2be2f2d567289f32885be848"
+          },
+          {
+            "remote_path": "HSI_boxing/sonic/zz/videos/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016968816652_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Boxing-Bag-G129-Dex3-Wholebody_sonic_1777016968816652_front_rgb.mp4",
+            "bytes": 3465091,
+            "sha256": "2c51373878dc966f08e763918f89e059509e511d5c44476733c204cd722b1aa9"
+          }
+        ]
+      }
+    ],
+    "doubledesk": [
+      {
+        "trajectory_id": "sonic_1776268633456387",
+        "files": [
+          {
+            "remote_path": "HOI_double_desk/sonic/tw/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776268633456387.npz",
+            "local_path": "episode.npz",
+            "bytes": 244100009,
+            "sha256": "6c967a9c5a5640c8ed959e4af9c154bfa3dd94f526e61a797eb70ebc908c08e1"
+          },
+          {
+            "remote_path": "HOI_double_desk/sonic/tw/videos/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776268633456387_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776268633456387_front_rgb.mp4",
+            "bytes": 19008187,
+            "sha256": "fbfc7f924e26642f4a312829b5a58008395a271b7b062fd83f89b5a56bbce68e"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776305184284052",
+        "files": [
+          {
+            "remote_path": "HOI_double_desk/sonic/tw/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776305184284052.npz",
+            "local_path": "episode.npz",
+            "bytes": 131996117,
+            "sha256": "d07727bca158acd0594358d8fd9c97bab2c2d363f65a5c279bfe807d9de9e1de"
+          },
+          {
+            "remote_path": "HOI_double_desk/sonic/tw/videos/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776305184284052_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776305184284052_front_rgb.mp4",
+            "bytes": 10360198,
+            "sha256": "8c9a91b3af9b2e78f88b64af3188d995b445452432d37e447bc67c7e20e1abe3"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776305276909208",
+        "files": [
+          {
+            "remote_path": "HOI_double_desk/sonic/tw/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776305276909208.npz",
+            "local_path": "episode.npz",
+            "bytes": 164856061,
+            "sha256": "e2e60b6d679644d08e7d73e4d610ffa27a3587d6a9089ec69055240203b1c07b"
+          },
+          {
+            "remote_path": "HOI_double_desk/sonic/tw/videos/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776305276909208_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-PickPlace-DoubleDesk-G129-Dex3-Wholebody_sonic_1776305276909208_front_rgb.mp4",
+            "bytes": 14731876,
+            "sha256": "5bac0a52acf90259f148fa84f4fc0571eb9fbc982bb012820ca7ce7c710608e6"
+          }
+        ]
+      }
+    ],
+    "football_single": [
+      {
+        "trajectory_id": "sonic_1775894319825238",
+        "files": [
+          {
+            "remote_path": "HOI_football_v2/SONIC/tw/Isaac-Move-Football-Single-G129-Dex3-Wholebody_sonic_1775894319825238.npz",
+            "local_path": "episode.npz",
+            "bytes": 1597591806,
+            "sha256": "39e7755b1a56abea4209ebe5f1a9dcf937bcace1ff58c19d134e72310da054a8"
+          }
+        ],
+        "preview_count": 40
+      },
+      {
+        "trajectory_id": "sonic_1775894660832965",
+        "files": [
+          {
+            "remote_path": "HOI_football_v2/SONIC/tw/Isaac-Move-Football-Single-G129-Dex3-Wholebody_sonic_1775894660832965.npz",
+            "local_path": "episode.npz",
+            "bytes": 820429687,
+            "sha256": "94e06e58210bc51ea9b65e6e813339e41e2d737ed7d3bc7730c1277853a087d9"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1775894715603602",
+        "files": [
+          {
+            "remote_path": "HOI_football_v2/SONIC/tw/Isaac-Move-Football-Single-G129-Dex3-Wholebody_sonic_1775894715603602.npz",
+            "local_path": "episode.npz",
+            "bytes": 1896670843,
+            "sha256": "16cf8dc7235f98ca2f59e7ee3294c0423ad78d973647bee23cbc52a26159335c"
+          }
+        ]
+      }
+    ],
+    "opendoor": [
+      {
+        "trajectory_id": "sonic_1776662381932619",
+        "files": [
+          {
+            "remote_path": "HSI_open_door/sonic/zz/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662381932619.npz",
+            "local_path": "episode.npz",
+            "bytes": 206895692,
+            "sha256": "61b23e46df977df5b204334bbcff6bb72c439069661c0ea86818464857fa1fa7"
+          },
+          {
+            "remote_path": "HSI_open_door/sonic/zz/videos/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662381932619_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662381932619_front_rgb.mp4",
+            "bytes": 10954146,
+            "sha256": "96ca2c3c749633eb6381dd7fbd1dfc5342b7b6afac96e322d6f91876770ba565"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776662498782299",
+        "files": [
+          {
+            "remote_path": "HSI_open_door/sonic/zz/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662498782299.npz",
+            "local_path": "episode.npz",
+            "bytes": 230035791,
+            "sha256": "b64c06adcfbbe4933361cc00413677fb9a2070ef1bebe763e1621e771fb927f6"
+          },
+          {
+            "remote_path": "HSI_open_door/sonic/zz/videos/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662498782299_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662498782299_front_rgb.mp4",
+            "bytes": 12360754,
+            "sha256": "03ce0622f185eb32846ebe77a2867579c1ecf3f468e582fc2f6b43af61d2779c"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776662643612147",
+        "files": [
+          {
+            "remote_path": "HSI_open_door/sonic/zz/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662643612147.npz",
+            "local_path": "episode.npz",
+            "bytes": 84152242,
+            "sha256": "f4bd9acbaf0e80fd82536c81294738148a241271409549a3ad00a2087d5da25d"
+          },
+          {
+            "remote_path": "HSI_open_door/sonic/zz/videos/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662643612147_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Open-Door-G129-Dex3-Wholebody_sonic_1776662643612147_front_rgb.mp4",
+            "bytes": 4848280,
+            "sha256": "730b2c4de26ec76920bff7dd94c2bf645c6179a939f570653511bdacd0ba9e9a"
+          }
+        ]
+      }
+    ],
+    "pickplace_box": [
+      {
+        "trajectory_id": "sonic_1776530636529557",
+        "files": [
+          {
+            "remote_path": "HOI_pp_box/sonic/yb/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776530636529557.npz",
+            "local_path": "episode.npz",
+            "bytes": 221590979,
+            "sha256": "049b2325e36bb7eb8c154fa9cb9d93986165d344f6407b9a6cb782c8ce6af19c"
+          },
+          {
+            "remote_path": "HOI_pp_box/sonic/yb/videos/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776530636529557_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776530636529557_front_rgb.mp4",
+            "bytes": 18602470,
+            "sha256": "ba4376af5e411f2a78489de1b9b66922ef2d5b3e7ec6c8440c57203ab442120b"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776563142330574",
+        "files": [
+          {
+            "remote_path": "HOI_pp_box/sonic/yb/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776563142330574.npz",
+            "local_path": "episode.npz",
+            "bytes": 107608688,
+            "sha256": "3a3b12986b58a231678c2854b145443237a6de4b00076c7dacf261c204adca32"
+          },
+          {
+            "remote_path": "HOI_pp_box/sonic/yb/videos/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776563142330574_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776563142330574_front_rgb.mp4",
+            "bytes": 8625981,
+            "sha256": "fe3111dfe2bc1f053cb7fc6fed15c107ba5cada5b5032879023d448282957568"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776563178615823",
+        "files": [
+          {
+            "remote_path": "HOI_pp_box/sonic/yb/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776563178615823.npz",
+            "local_path": "episode.npz",
+            "bytes": 147341035,
+            "sha256": "51ea90412df0b14d64babc5167353f02203f809dc7da3c4def6c3926b49a73e8"
+          },
+          {
+            "remote_path": "HOI_pp_box/sonic/yb/videos/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776563178615823_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-PickPlace-Box-G129-Dex3-Wholedoby_sonic_1776563178615823_front_rgb.mp4",
+            "bytes": 11867321,
+            "sha256": "e568e9957360ea329344f63f5936786b1a960e97190e4e12fa652e962c9ff5d0"
+          }
+        ]
+      }
+    ],
+    "sit_sofa": [
+      {
+        "trajectory_id": "sonic_1776692104129257",
+        "files": [
+          {
+            "remote_path": "HSI_sit_sofa/sonic/zz/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692104129257.npz",
+            "local_path": "episode.npz",
+            "bytes": 125080897,
+            "sha256": "d803e8cacc20a7cc45b06e577efb6abae621a176739d56d1ff8eaf94ba4904c2"
+          },
+          {
+            "remote_path": "HSI_sit_sofa/sonic/zz/videos/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692104129257_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692104129257_front_rgb.mp4",
+            "bytes": 8613060,
+            "sha256": "6855f93f5ede4826efd5c62d87d29f6be021b97636b4044f1586d61580ce3205"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776692504462390",
+        "files": [
+          {
+            "remote_path": "HSI_sit_sofa/sonic/zz/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692504462390.npz",
+            "local_path": "episode.npz",
+            "bytes": 93996896,
+            "sha256": "93587eb1501bab12fde063b6c1f12fcafb6af783b5877a49e1e6b798b4a54abd"
+          },
+          {
+            "remote_path": "HSI_sit_sofa/sonic/zz/videos/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692504462390_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692504462390_front_rgb.mp4",
+            "bytes": 6310871,
+            "sha256": "3e8494340365a2bd2f5c06bc35f4d337810aa6e067c41ba735166bc38ce71e1d"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776692531349383",
+        "files": [
+          {
+            "remote_path": "HSI_sit_sofa/sonic/zz/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692531349383.npz",
+            "local_path": "episode.npz",
+            "bytes": 69671795,
+            "sha256": "1473f429a3c525faf3fba6e0015f85d06792bbfb4178c0525c4181ac3a80e780"
+          },
+          {
+            "remote_path": "HSI_sit_sofa/sonic/zz/videos/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692531349383_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-Sit-Sofa-G129-Dex3-Wholebody_sonic_1776692531349383_front_rgb.mp4",
+            "bytes": 4578174,
+            "sha256": "530a29ca0ae5cb174eb9e04159113dc1bdc4b8d6587af3a24739642560eef9c1"
+          }
+        ]
+      }
+    ],
+    "warehouse_navigation": [
+      {
+        "trajectory_id": "sonic_1776476438549275",
+        "files": [
+          {
+            "remote_path": "HSI_vision_navi/sonic/yb/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476438549275.npz",
+            "local_path": "episode.npz",
+            "bytes": 95552196,
+            "sha256": "b61c5bf8e03a6e261019eba92a7460b42775ef491d7c77c6c8ba638bf867097f"
+          },
+          {
+            "remote_path": "HSI_vision_navi/sonic/yb/videos/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476438549275_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476438549275_front_rgb.mp4",
+            "bytes": 10019695,
+            "sha256": "0a10c7786ad75e54273a82f4b920bc0feb32007ebce42088e28606456b706326"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776476545882911",
+        "files": [
+          {
+            "remote_path": "HSI_vision_navi/sonic/yb/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476545882911.npz",
+            "local_path": "episode.npz",
+            "bytes": 178235035,
+            "sha256": "31c30a00b1a9da9a869cb63a58375e6140e85e546b1ea927105ad77af57cc38e"
+          },
+          {
+            "remote_path": "HSI_vision_navi/sonic/yb/videos/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476545882911_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476545882911_front_rgb.mp4",
+            "bytes": 15913102,
+            "sha256": "c08a84560740ff864d1d3e3d14f5ae6cb0e3c8f4c0ee5e02cd3beaef4a83f3b9"
+          }
+        ]
+      },
+      {
+        "trajectory_id": "sonic_1776476584551019",
+        "files": [
+          {
+            "remote_path": "HSI_vision_navi/sonic/yb/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476584551019.npz",
+            "local_path": "episode.npz",
+            "bytes": 132860999,
+            "sha256": "db0f026f4cd79b2d9c663949d5747b5a0b6842a5a5bfb3d5a981f7dcc6d6ce4c"
+          },
+          {
+            "remote_path": "HSI_vision_navi/sonic/yb/videos/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476584551019_front_rgb.mp4",
+            "local_path": "videos/Isaac-Move-SmallWarehouse-VisionNavigation-G129-Dex3-Wholebody_sonic_1776476584551019_front_rgb.mp4",
+            "bytes": 13020318,
+            "sha256": "b0008db39f7b289c83b8037ddd1744ddab8281327b0e0a1beff699f6a2143f9d"
+          }
+        ]
+      }
+    ]
+  }
+}

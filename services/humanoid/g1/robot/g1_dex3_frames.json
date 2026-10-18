@@ -1,0 +1,23 @@
+{
+ "hand_center_in_palm_m": {
+  "left": [
+   0.091,
+   -0.0495,
+   -0.0
+  ],
+  "right": [
+   0.091,
+   0.0495,
+   0.0
+  ]
+ },
+ "method": {
+  "hand_center": "midpoint of the vertex centroids of index_1+middle_1 and thumb_2 meshes at zero finger angles (open hand), palm-link frame",
+  "head_center": "bounding-box centre of head_link.STL in the head_link frame"
+ },
+ "head_center_in_head_link_m": [
+  0.0038,
+  0.0,
+  0.4277
+ ]
+}

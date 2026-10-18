@@ -1,0 +1,39 @@
+# Registry of reusable text blocks (agent_blocks/<path>), referenced from sources as
+# {{ block("<id>") }}. IDs are stable and never reused; a later evolution loop edits
+# `mutable` blocks by ID (deltas), while `core` blocks encode contracts and safety.
+#
+# [[block]]
+# id = "robot.stop-before-intervening"
+# path = "robot/stop-before-intervening.md"
+# tier = "core"            # core | mutable
+
+[[block]]
+id = "session.contract-pointer"
+path = "session/contract-pointer.md"
+tier = "core"
+
+[[block]]
+id = "images.forwarding"
+path = "images/forwarding.md"
+tier = "core"
+
+# HumanoidArena (G1 + Dex3 under the frozen SONIC controller).
+[[block]]
+id = "humanoid.tracking-loop"
+path = "humanoid/tracking-loop.md"
+tier = "mutable"
+
+[[block]]
+id = "humanoid.field-guide-legend"
+path = "humanoid/field-guide-legend.md"
+tier = "core"
+
+[[block]]
+id = "humanoid.robust-detection"
+path = "humanoid/robust-detection.md"
+tier = "mutable"
+
+[[block]]
+id = "humanoid.perception-checks"
+path = "humanoid/perception-checks.md"
+tier = "mutable"
