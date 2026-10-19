@@ -6,17 +6,29 @@
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b)](https://robot-agent-exploration.com/rax.pdf) [![Project WebPage](https://img.shields.io/badge/Project-webpage-00a3a6)](https://robot-agent-exploration.com/) [![Videos](https://img.shields.io/badge/Robot-videos-blue)](https://robot-agent-exploration.com/#tasks) [![Skill Library](https://img.shields.io/badge/Skill-library-6f42c1)](https://github.com/robot-agent-exploration/skills-lib) [![Session Logs](https://img.shields.io/badge/%F0%9F%A4%97%20Session-logs-ffd21e)](https://huggingface.co/datasets/robot-agent-exploration/robot-session-logs)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/scaling_dark.svg">
-  <img src="docs/assets/scaling_light.svg" alt="Mean success on unseen scenes rises from 25% to 79% as exploration scales from 4 to 128 episodes; the best prior SOTA scores 41.2" width="760">
-</picture>
-
 </div>
 
 > [RAX: Scaling Online Exploration for Robot Agents](https://robot-agent-exploration.com/rax.pdf) \
 > [Runhan Huang](https://hrh6666.github.io)<sup>1\*</sup>, [Xiangcheng Zhang](https://scholar.google.com/citations?user=pBnAahcAAAAJ)<sup>1\*†</sup>, [Haoyu Chen](https://tonychy.com)<sup>1‡</sup>, [Yitong Li](https://scholar.google.com/citations?user=xfp2Zv8AAAAJ)<sup>2‡</sup>, [Yen-Jen Wang](https://wangyenjen.github.io)<sup>3‡</sup>, [Bohan Lyu](https://bohanlyu.com)<sup>3‡</sup>, [Haotian Ye](https://haotianye.com)<sup>5</sup>, [Chuye Hong](https://chuye03.github.io)<sup>3</sup>, [Yixuan Wang](https://wangyixuan12.github.io)<sup>2</sup>, [Chloe Su](https://hither1.github.io)<sup>1</sup>, [Haoyu Xiong](https://haoyu-x.github.io)<sup>4</sup>, [Yangzhen Wu](https://thu-wyz.github.io)<sup>3</sup>, [Enze Xie](https://xieenze.github.io)<sup>2</sup>, [Travis Manderson](https://people.csail.mit.edu/travis/)<sup>4</sup>, [Stefano Ermon](https://cs.stanford.edu/~ermon/)<sup>5</sup>, [Pieter Abbeel](https://people.eecs.berkeley.edu/~pabbeel/)<sup>3</sup>, [Antonio Torralba](https://web.mit.edu/torralba/www/)<sup>4</sup>, [Dawn Song](https://dawnsong.io)<sup>3</sup>, [Weirui Ye](https://yewr.github.io)<sup>4</sup>, [Yilun Du](https://yilundu.github.io)<sup>1</sup> \
 > <sup>1</sup>Harvard University &nbsp; <sup>2</sup>NVIDIA &nbsp; <sup>3</sup>UC Berkeley &nbsp; <sup>4</sup>MIT &nbsp; <sup>5</sup>Stanford University \
 > <sup>\*</sup>Equal contribution &nbsp; <sup>†</sup>Project lead &nbsp; <sup>‡</sup>Core contributor
+
+## 🌿 Branches
+
+> [!IMPORTANT]
+> **The code lives on the branches below.** `main` is an index; switch to a branch for the
+> harness, setup guide and usage guide of that setting. Each branch is self-contained.
+
+| Branch | Setting | Contents | Status |
+| --- | --- | --- | --- |
+| [`robodojo-behavior/container`](https://github.com/robot-agent-exploration/rax/tree/robodojo-behavior/container) | 🖥️ Sim | RoboDojo and BEHAVIOR-1K (Isaac Sim 5.1). The agent runs in an offline Docker container; formal evaluation uses held-out layouts. | ✅ available |
+| [`robodojo-behavior/native`](https://github.com/robot-agent-exploration/rax/tree/robodojo-behavior/native) | 🖥️ Sim | The same benchmarks with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
+| [`humanoid-arena/container`](https://github.com/robot-agent-exploration/rax/tree/humanoid-arena/container) | 🖥️ Sim | HumanoidArena (Isaac Sim 6.1): Unitree G1 with Dex3 hands under the frozen SONIC whole-body controller. The agent runs in an offline Docker container; formal evaluation uses the official test episodes. | ✅ available |
+| [`humanoid-arena/native`](https://github.com/robot-agent-exploration/rax/tree/humanoid-arena/native) | 🖥️ Sim | HumanoidArena with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
+| [`dexjoco/container`](https://github.com/robot-agent-exploration/rax/tree/dexjoco/container) | 🖥️ Sim | DexJoCo (MuJoCo): Franka arms with Allegro hands on one GPU. The agent runs in an offline Docker container; formal evaluation uses the official evaluation episodes. | ✅ available |
+| [`dexjoco/native`](https://github.com/robot-agent-exploration/rax/tree/dexjoco/native) | 🖥️ Sim | DexJoCo with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
+| [`real/franka`](https://github.com/robot-agent-exploration/rax/tree/real/franka) | 🦾 Real | Franka FR3: one 7-DoF arm, Franka Hand, three ZED cameras. | ✅ available |
+| [`real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow) | 🦾 Real | Rainbow RB-Y1: wheeled base, 6-joint torso, two 7-DoF arms, grippers, head ZED 2i. | ✅ available |
 
 ---
 
@@ -47,22 +59,6 @@ that runs without the agent.
 | --- | ---: | ---: | ---: |
 | Air fryer | 72 min | 18 s | **241×** |
 | Bandu tower | 17 min | 10 s | **103×** |
-
-## 🌿 Branches
-
-`main` is an index. The code lives on the branches below; each is self-contained, with
-its own README, setup guide and usage guide.
-
-| Branch | Setting | Contents | Status |
-| --- | --- | --- | --- |
-| [`robodojo-behavior/container`](https://github.com/robot-agent-exploration/rax/tree/robodojo-behavior/container) | 🖥️ Sim | RoboDojo and BEHAVIOR-1K (Isaac Sim 5.1). The agent runs in an offline Docker container; formal evaluation uses held-out layouts. | ✅ available |
-| [`robodojo-behavior/native`](https://github.com/robot-agent-exploration/rax/tree/robodojo-behavior/native) | 🖥️ Sim | The same benchmarks with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
-| [`humanoid-arena/container`](https://github.com/robot-agent-exploration/rax/tree/humanoid-arena/container) | 🖥️ Sim | HumanoidArena (Isaac Sim 6.1): Unitree G1 with Dex3 hands under the frozen SONIC whole-body controller. The agent runs in an offline Docker container; formal evaluation uses the official test episodes. | ✅ available |
-| [`humanoid-arena/native`](https://github.com/robot-agent-exploration/rax/tree/humanoid-arena/native) | 🖥️ Sim | HumanoidArena with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
-| [`dexjoco/container`](https://github.com/robot-agent-exploration/rax/tree/dexjoco/container) | 🖥️ Sim | DexJoCo (MuJoCo): Franka arms with Allegro hands on one GPU. The agent runs in an offline Docker container; formal evaluation uses the official evaluation episodes. | ✅ available |
-| [`dexjoco/native`](https://github.com/robot-agent-exploration/rax/tree/dexjoco/native) | 🖥️ Sim | DexJoCo with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
-| [`real/franka`](https://github.com/robot-agent-exploration/rax/tree/real/franka) | 🦾 Real | Franka FR3: one 7-DoF arm, Franka Hand, three ZED cameras. | ✅ available |
-| [`real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow) | 🦾 Real | Rainbow RB-Y1: wheeled base, 6-joint torso, two 7-DoF arms, grippers, head ZED 2i. | ✅ available |
 
 ## 🚀 Getting started
 
