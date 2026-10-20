@@ -16,12 +16,12 @@ class Configuration:
     root: Path                      # session directory under the artifact root
     task: str                       # short task id, e.g. "stack_cups"
     task_description: str = ''      # TASK.md body written by the operator
-    robot: str = 'rby1'             # services.backends registry key
+    robot: str = 'evo-v3'             # services.backends registry key
     # Backend-specific operator settings (bridge URLs, cameras, workspace box, ...).
     backend_options: dict = field(default_factory=dict)
     # Interpreter for the agent's own scripts (a venv without robot SDKs); None: the launcher's.
     agent_python: str | None = None
-    observation_profile: str = 'rgbd'
+    observation_profile: str = 'rgb-only'
     agent_provider: str = 'claude-login'
     agent_effort: str = 'xhigh'
     agent_model: str | None = None  # Provider default (Opus 5.5) when unset.
@@ -46,6 +46,8 @@ class Configuration:
         if self.agent_python is not None and not (isinstance(self.agent_python, str)
                                                   and Path(self.agent_python).is_absolute()):
             raise ValueError('agent_python must be an absolute path to a python executable')
+        if self.robot == 'evo-v3' and self.observation_profile != 'rgb-only':
+            raise ValueError('Evo v3 currently provides RGB-only observations')
         if self.observation_profile not in PROFILES:
             raise ValueError(f'observation_profile must be one of {PROFILES}')
         if self.agent_provider not in PROVIDERS:

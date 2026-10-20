@@ -21,6 +21,7 @@ from importlib import import_module
 
 # registry key -> "module:Class"; the module is imported only when selected.
 BACKENDS = {
+    'evo-v3': 'services.evo_v3.backend:EvoV3Backend',
     'rby1': 'services.rby1.backend:Rby1Backend',
     'mock': 'services.mock_backend:MockBackend',
 }

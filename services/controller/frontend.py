@@ -293,6 +293,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--config', type=Path, required=True)
     parser.add_argument('--socket', type=Path, help='Serve this private Unix socket instead of stdio')
+    parser.add_argument('--gemini-provider', choices=('openrouter', 'google'), default='openrouter')
     parser.add_argument('--key-file', type=Path, help='OpenRouter key for gemini_generate (optional)')
     parser.add_argument('--started-at', type=float, help='Launch wall-clock start (epoch seconds)')
     args = parser.parse_args()
@@ -304,7 +305,9 @@ def main():
     except BaseException:
         session.close()
         raise
-    frontend = Frontend(session, backend, GeminiRouter(key) if key else None, started_at=args.started_at)
+    from .gemini_google import GoogleGeminiRouter
+    router = GoogleGeminiRouter if args.gemini_provider == 'google' else GeminiRouter
+    frontend = Frontend(session, backend, router(key) if key else None, started_at=args.started_at)
     def stop(*_):
         raise SystemExit(0)
     signal.signal(signal.SIGTERM, stop)

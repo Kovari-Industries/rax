@@ -1,3 +1,7 @@
+# RAX for Kovari Evo v3
+
+This branch adds the Evo v3 backend. Read [EVO_V3.md](EVO_V3.md) for tools, tested limits, and rollout status. The inherited Rainbow documentation below is a reference, not Evo operating guidance.
+
 # RAX on the Rainbow RB-Y1
 
 **[Project website](https://robot-agent-exploration.com/)** · [Paper](https://robot-agent-exploration.com/rax.pdf) · [Main repository](https://github.com/robot-agent-exploration/rax)

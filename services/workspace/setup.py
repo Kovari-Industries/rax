@@ -95,6 +95,19 @@ ROBOT_FACTS = {
                  'travel or 0.3 rad per joint per call, with an observation between, and approach surfaces '
                  'from above with clearance instead of pressing into them.',
              )},
+    'evo-v3': {'name': 'Kovari Evo v3', 'status': 'evo_status', 'observe': 'evo_observe',
+             'move': None, 'gripper': None, 'pixel': None,
+             'tools': ('evo_status', 'evo_observe', 'evo_hold'),
+             'overview_camera': 'base', 'overview': 'head RGB camera',
+             'cameras': ('base', 'left_arm', 'right_arm'),
+             'body': 'mobile two-arm robot with carriage and neck', 'move_joints': None,
+             'neutral': 'no posture command exposed',
+             'motion_example': 'Motion tools are not yet qualified; do not invent one.',
+             'grasp_example': None, 'stream': None, 'look_around': None,
+             'safety': ('Evo remains the motion owner. This adapter exposes observation and policy cancellation only.',),
+             'first_reads': (('robot-interface', 'available tools and current limitations'),),
+             'model_dir': None, 'model_note': None,
+             'read_tools': ('evo_status', 'evo_observe')},
     'mock': {'name': 'mock robot', 'status': 'status', 'observe': 'mock_observe', 'move': 'mock_move',
              'gripper': 'mock_move', 'pixel': 'mock_observe', 'tools': ('mock_observe', 'mock_move'),
              'overview_camera': 'none', 'overview': 'no camera', 'cameras': (),
@@ -108,16 +121,18 @@ CLIS = ('claude',)
 
 @dataclass(frozen=True)
 class Setup:
-    robot: str = 'rby1'
+    robot: str = 'evo-v3'
     task: str | None = None
     cli: str = 'claude'
-    observation_profile: str = 'rgbd'
+    observation_profile: str = 'rgb-only'
     subagents: int = 0
     gemini: bool = True
 
     def __post_init__(self):
         if self.robot not in ROBOT_FACTS:
             raise ValueError(f'Unknown robot {self.robot!r}')
+        if self.robot == 'evo-v3' and self.observation_profile != 'rgb-only':
+            raise ValueError('Evo v3 currently provides RGB-only observations')
         if self.cli not in CLIS:
             raise ValueError('Unknown agent CLI')
         if self.observation_profile not in ('rgbd', 'rgb-only'):

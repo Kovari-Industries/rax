@@ -100,9 +100,14 @@ above. Use
 current observations to adapt to new layouts, rather than blindly replaying one run's
 actions.
 
+{% if robot.move %}
 - Hard-code reusable motion functions and decision rules on the MCP tools
   (`{{ robot.move }}`, `{{ robot.move_joints }}`{% if robot.gripper %}, `{{ robot.gripper }}`{% endif %}) when suitable;
   [robot-interface](../robot-interface/SKILL.md) has the frames and limits.
+{% else %}
+- This backend has no motion tool yet. Compile and test observation and analysis steps only.
+  Do not replace a missing tool with direct hardware or shell commands.
+{% endif %}
 {% if gemini %}
 - **For perception in code, read the [gemini skill](../gemini/SKILL.md) before you write
   any detector.** Gemini identifies, points at and segments objects in a few seconds;

@@ -55,7 +55,7 @@ PRIVATE_FILES = ('configuration.json', 'model-relay.json', 'state.json', 'mcp.js
 # Credentials and the harness itself: the agent's tools never read them.
 HOME = Path.home()
 PROTECTED_PATHS = (PROJECT, HOME/'.config/rax', HOME/'.claude', HOME/'.claude.json', HOME/'.codex', HOME/'.ssh',
-                   HOME/'.aws', HOME/'.config/gcloud', HOME/'.netrc', HOME/'.git-credentials')
+                   HOME/'.aws', HOME/'.google', HOME/'.config/gcloud', HOME/'.netrc', HOME/'.git-credentials')
 # Paths on this host that grant direct robot access are site-specific, so the operator lists them:
 # robot-controller checkouts, vendor SDK environments and other robot servers, whose code could reach
 # the controller past the backend. Colon-separated absolute paths.
@@ -126,7 +126,13 @@ def site_protected_paths():
 
 
 def protected_paths(config):
-    return [*PROTECTED_PATHS, *site_protected_paths(), *(config.root/name for name in PRIVATE_FILES)]
+    # Explicit credential files can be outside the usual credential directories.
+    relay_file = config.root/'model-relay.json'
+    relay = json.loads(relay_file.read_text()) if relay_file.is_file() else {}
+    credentials = [Path(relay[key]).expanduser().resolve() for key in ('key_file', 'gemini_key_file')
+                   if relay.get(key)]
+    return [*PROTECTED_PATHS, *site_protected_paths(), *credentials,
+            *(config.root/name for name in PRIVATE_FILES)]
 
 
 def denied_hosts(config):
@@ -217,7 +223,7 @@ def populate_workspace(config, workspace, *, gemini=True):
     return built
 
 
-def deploy(config, *, key_file=None, gemini_key_file=None, claude=None):
+def deploy(config, *, key_file=None, gemini_key_file=None, gemini_provider="openrouter", claude=None):
     """Prepare a new session without starting the robot service or a model."""
     binary = claude_binary(claude)
     root = config.root
@@ -238,6 +244,7 @@ def deploy(config, *, key_file=None, gemini_key_file=None, claude=None):
         'models': [ANY_MODEL],  # the agent and its subagents may use every model the provider serves
         'key_file': str(key_file) if key_file else None,
         'gemini_key_file': str(gemini_key_file) if gemini_key_file else None,
+        'gemini_provider': gemini_provider,
         # Identity only (no token): which dedicated account this session bills.
         'account': {k: account.get(k) for k in ('email', 'organization')} if account else None})
     write_private_json(root/'configuration.json', config.to_dict())
@@ -392,7 +399,7 @@ def start_robot_service(config, deployed, log, *, started_at, timeout=120):
     args = [sys.executable, '-m', 'services.controller.frontend', '--config', str(deployed['configuration']),
             '--socket', str(socket), '--started-at', str(started_at)]
     if relay.get('gemini_key_file'):
-        args += ['--key-file', relay['gemini_key_file']]
+        args += ['--key-file', relay['gemini_key_file'], '--gemini-provider', relay.get('gemini_provider', 'openrouter')]
     environment = {**os.environ, 'PYTHONPATH': str(PROJECT)}
     server = subprocess.Popen(args, cwd=PROJECT, env=environment, stdout=log, stderr=log)
     deadline = time.monotonic() + timeout
@@ -505,6 +512,7 @@ def main():
                         'claude-login experiment token; default for claude-login: the experiment token)')
     parser.add_argument('--gemini-key-file', type=Path,
                         help=f'OpenRouter key enabling gemini_generate (default: {DEFAULT_GEMINI_KEY} if present)')
+    parser.add_argument('--gemini-provider', choices=('openrouter', 'google'), default='openrouter')
     parser.add_argument('--no-gemini', action='store_true', help='Run without gemini_generate')
     parser.add_argument('--prepare-only', action='store_true', help='Build the session; start no service or model')
     parser.add_argument('--exec-prompt', help='Run non-interactively with this prompt')
@@ -536,12 +544,12 @@ def main():
                 from harness.claude_cli import experiment_login
                 experiment_login.check()  # Fail before provisioning if the token is missing or revoked.
             gemini_key = None if args.no_gemini else args.gemini_key_file or (
-                DEFAULT_GEMINI_KEY if DEFAULT_GEMINI_KEY.is_file() else None)
+                DEFAULT_GEMINI_KEY if args.gemini_provider == 'openrouter' and DEFAULT_GEMINI_KEY.is_file() else None)
             warn_unsafe_defaults(config)
             if args.resume:
                 deployed = redeploy(config)
             else:
-                deployed = deploy(config, key_file=args.key_file, gemini_key_file=gemini_key)
+                deployed = deploy(config, key_file=args.key_file, gemini_key_file=gemini_key, gemini_provider=args.gemini_provider)
             if args.prepare_only:
                 print(json.dumps({k: str(v) for k, v in deployed.items()}, indent=2))
                 lifecycle['status'] = 'prepared-only'
