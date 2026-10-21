@@ -72,8 +72,8 @@ flowchart LR
 
 Base action duration starts when Evo sends the first velocity command. A delayed
 first control tick cannot turn an unsent action into a successful result. Gripper
-tool descriptions and parameters both specify radians. The Evo history skill
-describes state and observation metadata; it does not advertise image playback.
+tool descriptions and parameters both specify radians. `evo_history` returns a bounded image index and can retrieve a capture by
+`observation_id`, including its original timestamp and measured state.
 
 The dedicated Evo simulation profile uses mock actuators, the existing controllers,
 and camera fixtures. Run the complete-path test after starting that isolated profile:
@@ -90,6 +90,36 @@ program, cancellation, disarm, lease loss, recorder loss, restart, and shutdown.
 See `local_tests/README.md` for the optional failure and restart checks.
 Simulation establishes software behavior. Physical stopping and task qualification
 remain separate work.
+
+## Cloth routines
+
+The public interface now includes `evo_move_body`, `evo_follow_path`, `evo_move_pair`,
+and `evo_set_grip`. Path waypoints share timing across selected hands and body
+joints. Preview and execution check all generated samples. Segments use smooth
+progress and stop at each waypoint. Grip targets persist during normal actions
+while operator arming, measured feedback, recording, and the client lease remain
+valid. A retained command is not evidence that cloth is held.
+
+The [cloth handling instructions](agent_skills/control/evo-v3/cloth-handling/SKILL.md)
+describe the Python routines for crumpled towel unfolding, measured half-folds,
+and folded packet stacking. A task perception function must supply current metric
+geometry and cloth checks. The library includes calibrated ray triangulation and
+measured-plane helpers; it does not include a trained cloth detector. Each routine
+stops on uncertain grasp, layer, support, or alignment evidence. The unfold loop
+has a finite attempt budget. A failed handover does not release the source hand.
+
+```mermaid
+flowchart LR
+    A[Current RGB and metric geometry] --> B[Cloth scene and checks]
+    B --> C[RAX cloth routine]
+    C --> D[Public Evo path and grip tools]
+    D --> E[Measured action result]
+    E --> A
+```
+
+The cloth workflow tests use explicit perception fixtures. They check sequencing,
+geometry refusal, bounded retries, complete-packet checks, and release conditions.
+They do not simulate cloth mechanics or qualify physical folding performance.
 
 ## Earlier trial evidence
 

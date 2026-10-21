@@ -23,5 +23,74 @@
       "code": "refused",
       "message": "operator has not armed this session"
     }
-  }
+  },
+  "cloth_actions": [
+    {
+      "kind": "move_body",
+      "targets": {
+        "left_joint1": 0.1,
+        "carriage_joint": 0.2
+      },
+      "duration_s": 3.0
+    },
+    {
+      "kind": "follow_path",
+      "frame": "base_link",
+      "waypoints": [
+        {
+          "duration_s": 3.0,
+          "left": {
+            "position": [
+              0.4,
+              0.2,
+              0.6
+            ],
+            "quaternion_xyzw": [
+              0,
+              0,
+              0,
+              1
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "kind": "move_pair",
+      "frame": "base_link",
+      "waypoints": [
+        {
+          "duration_s": 3.0,
+          "midpoint": [
+            0.4,
+            0,
+            0.6
+          ],
+          "separation": [
+            0,
+            0.4,
+            0
+          ],
+          "left_quaternion_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "right_quaternion_xyzw": [
+            0,
+            0,
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "set_grip",
+      "side": "left",
+      "position_rad": 0.1,
+      "retain": true
+    }
+  ]
 }

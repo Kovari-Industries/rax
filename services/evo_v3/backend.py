@@ -24,6 +24,10 @@ MOTION = frozenset(
         "move_carriage",
         "move_neck",
         "drive",
+        "move_body",
+        "follow_path",
+        "move_pair",
+        "set_grip",
     )
 )
 DEFAULTS = {
@@ -82,10 +86,15 @@ def validate_value(value, schema):
     elif kind == "number":
         if type(value) not in (float, int) or not math.isfinite(value):
             raise ValueError("expected a finite number")
+        if "minimum" in schema and value < schema["minimum"]:
+            raise ValueError("number is below minimum")
         if "maximum" in schema and value > schema["maximum"]:
             raise ValueError("number exceeds maximum")
         if "exclusiveMinimum" in schema and value <= schema["exclusiveMinimum"]:
             raise ValueError("number is below minimum")
+    elif kind == "boolean":
+        if not isinstance(value, bool):
+            raise ValueError("expected a boolean")
     elif kind == "string":
         if not isinstance(value, str) or not value or len(value) > 1024:
             raise ValueError("expected a nonempty bounded string")
@@ -290,7 +299,12 @@ class EvoV3Backend:
                 self._failure = str(error)
                 self._stop.set()  # No retry of an action with an unknown result.
             raise
-        return self._save_observation(value) if name == "evo_observe" else (value, [])
+        return (
+            self._save_observation(value)
+            if name == "evo_observe"
+            or (name == "evo_history" and "observation_id" in arguments)
+            else (value, [])
+        )
 
     def close(self):
         if self.closed:

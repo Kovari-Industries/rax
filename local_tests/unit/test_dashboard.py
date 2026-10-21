@@ -110,6 +110,7 @@ def test_configure_and_list(dashboard, artifact_root):
     config = json.loads(Path(value['config_path']).read_text())
     assert config['agent_effort'] == 'max' and config['agent_provider'] == 'claude-login'
     assert config['task'] == 'red_on_blue' and config['observation_profile'] == 'rgbd'
+    assert config['robot'] == 'rby1'
     assert value['commands']['interactive'].endswith(f"--config {value['config_path']}")
     assert '--non-interactive' in value['commands']['headless']
     status, listing = call(base, '/api/sessions')
@@ -257,3 +258,10 @@ def test_rby1_telemetry_snapshot_flags_emo_stale_state_and_faults():
     assert value['kind'] == 'rby1' and value['ok'] is False and commanded == []
     assert value['stale'] == ['head'] and value['emo_pressed'] == [1] and value['battery']['level_percent'] == 81.5
     assert value['end_effectors'] == {'right': [0.0, 0.0, 0.0], 'left': [0.0, 0.0, 0.0]}
+
+
+def test_evo_dashboard_defaults_to_supported_rgb_profile(artifact_root):
+    sessions = Sessions(project=PROJECT, robot='evo-v3')
+    configured = sessions.configure({'task':'fold_towel','task_text':'Fold the towel.'})
+    config = json.loads(Path(configured['config_path']).read_text())
+    assert config['robot'] == 'evo-v3' and config['observation_profile'] == 'rgb-only'

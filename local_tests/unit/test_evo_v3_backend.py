@@ -215,6 +215,10 @@ def test_shared_contract_fixture():
         "evo_ik",
         "evo_preview",
         "evo_camera_ray",
+        "evo_move_body",
+        "evo_follow_path",
+        "evo_move_pair",
+        "evo_set_grip",
         "evo_move_joints",
         "evo_move_eef",
         "evo_gripper",
@@ -239,6 +243,9 @@ def test_registry_workspace_and_python_helpers(tmp_path):
     text = (workspace / ".agents/skills/robot-interface/SKILL.md").read_text()
     assert "evo_action_status" in text and "position_rad" in text
     assert (workspace / "api/evo.py").is_file()
+    assert (workspace / "api/cloth.py").is_file()
+    assert (workspace / "api/cloth_geometry.py").is_file()
+    assert (workspace / ".agents/skills/cloth-handling/SKILL.md").is_file()
     with pytest.raises(ValueError, match="RGB-only"):
         Setup(robot="evo-v3", observation_profile="rgbd")
 
@@ -377,7 +384,19 @@ def test_frontend_socket_stop_bypasses_slow_request(tmp_path, stop_tool, slow_to
         client, tmp_path
     ) as path:
         with Context(str(path)) as ordinary, ThreadPoolExecutor(max_workers=1) as pool:
-            action = ordinary.value("evo_move_neck", yaw_rad=0.1, pitch_rad=0)
+            action = ordinary.value(
+                "evo_follow_path",
+                frame="base_link",
+                waypoints=[
+                    {
+                        "duration_s": 3.0,
+                        "left": {
+                            "position": [0.4, 0.2, 0.6],
+                            "quaternion_xyzw": [0, 0, 0, 1],
+                        },
+                    }
+                ],
+            )
             params = {} if slow_tool == "evo_observe" else {"links": ["left_palm"]}
             pending = pool.submit(ordinary.value, slow_tool, **params)
             try:
@@ -407,7 +426,8 @@ def test_frontend_socket_stop_bypasses_slow_request(tmp_path, stop_tool, slow_to
             finally:
                 release.set()
             pending.result(timeout=2)
-            assert sum(r["method"] == "move_neck" for r in received) == 1
+            assert sum(r["method"] == "follow_path" for r in received) == 1
+            assert not any(r["method"] == "move_neck" for r in received)
 
 
 def test_frontend_socket_stop_bypasses_blocked_image_write(tmp_path):
@@ -553,3 +573,57 @@ def test_socket_stop_timeout_withdraws_lease(tmp_path, stop_tool):
                 )
                 == 1
             )
+
+
+def test_cloth_action_fixtures_cross_the_adapter_with_session_ownership(tmp_path):
+    fixtures = json.loads(Path("services/evo_v3/protocol_fixtures.json").read_text())
+    with service(tmp_path, lambda r: {"action_id": r["id"], "state": "accepted"}) as (
+        client,
+        received,
+    ):
+        for action in fixtures["cloth_actions"]:
+            args = {k: v for k, v in action.items() if k != "kind"}
+            client.call("evo_" + action["kind"], args)
+        for action in fixtures["cloth_actions"]:
+            request = next(r for r in received if r["method"] == action["kind"])
+            assert request["session_id"] == client.session_id
+            assert request["params"] == {k: v for k, v in action.items() if k != "kind"}
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        {"side": "left", "position_rad": 0.1, "retain": 1},
+        {"side": "left", "position_rad": 0.1, "retain": "yes"},
+    ],
+)
+def test_retained_grip_requires_boolean_intent(tmp_path, args):
+    with service(tmp_path, lambda _: {}) as (client, received):
+        with pytest.raises(ValueError):
+            client.call("evo_set_grip", args)
+        assert received == []
+
+
+def test_image_history_retrieval_saves_artifact_and_keeps_capture_identity(tmp_path):
+    capture = {
+        "observation_id": "old-capture",
+        "cameras": {
+            "base": {
+                "jpeg": base64.b64encode(b"\xff\xd8jpeg fixture\xff\xd9").decode(),
+                "capture_us": 42,
+                "geometry_validated": False,
+            }
+        },
+    }
+    with service(tmp_path, lambda _: capture) as (client, received):
+        value, images = client.call("evo_history", {"observation_id": "old-capture"})
+        assert value["observation_id"] == "old-capture"
+        assert value["cameras"]["base"]["capture_us"] == 42
+        assert (
+            images
+            and (
+                tmp_path / "agent-workspace" / value["cameras"]["base"]["path"]
+            ).read_bytes()
+            == b"\xff\xd8jpeg fixture\xff\xd9"
+        )
+        assert received[0]["params"] == {"observation_id": "old-capture"}

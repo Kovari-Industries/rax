@@ -31,6 +31,35 @@ class Evo:
     def move(self, tool, **arguments):
         return self.wait(self.context.value(tool, **arguments))
 
+    def execute(self, tool, **arguments):
+        """Preview, execute, and require measured success before the next stage."""
+        allowed = {
+            "evo_move_joints",
+            "evo_move_eef",
+            "evo_gripper",
+            "evo_set_grip",
+            "evo_move_body",
+            "evo_follow_path",
+            "evo_move_pair",
+            "evo_move_carriage",
+            "evo_move_neck",
+            "evo_drive",
+        }
+        if tool not in allowed:
+            raise ValueError("not an Evo action tool")
+        preview = self.context.value(
+            "evo_preview", action={"kind": tool.removeprefix("evo_"), **arguments}
+        )
+        if preview.get("valid") is not True:
+            raise ValueError("Evo preview did not validate the path")
+        result = self.move(tool, **arguments)
+        if (
+            result.get("state") != "succeeded"
+            or result.get("physical_stop_verified") is not True
+        ):
+            raise EvoActionFailed(result)
+        return result
+
     def close(self):
         if self._owns_context:
             self.context.close()
@@ -40,3 +69,11 @@ class Evo:
 
     def __exit__(self, *_):
         self.close()
+
+
+class EvoActionFailed(RuntimeError):
+    def __init__(self, result):
+        self.result = result
+        super().__init__(
+            f"Evo action did not succeed: {result.get('reason', result.get('state'))}"
+        )

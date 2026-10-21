@@ -50,3 +50,23 @@ measured state and the recording path.
 Depth, force control, scene collision checks, and navigation are unavailable.
 Simulation checks software behavior. They do not establish physical stopping
 performance or task success.
+
+## Paths and retained grips
+
+Use `evo_follow_path` for straight Cartesian segments with smooth progress and
+shortest quaternion rotation. Each waypoint gives a duration and the same selected
+components: either or both palms, carriage, and/or neck. Each segment stops before
+the next one. Use `evo_move_pair` for midpoint and separation targets; separation
+points from the right palm to the left palm. Both hands share the same timing.
+Pair motion interpolates span separately from direction, so rotation does not
+shorten a constant span. Opposite directions need an intermediate waypoint.
+`evo_move_body` coordinates named arm, carriage, and neck joint targets. Increase
+duration if a path exceeds velocity or acceleration limits. `evo_move_eef` solves
+an endpoint and follows a joint-space path; its palm path is not straight.
+
+`evo_set_grip` accepts `side`, `position_rad`, and `retain`. Retention keeps that
+position command through normal actions and while idle with valid authority.
+Completion does not prove cloth contact or capture of all layers. Stop requests,
+disarm, faults, and lease loss clear retention and hold measured joints. They do
+not open the fingers. Read [cloth-handling](../cloth-handling/SKILL.md) for towel
+routines, perception requirements, and recovery checks.

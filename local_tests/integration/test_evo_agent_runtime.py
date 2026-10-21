@@ -30,6 +30,88 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+def _cloth_program_fixture(program):
+    """Run real motion from deterministic cloth evidence, without cloth physics."""
+    from auto_research_agent.api.cloth import Cloth, ClothSettings, Grasp, Pile, Scene
+
+    assert program.value("evo_capabilities")["simulated"] is True
+    palms = program.value("evo_fk", links=["left_palm", "right_palm"])["poses"]
+    positions = program.value("evo_status")["state"]["positions"]
+    x = sum(p["position"][0] for p in palms.values()) / 2
+    z = sum(p["position"][2] for p in palms.values()) / 2
+    yl, yr = palms["left_palm"]["position"][1], palms["right_palm"]["position"][1]
+    orientations = {s: palms[s + "_palm"]["quaternion_xyzw"] for s in ("left", "right")}
+    scene_state = "crumpled"
+    folded = False
+
+    def perceive(observation, check):
+        nonlocal scene_state, folded
+        if check.stage == "fold_select":
+            folded = True
+        if check.stage == "laid_down":
+            scene_state = "folded" if folded else "spread"
+        if check.stage == "stack_complete":
+            scene_state = "stacked"
+        near = x - 0.025 if scene_state in ("folded", "stacked") else x
+        corners = ((near, yl, z), (near, yr, z), (x - 0.05, yr, z), (x - 0.05, yl, z))
+        feature = "packet" if scene_state in ("folded", "stacked") else "corner"
+        grasps = tuple(
+            Grasp(str(i), p, orientations["left" if p[1] > 0 else "right"], feature)
+            for i, p in enumerate(corners)
+        )
+        measured = program.value("evo_fk", links=["left_palm", "right_palm"])["poses"]
+        return Scene(
+            observation["observation_id"],
+            scene_state,
+            "simulation",
+            grasps=grasps,
+            corners=corners,
+            held={"left": "verified", "right": "verified"},
+            layers={"left": "packet", "right": "packet"},
+            stable=True,
+            supported=True,
+            surface_z=z - 0.02,
+            packet_bottom_z=min(p["position"][2] for p in measured.values()) - 0.02,
+            pile=Pile(
+                (x - 0.04, (yl + yr) / 2, z - 0.015),
+                (yl - yr + 0.02, 0.05),
+                yaw_rad=-1.5707963267948966,
+            ),
+            alignment_error_m=0.001,
+            note="Deterministic software fixture; no physical cloth evidence",
+        )
+
+    settings = ClothSettings(
+        open_rad={s: positions[s + "_finger_joint1"] for s in ("left", "right")},
+        close_rad={
+            s: positions[s + "_finger_joint1"] + 0.005 for s in ("left", "right")
+        },
+        approach_clearance_m=0.005,
+        test_lift_m=0.003,
+        inspection_lift_m=0.005,
+        fold_clearance_m=0.01,
+        transport_clearance_m=0.01,
+        release_gap_m=0.001,
+        alignment_tolerance_m=0.005,
+        segment_s=3.0,
+    )
+    landing = {
+        s: {
+            "position": [x, yl if s == "left" else yr, z],
+            "quaternion_xyzw": orientations[s],
+        }
+        for s in ("left", "right")
+    }
+    cloth = Cloth(program, perceive, settings)
+    # One half-fold keeps this fixture inside the mock robot's initial workspace.
+    result = cloth.crumpled_to_pile(landing, yl - yr, axes=("v",))
+    assert result.state == "stacked"
+    assert all(
+        e["result"]["physical_stop_verified"] for e in cloth.evidence if "result" in e
+    )
+    return cloth.evidence
+
+
 def test_all_actuators_and_stop_paths(monkeypatch):
     parent = Path(os.environ["EVO_AGENT_TEST_SESSION_ROOT"]).resolve()
     parent.mkdir(parents=True, exist_ok=True)
@@ -139,9 +221,89 @@ def test_all_actuators_and_stop_paths(monkeypatch):
             left=poses["left_palm"],
             right=poses["right_palm"],
         )
+        # Coordinated path, body and persistent grip primitives use the same
+        # native model, bridge and measured controllers as single targets.
+        execute(
+            "evo_set_grip",
+            side="left",
+            position_rad=q["left_finger_joint1"] - 0.03,
+            retain=True,
+        )
+        current = call("evo_status")["state"]["positions"]
+        execute(
+            "evo_move_body",
+            targets={
+                "carriage_joint": current["carriage_joint"] + 0.005,
+                "neck_yaw_joint": current["neck_yaw_joint"] + 0.01,
+            },
+            duration_s=2.0,
+        )
+        assert call("evo_status")["retained_grips"][
+            "left_finger_joint1"
+        ] == pytest.approx(q["left_finger_joint1"] - 0.03)
+        palms = call("evo_fk", links=["left_palm", "right_palm"])["poses"]
+        for pose in palms.values():
+            pose["position"][2] += 0.003
+        execute(
+            "evo_follow_path",
+            frame="base_link",
+            waypoints=[
+                {
+                    "duration_s": 3.0,
+                    "left": palms["left_palm"],
+                    "right": palms["right_palm"],
+                }
+            ],
+        )
+        reached = call("evo_fk", links=["left_palm", "right_palm"])["poses"]
+        for side in ("left", "right"):
+            assert (
+                sum(
+                    (a - b) ** 2
+                    for a, b in zip(
+                        reached[side + "_palm"]["position"],
+                        palms[side + "_palm"]["position"],
+                    )
+                )
+                < 0.002**2
+            )
+        left, right = reached["left_palm"], reached["right_palm"]
+        execute(
+            "evo_move_pair",
+            frame="base_link",
+            waypoints=[
+                {
+                    "duration_s": 3.0,
+                    "midpoint": [
+                        (a + b) / 2 for a, b in zip(left["position"], right["position"])
+                    ],
+                    "separation": [
+                        a - b for a, b in zip(left["position"], right["position"])
+                    ],
+                    "left_quaternion_xyzw": left["quaternion_xyzw"],
+                    "right_quaternion_xyzw": right["quaternion_xyzw"],
+                    "carriage_position_m": current["carriage_joint"] + 0.007,
+                }
+            ],
+        )
+        assert call("evo_status")["retained_grips"]
+        hold = call("evo_hold")
+        assert wait.wait(hold)["physical_stop_verified"]
+        assert call("evo_status")["retained_grips"] == {}
         observation = call("evo_observe")
         assert set(observation["cameras"]) == {"base", "left_arm", "right_arm"}
         assert all(v["capture_time_state"] for v in observation["cameras"].values())
+        history = call("evo_history")
+        assert any(
+            v["observation_id"] == observation["observation_id"]
+            for v in history["observations"]
+        )
+        old = call("evo_history", observation_id=observation["observation_id"])
+        assert old["observation_id"] == observation["observation_id"]
+        assert (
+            old["cameras"]["base"]["capture_us"]
+            == observation["cameras"]["base"]["capture_us"]
+        )
         assert all(not v["geometry_validated"] for v in observation["cameras"].values())
         rejected = frontend.call(
             "evo_camera_ray",
@@ -194,7 +356,12 @@ def test_all_actuators_and_stop_paths(monkeypatch):
         socket_stops = []
         # Keep an ordinary call pending in the real RAX frontend while cancellation
         # crosses its public socket, Evo, bridge, and mock controllers.
-        for stop_tool in ("evo_cancel", "evo_hold"):
+        for stop_tool, moving_tool in (
+            ("evo_cancel", "evo_drive"),
+            ("evo_hold", "evo_drive"),
+            ("evo_cancel", "evo_follow_path"),
+            ("evo_hold", "evo_follow_path"),
+        ):
             blocked = threading.Event()
             release = threading.Event()
             original_rpc = backend._rpc
@@ -208,14 +375,42 @@ def test_all_actuators_and_stop_paths(monkeypatch):
             with Context(str(directory / "mcp.sock")) as program, Context(
                 str(directory / "mcp.sock")
             ) as observer:
-                action = program.value("evo_drive", velocity=[0.03, 0, 0], duration_s=5)
+                if moving_tool == "evo_drive":
+                    action = program.value(
+                        moving_tool, velocity=[0.03, 0, 0], duration_s=5
+                    )
+                else:
+                    palms = program.value("evo_fk", links=["left_palm", "right_palm"])[
+                        "poses"
+                    ]
+                    for p in palms.values():
+                        p["position"][2] += 0.005
+                    action = program.value(
+                        moving_tool,
+                        frame="base_link",
+                        waypoints=[
+                            {
+                                "duration_s": 5.0,
+                                "left": palms["left_palm"],
+                                "right": palms["right_palm"],
+                            }
+                        ],
+                    )
                 deadline = time.monotonic() + 1
                 while time.monotonic() < deadline:
                     status = program.value("evo_status")
-                    if status["state"]["odometry"]["velocity"][0] > 0.01:
+                    moving = (
+                        abs(status["state"]["odometry"]["velocity"][0]) > 0.01
+                        if moving_tool == "evo_drive"
+                        else any(
+                            abs(v) > 1e-5
+                            for v in status["state"]["velocities"].values()
+                        )
+                    )
+                    if moving:
                         break
                     time.sleep(0.01)
-                assert status["state"]["odometry"]["velocity"][0] > 0.01
+                assert moving, status
                 with monkeypatch.context() as patch, ThreadPoolExecutor(
                     max_workers=1
                 ) as pool:
@@ -245,11 +440,15 @@ def test_all_actuators_and_stop_paths(monkeypatch):
                         assert (
                             not backend._stop.is_set()
                         ), "cancellation must not depend on lease expiry"
-                        socket_stops.append({"tool": stop_tool, "result": result})
+                        socket_stops.append(
+                            {"tool": stop_tool, "motion": moving_tool, "result": result}
+                        )
                     finally:
                         release.set()
                     assert pending.result(timeout=2)["cameras"]
                 assert program.value("evo_status")["active_action"] is None
+        with Context(str(directory / "mcp.sock")) as program:
+            cloth_evidence = _cloth_program_fixture(program)
         # A lost client stops renewing its lease; no reconnect may replay its action.
         action = call("evo_drive", velocity=[0.03, 0, 0], duration_s=2)
         backend._stop.set()
@@ -273,6 +472,7 @@ def test_all_actuators_and_stop_paths(monkeypatch):
             json.dumps(
                 {
                     "actuators": results,
+                    "cloth_fixture": cloth_evidence,
                     "cancel": cancelled,
                     "frontend_socket_stops": socket_stops,
                     "disarm": disarmed,

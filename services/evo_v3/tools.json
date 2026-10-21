@@ -31,10 +31,14 @@
   },
   {
     "name": "evo_history",
-    "description": "Read bounded recent measured state and the recording artifact path.",
+    "description": "List bounded continuously captured image metadata and measured state. Supply observation_id to retrieve that saved capture with images and capture-time geometry.",
     "inputSchema": {
       "type": "object",
-      "properties": {},
+      "properties": {
+        "observation_id": {
+          "type": "string"
+        }
+      },
       "required": [],
       "additionalProperties": false
     }
@@ -357,6 +361,248 @@
                 "duration_s"
               ],
               "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "targets": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "maxProperties": 64,
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                },
+                "duration_s": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 29.9
+                },
+                "kind": {
+                  "const": "move_body"
+                }
+              },
+              "required": [
+                "kind",
+                "targets",
+                "duration_s"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "frame": {
+                  "enum": [
+                    "base_link",
+                    "carriage_link"
+                  ]
+                },
+                "waypoints": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "duration_s": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 29.9
+                      },
+                      "left": {
+                        "type": "object",
+                        "properties": {
+                          "position": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "quaternion_xyzw": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 4,
+                            "maxItems": 4
+                          }
+                        },
+                        "required": [
+                          "position",
+                          "quaternion_xyzw"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "right": {
+                        "type": "object",
+                        "properties": {
+                          "position": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "quaternion_xyzw": {
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            },
+                            "minItems": 4,
+                            "maxItems": 4
+                          }
+                        },
+                        "required": [
+                          "position",
+                          "quaternion_xyzw"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "carriage_position_m": {
+                        "type": "number"
+                      },
+                      "neck_yaw_pitch_rad": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "duration_s"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 32
+                },
+                "kind": {
+                  "const": "follow_path"
+                }
+              },
+              "required": [
+                "kind",
+                "frame",
+                "waypoints"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "frame": {
+                  "enum": [
+                    "base_link",
+                    "carriage_link"
+                  ]
+                },
+                "waypoints": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "duration_s": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 29.9
+                      },
+                      "midpoint": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "separation": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 3,
+                        "maxItems": 3
+                      },
+                      "left_quaternion_xyzw": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      },
+                      "right_quaternion_xyzw": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 4,
+                        "maxItems": 4
+                      },
+                      "carriage_position_m": {
+                        "type": "number"
+                      },
+                      "neck_yaw_pitch_rad": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      }
+                    },
+                    "required": [
+                      "duration_s",
+                      "midpoint",
+                      "separation",
+                      "left_quaternion_xyzw",
+                      "right_quaternion_xyzw"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 32
+                },
+                "kind": {
+                  "const": "move_pair"
+                }
+              },
+              "required": [
+                "kind",
+                "frame",
+                "waypoints"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "side": {
+                  "enum": [
+                    "left",
+                    "right"
+                  ]
+                },
+                "position_rad": {
+                  "type": "number"
+                },
+                "retain": {
+                  "type": "boolean"
+                },
+                "kind": {
+                  "const": "set_grip"
+                }
+              },
+              "required": [
+                "kind",
+                "side",
+                "position_rad",
+                "retain"
+              ],
+              "additionalProperties": false
             }
           ]
         }
@@ -390,7 +636,7 @@
   },
   {
     "name": "evo_move_eef",
-    "description": "Start a checked arm pose move. Poll the action ID for measured completion.",
+    "description": "Start endpoint arm IK followed by a joint-space path. The palm path is not a straight line. Poll the action ID for measured completion; use evo_follow_path for Cartesian paths.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -584,6 +830,248 @@
       "type": "object",
       "properties": {},
       "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_body",
+    "description": "Start a synchronized joint path for arms, carriage and neck. Fingers retain their owned grip. duration_s applies to the complete move; limits can reject a duration that is too short.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "duration_s": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 29.9
+        }
+      },
+      "required": [
+        "targets",
+        "duration_s"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_follow_path",
+    "description": "Start a checked Cartesian path. Each segment uses linear palm translation, shortest quaternion rotation, and shared smooth progress. Each waypoint must name the same components. Duration includes no scene or cloth guarantee.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frame": {
+          "enum": [
+            "base_link",
+            "carriage_link"
+          ]
+        },
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "duration_s": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 29.9
+              },
+              "left": {
+                "type": "object",
+                "properties": {
+                  "position": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "quaternion_xyzw": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "position",
+                  "quaternion_xyzw"
+                ],
+                "additionalProperties": false
+              },
+              "right": {
+                "type": "object",
+                "properties": {
+                  "position": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  },
+                  "quaternion_xyzw": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    },
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "position",
+                  "quaternion_xyzw"
+                ],
+                "additionalProperties": false
+              },
+              "carriage_position_m": {
+                "type": "number"
+              },
+              "neck_yaw_pitch_rad": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "duration_s"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "frame",
+        "waypoints"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_pair",
+    "description": "Move both palms with shared timing. Interpolate midpoint and span; rotate the separation direction on a spherical arc. Separation is left minus right in metres. Opposite directions need an intermediate waypoint. Stop at every waypoint. Robot-model checks do not check scene objects.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frame": {
+          "enum": [
+            "base_link",
+            "carriage_link"
+          ]
+        },
+        "waypoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "duration_s": {
+                "type": "number",
+                "minimum": 0.1,
+                "maximum": 29.9
+              },
+              "midpoint": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "separation": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              },
+              "left_quaternion_xyzw": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "right_quaternion_xyzw": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              "carriage_position_m": {
+                "type": "number"
+              },
+              "neck_yaw_pitch_rad": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            },
+            "required": [
+              "duration_s",
+              "midpoint",
+              "separation",
+              "left_quaternion_xyzw",
+              "right_quaternion_xyzw"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "frame",
+        "waypoints"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_set_grip",
+    "description": "Set finger angle in radians. retain=true preserves the target across normal actions while armed and leased, and permits a stationary finger to finish short of target. This does not verify a grasp or regulate force. Stop, disarm and faults withdraw retention.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "side": {
+          "enum": [
+            "left",
+            "right"
+          ]
+        },
+        "position_rad": {
+          "type": "number"
+        },
+        "retain": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "side",
+        "position_rad",
+        "retain"
+      ],
       "additionalProperties": false
     }
   }
