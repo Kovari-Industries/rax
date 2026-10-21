@@ -224,17 +224,10 @@ own licenses. See [NOTICE](NOTICE) and the relevant upstream releases.
 If you find RAX useful, please cite:
 
 ```bibtex
-@misc{huang2026scaling,
-  title        = {Scaling Online Exploration for Robot Agents},
-  author       = {Huang, Runhan and Zhang, Xiangcheng and Chen, Haoyu
-                  and Li, Yitong and Wang, Yen-Jen and Lyu, Bohan
-                  and Ye, Haotian and Hong, Chuye and Wang, Yixuan
-                  and Su, Chloe and Xiong, Haoyu and Wu, Yangzhen
-                  and Xie, Enze and Manderson, Travis and Ermon, Stefano
-                  and Abbeel, Pieter and Torralba, Antonio and Song, Dawn
-                  and Ye, Weirui and Du, Yilun},
-  year         = {2026},
-  howpublished = {Preprint},
-  url          = {https://robot-agent-exploration.com/}
+@article{huang2026scaling,
+  title={Scaling Online Exploration for Robot Agents},
+  author={Huang, Runhan and Zhang, Xiangcheng and Chen, Haoyu and Li, Yitong and Wang, Yen-Jen and Lyu, Bohan and Ye, Haotian and Hong, Chuye and Wang, Yixuan and Su, Chloe and others},
+  journal={arXiv preprint arXiv:2610.22496},
+  year={2026}
 }
 ```
