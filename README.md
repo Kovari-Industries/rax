@@ -13,6 +13,27 @@
 > <sup>1</sup>Harvard University &nbsp; <sup>2</sup>NVIDIA &nbsp; <sup>3</sup>UC Berkeley &nbsp; <sup>4</sup>MIT &nbsp; <sup>5</sup>Stanford University \
 > <sup>\*</sup>Equal contribution &nbsp; <sup>†</sup>Project lead &nbsp; <sup>‡</sup>Core contributor
 
+## 📰 News
+
+- **[2026-10-21]** 🔥 **DeepSeek and Kimi are here, and you can serve the model yourself!**
+  The simulation branches now run **DeepSeek Harness** and **Kimi Code** alongside Codex
+  CLI and Claude Code, natively or in a container. **Try local serving:** three commands
+  prepare, serve and validate **DeepSeek-V4.1-Flash** with vLLM on one node with four
+  H200s, and Claude Code or DeepSeek Harness then drives the robot through your own
+  endpoint, no hosted API needed. Kimi Code runs through OpenRouter, the Moonshot API, a
+  Kimi account or any compatible endpoint. 👉 [Self-host DeepSeek](docs/DEEPSEEK_SERVING.md) ·
+  [Agent harnesses](docs/AGENT_HARNESSES.md) ·
+  [DeepSeek model results](https://github.com/robot-agent-exploration/rax/blob/dexjoco/native/docs/DEEPSEEK_MODEL_RESULTS.md)
+- **[2026-10-17]** 🌿 **HumanoidArena and DexJoCo branches released**, each as a container and
+  a native branch. See [Branches](#-branches).
+- **[2026-10-16]** 🗂️ **All real-robot sessions released on Hugging Face.**
+  [robot-session-logs](https://huggingface.co/datasets/robot-agent-exploration/robot-session-logs)
+  holds every Franka and RB-Y1 session: the agent's full transcripts, every tool call,
+  robot state, camera recordings and the code and skills it wrote. See [Session logs](#%EF%B8%8F-session-logs).
+- **[2026-10-15]** 📄 **The paper is on arXiv:** [2610.22496](https://arxiv.org/abs/2610.22496).
+- **[2026-10-13]** 🌿 **RoboDojo, BEHAVIOR-1K and real-robot branches released:** simulation as
+  a container and a native branch, and the real Franka FR3 and Rainbow RB-Y1 harnesses.
+
 ## 🌿 Branches
 
 > [!IMPORTANT]
@@ -29,6 +50,7 @@
 | [`dexjoco/native`](https://github.com/robot-agent-exploration/rax/tree/dexjoco/native) | 🖥️ Sim | DexJoCo with the agent CLIs running natively, sandboxed by the CLI itself. | ✅ available |
 | [`real/franka`](https://github.com/robot-agent-exploration/rax/tree/real/franka) | 🦾 Real | Franka FR3: one 7-DoF arm, Franka Hand, three ZED cameras. | ✅ available |
 | [`real/rainbow`](https://github.com/robot-agent-exploration/rax/tree/real/rainbow) | 🦾 Real | Rainbow RB-Y1: wheeled base, 6-joint torso, two 7-DoF arms, grippers, head ZED 2i. | ✅ available |
+
 
 ---
 
