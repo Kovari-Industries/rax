@@ -120,6 +120,19 @@ flowchart LR
 The cloth workflow tests use explicit perception fixtures. They check sequencing,
 geometry refusal, bounded retries, complete-packet checks, and release conditions.
 They do not simulate cloth mechanics or qualify physical folding performance.
+The complete-path mock test also runs the cloth program through the frontend
+socket, with the native model, bridge, and measured mock controllers.
+
+| Verification on Linux ARM64 | Result |
+|---|---|
+| RAX unit suite after merging target-branch trial changes | 248 passed, 4 skipped |
+| Public actuator and cloth-program path | Passed |
+| Frontend cancel/hold during blocked observation | Passed for base and arm paths |
+| Rust/Python schema and protocol fixture copies | Exact match |
+
+The skipped tests require the optional rby1-sdk or FFmpeg dependencies, which
+were not available in this test environment. The
+operator trial code is kept outside the backend and is not an agent fallback.
 
 ## Earlier trial evidence
 
@@ -179,3 +192,12 @@ did not repeat. Keep refinement as a diagnostic, not a promoted control primitiv
 
 Reusable skills live in `agent_skills/control/evo-v3/` and
 `agent_skills/perception/rgb-only-evo-v3/`. They render into each new RAX workspace.
+
+## Preserved operator trials
+
+[Earlier arm-step and J4 hold trials](docs/evo_trials_2026_10_20.md) retain the
+recordings, measured errors, and first observed failures from the target branch.
+Their diagnostic code is in `operator_trials/`. The exclusive backend replaces
+those agent-facing sockets and tools. It does not expose hardware parameter
+changes or hold-correction pulses to the agent. The recorded physical tracking
+problems remain unqualified by the mock-controller tests.

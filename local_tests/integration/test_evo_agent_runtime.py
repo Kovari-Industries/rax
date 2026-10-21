@@ -528,6 +528,12 @@ def test_recorder_failure_stops_action(monkeypatch):
             arg.startswith(str(runtime / "bags").encode() + b"/") for arg in command
         )
         arming.write(directory, True, by="simulation recorder failure test")
+        finger = context.value("evo_status")["state"]["positions"]["left_finger_joint1"]
+        grip = context.value(
+            "evo_set_grip", side="left", position_rad=finger, retain=True
+        )
+        assert Evo(context).wait(grip)["state"] == "succeeded"
+        assert context.value("evo_status")["retained_grips"]
         action = context.value("evo_drive", velocity=[0.03, 0, 0], duration_s=5)
         time.sleep(0.1)
         os.kill(pid, signal.SIGINT)
@@ -535,6 +541,7 @@ def test_recorder_failure_stops_action(monkeypatch):
         assert result["state"] == "failed" and result["physical_stop_verified"], result
         assert result["reason"] == "recording unavailable", result
         assert not context.value("evo_status")["recording"]
+        assert context.value("evo_status")["retained_grips"] == {}
         (directory / "verification.json").write_text(json.dumps(result, indent=2))
     finally:
         arming.write(directory, False, by="simulation test cleanup")

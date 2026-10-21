@@ -26,9 +26,17 @@ python -m pytest local_tests/integration/test_evo_agent_runtime.py -q
 ```
 
 The complete-path check also sends cancel and hold through the RAX frontend
-socket while an observation is pending. The action must reach a measured stop
+socket while an observation is pending, for both base and coordinated arm actions. The action must reach a measured stop
 before that observation is released. Unit socket tests cover blocked model work
 and image writes; ordinary backend calls remain serialized.
+
+The same test runs a crumpled-to-pile Python program through the frontend socket,
+with a reachable half-fold and deterministic perception fixtures. The native
+model, bridge, and mock controllers execute every command. The fixture does not
+simulate cloth mechanics or supply physical cloth evidence. Separate unit tests
+cover two-axis fold patterns, failed handovers, uncertain packet layers and support,
+stale geometry, calibration refusal, and the unfold attempt budget. Pair rotation
+has a constant-span regression in Evo. Recorder failure also clears retained grips.
 
 The check saves measured results in the test session's `verification.json`.
 Without these environment variables, pytest skips this check.
