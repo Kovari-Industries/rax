@@ -1,0 +1,590 @@
+[
+  {
+    "name": "evo_capabilities",
+    "description": "Read robot capabilities, limits, frames and supported tools.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_status",
+    "description": "Read measured robot state, ownership, recording and current action.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_observe",
+    "description": "Read fresh RGB images and capture-time state. Missing calibration is explicit.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_history",
+    "description": "Read bounded recent measured state and the recording artifact path.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_fk",
+    "description": "Compute link poses without motion.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "joints": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "number"
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "maxItems": 64
+        }
+      },
+      "required": [
+        "links"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_ik",
+    "description": "Solve arm poses without motion. Coordinates use the selected frame.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frame": {
+          "enum": [
+            "base_link",
+            "carriage_link"
+          ]
+        },
+        "left": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "quaternion_xyzw": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "position",
+            "quaternion_xyzw"
+          ],
+          "additionalProperties": false
+        },
+        "right": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "quaternion_xyzw": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "position",
+            "quaternion_xyzw"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "frame"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_camera_ray",
+    "description": "Return a calibrated base-frame ray from a saved observation. This does not supply depth.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "observation_id": {
+          "type": "string"
+        },
+        "camera": {
+          "enum": [
+            "base",
+            "left_arm",
+            "right_arm"
+          ]
+        },
+        "pixel": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "required": [
+        "observation_id",
+        "camera",
+        "pixel"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_preview",
+    "description": "Prepare and check the same robot-model trajectory used for execution. Does not check the scene.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "move_joints"
+                },
+                "targets": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "maxProperties": 64,
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "kind",
+                "targets"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "move_eef"
+                },
+                "frame": {
+                  "enum": [
+                    "base_link",
+                    "carriage_link"
+                  ]
+                },
+                "left": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "quaternion_xyzw": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 4,
+                      "maxItems": 4
+                    }
+                  },
+                  "required": [
+                    "position",
+                    "quaternion_xyzw"
+                  ],
+                  "additionalProperties": false
+                },
+                "right": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 3,
+                      "maxItems": 3
+                    },
+                    "quaternion_xyzw": {
+                      "type": "array",
+                      "items": {
+                        "type": "number"
+                      },
+                      "minItems": 4,
+                      "maxItems": 4
+                    }
+                  },
+                  "required": [
+                    "position",
+                    "quaternion_xyzw"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "kind",
+                "frame"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "gripper"
+                },
+                "side": {
+                  "enum": [
+                    "left",
+                    "right"
+                  ]
+                },
+                "position_rad": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "kind",
+                "side",
+                "position_rad"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "move_carriage"
+                },
+                "position_m": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "kind",
+                "position_m"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "move_neck"
+                },
+                "yaw_rad": {
+                  "type": "number"
+                },
+                "pitch_rad": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "kind",
+                "yaw_rad",
+                "pitch_rad"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "const": "drive"
+                },
+                "velocity": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "duration_s": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 10
+                }
+              },
+              "required": [
+                "kind",
+                "velocity",
+                "duration_s"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_joints",
+    "description": "Start a checked arm joint move. Returns an action ID, not proof of completion.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "targets": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "targets"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_eef",
+    "description": "Start a checked arm pose move. Poll the action ID for measured completion.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "frame": {
+          "enum": [
+            "base_link",
+            "carriage_link"
+          ]
+        },
+        "left": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "quaternion_xyzw": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "position",
+            "quaternion_xyzw"
+          ],
+          "additionalProperties": false
+        },
+        "right": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "quaternion_xyzw": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 4,
+              "maxItems": 4
+            }
+          },
+          "required": [
+            "position",
+            "quaternion_xyzw"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "frame"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_gripper",
+    "description": "Set the canonical finger joint position in radians; no force control.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "side": {
+          "enum": [
+            "left",
+            "right"
+          ]
+        },
+        "position_rad": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "side",
+        "position_rad"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_carriage",
+    "description": "Set carriage position in metres.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "position_m": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "position_m"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_neck",
+    "description": "Set neck yaw and pitch in radians.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "yaw_rad": {
+          "type": "number"
+        },
+        "pitch_rad": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "yaw_rad",
+        "pitch_rad"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_drive",
+    "description": "Command bounded base-frame velocity [x m/s, y m/s, yaw rad/s]. No obstacle avoidance.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "velocity": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "duration_s": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10
+        }
+      },
+      "required": [
+        "velocity",
+        "duration_s"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_action_status",
+    "description": "Read action progress or a measured terminal result.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_cancel",
+    "description": "Cancel the active action. Poll until its measured stop result.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "action_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "action_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_hold",
+    "description": "Withdraw all agent commands and request measured holds and zero base velocity.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  }
+]

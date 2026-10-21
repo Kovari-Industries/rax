@@ -1,66 +1,102 @@
-# Evo v3 adaptation
+# Evo v3 backend
 
-This branch starts from upstream `real/rainbow` at
-`36c926ca3cf15921c6fc746a4bf309c26b0aa3c4`. The
-[real-robot adaptation guide](https://github.com/robot-agent-exploration/rax/blob/2652c73f51514cbb84ef0fdf5a8aee2ba5b53fb7/docs/REAL_ROBOT_ADAPTATION.md)
-is the design reference. Rainbow code remains as an explicit reference backend; new
-sessions default to `evo-v3` and RGB-only. No Rainbow numbers qualify Evo motion.
+RAX uses the versioned Evo agent backend in `evo_orchestrator`. The Python adapter
+owns tool schemas, local transport, image files, and result formatting. Evo owns
+arming checks, command ownership, limits, model checks, action execution, and
+measured stop results. This follows the [RAX system interface](https://arxiv.org/html/2610.22496#S4).
 
 ```mermaid
 flowchart LR
-    A[RAX agent and learned skills] --> B[Evo RAX backend]
-    B --> C[Local Evo policy socket]
-    B --> D[Read-only EVJ1 cameras]
-    C --> E[Evo v3 Rust policy and command arbitration]
-    E --> F[Existing hardware bridges and Ruckig]
+    A[Agent or Python program] --> B[RAX tools]
+    B -->|Private Unix socket| C[Evo agent backend]
+    C --> D[Bridge and robot controllers]
+    D -->|Measured feedback| C
 ```
 
-## Implemented contract
+The adapter exposes discovery, RGB observation and history, FK, IK, preview, camera
+rays, arm motion, grippers, carriage, neck, bounded base velocity, action status,
+cancellation, and hold. `services/evo_v3/tools.json` is the public schema. It is
+identical to Evo's `evo_agent_backend/contract/tools.json`. The old towel socket and
+EVJ1 transport are removed; there is no fallback.
 
-| Tool | Effect | Limitation |
-|---|---|---|
-| `evo_status` | Read existing towel-policy status | Not a measured robot-state snapshot |
-| `evo_observe` | Save coherent, fresh camera JPEGs and metadata | No validated extrinsics or capture-time joints yet |
-| `evo_hold` | Request towel-policy cancellation | Not a global stop; acknowledgement is not stop verification |
+Use SI units and named joints. Gripper positions are radians (`position_rad`).
+Carriage position is metres (`position_m`). Cartesian targets name `base_link` or
+`carriage_link`. Quaternion order is `[x, y, z, w]`. Depth, force control, scene
+collision checks, and navigation are unavailable. Missing camera calibration
+leaves metric geometry unavailable.
 
-The backend runs beside Evo on the robot. It has operator-configured local paths, no
-shell command transport, no ROS publisher, and no hardware SDK. Camera errors are
-returned individually. Frames older than the configured age, future timestamps,
-unstable generations and malformed payloads are refused. Construction and close while
-idle command nothing. Files are published by rename. Raw frames are full-resolution;
-preview downscaling remains pending.
+The operator must start Evo's explicit exclusive agent profile and set its trusted
+`session_root` to the directory that directly contains RAX sessions. The usual RAX
+layout is `$RAX_ARTIFACT_ROOT/sessions/<session>`. Keep this artifact root outside
+the private Evo runtime directory; the sandbox hides that complete directory. The existing dashboard and operator
+arm/disarm controls write `<session>/operator/armed.json`. Evo reads this file
+independently. Neither arming nor controller configuration is an agent tool.
 
-Use `python scripts/configure_session.py --robot evo-v3 --observation-profile rgb-only
---task towel_alignment --task-text 'Observe towel alignment; no motion.'` with the
-harness dependencies installed. The inherited launcher is Claude-based; this branch
-does not claim that a Codex launcher or sandbox qualification has been completed.
+Operator `backend_options` are `control_socket` and `socket_timeout_s`. The default
+socket is `~/.local/evo/agent/agent.sock`. Configure the exact runtime socket when
+using an isolated simulation. Unknown options are refused. The launcher hides the
+Evo socket, runtime files, Evo workspace, and session operator directory from the
+agent sandbox.
 
-Operator `backend_options`: `control_socket`, `camera_directory`,
-`camera_max_age_s` (default 0.3, maximum 1), `socket_timeout_s` (default 2, maximum 5).
-The defaults use `/run/evo/towel-alignment.sock` and `/run/evo/camera-shm`.
-Use the actual configured Evo socket path. Unknown options and tool fields are rejected.
+An action returns `action_id` and `state: accepted`. Poll `evo_action_status` for a
+terminal result. `evo_cancel` and `evo_hold` request a stop. Inspect
+`physical_stop_verified` before treating the robot as stopped. A lost or malformed
+motion response removes the adapter's lease; the adapter never retries that action.
 
-## Evo integration
+```python
+from api.runtime import Context
+from api.evo import Evo
 
-The existing Evo work is in `Kovari-Industries/evo`, branch
-`benson/towel-alignment-gpu`, package `evo_towel_folding`. The Rust physical adapter
-owns measured feedback, Ruckig transitions, bounded base corrections and MCAP events.
-Keep the tested policy in Evo; RAX stores exploration decisions and reusable experience.
+with Context() as ctx:
+    state = ctx.value("evo_status")
+    action = {"kind": "move_neck", "yaw_rad": 0.1, "pitch_rad": 0.0}
+    ctx.value("evo_preview", action=action)
+    result = Evo(ctx).move("evo_move_neck", yaw_rad=0.1, pitch_rad=0.0)
+    assert result["state"] == "succeeded" and result["physical_stop_verified"]
+```
 
-The current Evo socket has asynchronous `start`, `cancel`, and `status`. It does not
-identify attempts. A start can fail before a client sees any intermediate state.
-Therefore this adapter deliberately does not expose start: add attempt IDs, explicit
-running/completed state, and a measured-stop result on the Evo side before wiring a
-supervised action tool. Polling for a state transition alone can mistake an old result
-for a new result or miss a fast refusal.
+These calls use the same MCP interface as interactive agent calls. Operator arming
+and fresh measured state are still required. Evo cancel, hold, and status calls
+use a separate frontend dispatcher. A slow observation, model call, or image
+reader cannot occupy that dispatcher. A competing ordinary request is refused
+as busy; it cannot remain queued and start motion after a stop. A Python program must use a separate
+`Context` connection to stop an action while another call is pending.
 
-Next backend primitives, in order:
-1. Capture-time joint/odometry snapshot and calibrated per-camera metadata from Evo.
-2. Measured stop and attempt identity, then dry-run checks and supervised policy execution.
-3. Characterized carriage/base actions through Evo arbitration, with cancellation and
-   record-before-motion. No duplicate Python motor controller.
-4. SAM as an optional perception service; image-edge and optical-flow diagnostics as
-   separate read-only tools. Freeze settings for each evaluation trial.
+```mermaid
+flowchart LR
+    A[Ordinary calls] --> B[Ordinary dispatcher]
+    C[Cancel, hold, and status] --> D[Priority dispatcher]
+    B --> E[Evo socket]
+    D --> E
+```
+
+Base action duration starts when Evo sends the first velocity command. A delayed
+first control tick cannot turn an unsent action into a successful result. Gripper
+tool descriptions and parameters both specify radians. The Evo history skill
+describes state and observation metadata; it does not advertise image playback.
+
+The dedicated Evo simulation profile uses mock actuators, the existing controllers,
+and camera fixtures. Run the complete-path test after starting that isolated profile:
+
+```sh
+EVO_AGENT_TEST_SOCKET=/absolute/simulation/agent/agent.sock \
+EVO_AGENT_TEST_SESSION_ROOT=/absolute/simulation-rax/sessions \
+python -m pytest -q local_tests/integration/test_evo_agent_runtime.py
+```
+
+The test refuses to arm a runtime unless Evo reports simulated actuator modes.
+The complete-path checks passed on ARM64 Linux with all actuator groups, a Python
+program, cancellation, disarm, lease loss, recorder loss, restart, and shutdown.
+See `local_tests/README.md` for the optional failure and restart checks.
+Simulation establishes software behavior. Physical stopping and task qualification
+remain separate work.
+
+## Earlier trial evidence
+
+Stop requests (`evo_cancel`, `evo_hold`) have separate frontend admission and do not wait for status calls or frontend audit storage. Evo records stop requests and action outcomes in its event log. If a stop RPC fails or is refused, RAX stops lease renewal; Evo then stops the action on lease expiry. Start a new session before further motion.
+
+The sections below describe earlier perception trials and the replaced observation
+transport. They do not qualify the new motion backend.
 
 ## Trial lessons
 

@@ -3,15 +3,17 @@
 One process per session owns the robot backend (services.backends). It speaks
 newline-delimited JSON-RPC (MCP tools) on a private Unix socket, multiplexing the
 agent CLI's stdio bridge (harness/claude_cli/mcp_bridge.py) and the agent's own
-Python scripts (auto_research_agent/api/runtime.py); every call runs on one
-dispatcher thread, so two clients never drive the robot at once. Without --socket it
-serves a single client on stdin/stdout.
+Python scripts (auto_research_agent/api/runtime.py). Ordinary calls share one
+dispatcher, so two clients never start motion at once. Backends can declare
+status tools that use a separate dispatcher. Stop tools bypass both dispatchers
+and frontend audit I/O; the backend records their execution. Socket reads and image
+writes do not occupy a dispatcher. Without --socket it serves one client on stdin/stdout.
 """
 import argparse
+from contextlib import nullcontext
 import json
 import os
 from pathlib import Path
-import selectors
 import signal
 import socket
 import sys
@@ -89,6 +91,10 @@ class Frontend:
         # Interlocks (arming, workspace limits, holds) belong to the backend itself; errors reach
         # the agent whole (services.controller.errors), never as a label such as "control uncertain".
         self._dispatch = threading.Lock()
+        self._priority_dispatch = threading.Lock()
+        self._closing = threading.Event()
+        self._priority_tools = frozenset(getattr(backend, "priority_tools", ()))
+        self._stop_tools = frozenset(getattr(backend, "stop_tools", ()))
         self._backend_tools = {t['name']: t for t in backend.tools()}
         reserved = {'status', 'gemini_generate', 'request_operator', 'skill_library_merge'} & set(self._backend_tools)
         # The persistent skill library clone, when the launcher created one for this workspace.
@@ -131,11 +137,18 @@ class Frontend:
         """One tools/call; returns an MCP CallToolResult."""
         call_id = uuid.uuid4().hex
         failure = {'stage': 'request'}
-        with self._dispatch, self.timings.measure(name if isinstance(name, str) else 'invalid'):
+        priority = isinstance(name, str) and name in self._priority_tools
+        stop_request = isinstance(name, str) and name in self._stop_tools
+        dispatch = nullcontext() if stop_request else (self._priority_dispatch if priority else self._dispatch)
+        with dispatch, self.timings.measure(name if isinstance(name, str) else 'invalid'):
             try:
+                if self._closing.is_set():
+                    raise RuntimeError('Frontend is closing')
                 if not isinstance(arguments, dict):
                     raise ValueError('Arguments must be an object')
-                self.s.audit({'event': 'mcp_request', 'call_id': call_id, 'tool': name, 'arguments': arguments})
+                # Evo records stops itself. Frontend audit I/O must never delay a stop.
+                if not stop_request:
+                    self.s.audit({'event': 'mcp_request', 'call_id': call_id, 'tool': name, 'arguments': arguments})
                 if name == 'status':
                     if arguments:
                         raise ValueError('status takes no arguments')
@@ -175,8 +188,9 @@ class Frontend:
                     raise PermissionError('Unknown tool')
                 value = jsonable(value)
                 result = {'content': [{'type': 'text', 'text': json.dumps(value, allow_nan=False)}, *images]}
-                self.s.audit({'event': 'mcp_result', 'call_id': call_id, 'tool': name,
-                              'result': result['content'][0]['text'][:65536], 'images': len(images)})
+                if not stop_request:
+                    self.s.audit({'event': 'mcp_result', 'call_id': call_id, 'tool': name,
+                                  'result': result['content'][0]['text'][:65536], 'images': len(images)})
                 return result
             except Exception as exc:
                 # Expected refusals and handled stops carry their own complete message; anything else
@@ -185,7 +199,8 @@ class Frontend:
                 error = jsonable(public_failure(exc, operation=name, stage=failure['stage'],
                                                 traceback_tail=not handled))
                 try:
-                    self.s.audit({'event': 'mcp_error', 'call_id': call_id, **error})
+                    if not stop_request:
+                        self.s.audit({'event': 'mcp_error', 'call_id': call_id, **error})
                 except Exception:
                     error['audit_recording_failed'] = True
                 return {'isError': True, 'content': [{'type': 'text', 'text': json.dumps({'error': error})}]}
@@ -225,50 +240,105 @@ class Frontend:
         return self.handle(request)
 
     def serve_socket(self, listener, stop=None):
-        """Multiplex up to 16 clients; requests run one at a time on this thread."""
-        listener.setblocking(False)
-        buffers = {}
-        with selectors.DefaultSelector() as poll:
-            poll.register(listener, selectors.EVENT_READ)
+        """Bounded socket workers; stop tools bypass ordinary work and image writes."""
+        listener.settimeout(0.1)
+        stopping = threading.Event()
+        clients = {}
+        clients_lock = threading.Lock()
+        # Retain admission through response transfer. Slow image readers cannot use
+        # every connection slot. Each connection preserves its own request order.
+        # An asynchronous action backend must not queue a new motion behind a
+        # blocked observation: a stop could otherwise overtake and then precede it.
+        ordinary = threading.BoundedSemaphore(1 if self._priority_tools else 4)
+        priority = threading.BoundedSemaphore(4)
+        stops = threading.BoundedSemaphore(4)
+
+        def respond(line):
             try:
-                while not (stop and stop.is_set()):
-                    for key, _ in poll.select(timeout=0.5):
-                        connection = key.fileobj
-                        if connection is listener:
-                            try:
-                                client, _ = listener.accept()
-                            except BlockingIOError:
-                                continue
-                            if len(buffers) >= 16:
-                                client.close()
-                                continue
-                            client.setblocking(False)
-                            buffers[client] = bytearray()
-                            poll.register(client, selectors.EVENT_READ)
-                            continue
+                request = json.loads(line)
+            except (ValueError, UnicodeError):
+                request = None
+                response = {'jsonrpc': '2.0', 'id': None,
+                            'error': {'code': -32700, 'message': 'Invalid request'}}
+            else:
+                response = None
+            params = request.get('params') if isinstance(request, dict) else None
+            name = params.get('name') if isinstance(params, dict) else None
+            urgent = (isinstance(request, dict) and (
+                request.get('method') in ('initialize', 'ping', 'tools/list')
+                or (request.get('method') == 'tools/call'
+                    and isinstance(name, str) and name in self._priority_tools)))
+            stop_request = (isinstance(request, dict) and request.get("method") == "tools/call"
+                            and isinstance(name, str) and name in self._stop_tools)
+            admission = stops if stop_request else (priority if urgent else ordinary)
+            if not admission.acquire(blocking=False):
+                return None, {'jsonrpc': '2.0',
+                              'id': request.get('id') if isinstance(request, dict) else None,
+                              'error': {'code': -32000, 'message': 'Frontend workers busy'}}
+            try:
+                return admission, response if response is not None else self.handle(request)
+            except BaseException:
+                admission.release()
+                raise
+
+        def connection(client):
+            pending = bytearray()
+            try:
+                while not stopping.is_set() and not self._closing.is_set():
+                    client.settimeout(0.2)
+                    try:
+                        block = client.recv(65536)
+                    except socket.timeout:
+                        continue
+                    if not block:
+                        return
+                    pending.extend(block)
+                    if len(pending) > MAX_REQUEST_BYTES:
+                        return
+                    while b'\n' in pending:
+                        if stopping.is_set() or self._closing.is_set():
+                            return
+                        line, _, tail = pending.partition(b'\n')
+                        pending[:] = tail
+                        admission, response = respond(line)
                         try:
-                            block = connection.recv(65536)
-                            if not block:
-                                raise ConnectionError('Client closed')
-                            pending = buffers[connection]
-                            pending.extend(block)
-                            if len(pending) > MAX_REQUEST_BYTES:
-                                raise ConnectionError('Request exceeds wire limit')
-                            while b'\n' in pending:
-                                line, _, tail = pending.partition(b'\n')
-                                pending[:] = tail
-                                response = self._respond(line)
-                                if response is not None:
-                                    connection.settimeout(30)
-                                    connection.sendall(json.dumps(response, allow_nan=False).encode() + b'\n')
-                                    connection.setblocking(False)
-                        except (ConnectionError, OSError):
-                            poll.unregister(connection)
-                            buffers.pop(connection, None)
-                            connection.close()
+                            if response is not None:
+                                encoded = json.dumps(response, allow_nan=False).encode() + b'\n'
+                                client.settimeout(5)
+                                client.sendall(encoded)
+                        finally:
+                            if admission is not None:
+                                admission.release()
+            except (ConnectionError, OSError):
+                pass
             finally:
-                for client in buffers:
-                    client.close()
+                with clients_lock:
+                    clients.pop(client, None)
+                client.close()
+
+        try:
+            while not self._closing.is_set() and not (stop and stop.is_set()):
+                try:
+                    client, _ = listener.accept()
+                except socket.timeout:
+                    continue
+                with clients_lock:
+                    if len(clients) >= 32:
+                        client.close()
+                        continue
+                    worker = threading.Thread(target=connection, args=(client,), daemon=True)
+                    clients[client] = worker
+                worker.start()
+        finally:
+            stopping.set()
+            self._closing.set()
+            with clients_lock:
+                active = list(clients)
+            for client in active:
+                try:
+                    client.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
 
     def serve(self, reader, writer):
         while line := reader.readline(MAX_REQUEST_BYTES + 1):
@@ -283,6 +353,7 @@ class Frontend:
                 writer.flush()
 
     def close(self):
+        self._closing.set()
         try:
             self.backend.close()
         finally:

@@ -3,6 +3,9 @@
 /external
 /local_tests/*
 !/local_tests/unit/
+!/local_tests/integration/
+/local_tests/integration/*
+!/local_tests/integration/test_evo_agent_runtime.py
 !/local_tests/README.md
 !/local_tests/goldens/
 

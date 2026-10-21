@@ -1,0 +1,27 @@
+{
+  "capabilities_request": {
+    "version": 1,
+    "id": "request-a",
+    "session_id": null,
+    "method": "capabilities",
+    "params": {}
+  },
+  "accepted_response": {
+    "version": 1,
+    "id": "request-b",
+    "ok": true,
+    "result": {
+      "action_id": "session-a-1",
+      "state": "accepted"
+    }
+  },
+  "refused_response": {
+    "version": 1,
+    "id": "request-c",
+    "ok": false,
+    "error": {
+      "code": "refused",
+      "message": "operator has not armed this session"
+    }
+  }
+}

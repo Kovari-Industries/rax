@@ -31,6 +31,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -131,13 +132,28 @@ def protected_paths(config):
     relay = json.loads(relay_file.read_text()) if relay_file.is_file() else {}
     credentials = [Path(relay[key]).expanduser().resolve() for key in ('key_file', 'gemini_key_file')
                    if relay.get(key)]
-    return [*PROTECTED_PATHS, *site_protected_paths(), *credentials,
+    evo_paths = []
+    if getattr(config, 'robot', None) == 'evo-v3':
+        from services.evo_v3.backend import DEFAULTS
+        evo_socket = Path(config.backend_options.get('control_socket', DEFAULTS['control_socket']))
+        runtime = evo_socket.parent.parent if evo_socket.parent.name == 'agent' else evo_socket.parent
+        if config.root.resolve().is_relative_to(runtime.resolve()):
+            raise ValueError('RAX sessions must be outside the private Evo runtime directory')
+        evo_paths = [evo_socket, runtime, config.root/'operator', Path.home()/'.local/evo', Path.home()/'evo_ws', Path('/run/evo')]
+    return [*PROTECTED_PATHS, *site_protected_paths(), *credentials, *evo_paths,
             *(config.root/name for name in PRIVATE_FILES)]
 
 
 def denied_hosts(config):
     """DENIED_HOSTS plus the host of the session's controller address (backend option `address`)."""
     hosts = list(DENIED_HOSTS)
+    if getattr(config, 'robot', None) == 'evo-v3':
+        local = {'localhost', '127.0.0.1', '::1', socket.gethostname()}
+        try:
+            local.update(item[4][0] for item in socket.getaddrinfo(socket.gethostname(), None))
+        except OSError:
+            pass
+        hosts.extend(sorted(local - set(hosts)))
     address = config.backend_options.get('address')
     if address:
         host = (str(address).rpartition(':')[0] or str(address)).strip('[]')
