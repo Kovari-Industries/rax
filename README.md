@@ -73,6 +73,19 @@ that runs without the agent.
 | Port the agent skills to a new robot | [`skills/`](skills/README.md) |
 | Reuse task skills agents learned on a real robot | [`skills-lib`](https://github.com/robot-agent-exploration/skills-lib) |
 
+### Agent harnesses and model providers
+
+The simulation branches support **Codex CLI, Claude Code, DeepSeek Harness
+and Kimi Code** in both native and container execution. Choose the harness
+that manages the agent's reasoning and tools, then connect it to OpenRouter,
+a supported vendor account or API, or your own model endpoint.
+
+| Guide | What you can do |
+| --- | --- |
+| [Agent harnesses](docs/AGENT_HARNESSES.md) | Compare backends, choose an authentication method and configure a session. |
+| [Self-host DeepSeek](docs/DEEPSEEK_SERVING.md) | Deploy the pinned model on four H200s, tune CUDA Graphs and DSpark, and validate the endpoint. |
+| [DeepSeek model results](https://github.com/robot-agent-exploration/rax/blob/dexjoco/native/docs/DEEPSEEK_MODEL_RESULTS.md) | Compare DexJoCo task scores, model configurations and API pricing. |
+
 ## 🧠 How RAX works
 
 <p align="center">
