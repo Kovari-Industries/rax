@@ -27,7 +27,7 @@ def test_constructor_idle_close_and_unknown_inputs(tmp_path):
     b.close(); b.close()
     with pytest.raises(ValueError, match='unknown Evo options'):
         backend(tmp_path, gains=1)
-    with pytest.raises(ValueError, match='unknown Evo tool'):
+    with pytest.raises(RuntimeError, match='not enabled'):
         backend(tmp_path).call('evo_towel_align', {})
     with pytest.raises(ValueError, match='unknown Evo tool'):
         backend(tmp_path).call('evo_status', {'speed':1})
@@ -84,3 +84,71 @@ def test_evo_workspace_has_no_invented_motion_tools(tmp_path):
     assert '`None`' not in text
     assert 'no motion tool' in text
     assert (workspace/'.agents/skills/towel-perception-trials/SKILL.md').is_file()
+
+
+def attempt_reply(requested=0, completed=0, running=False, stopped=False, state='Preparing', session='runtime-one'):
+    return {'protocol':'evo.towel.control.v2','result':'status','state':state,'error':None,
+            'attempt':{'session':session,'requested':requested,'completed':completed,
+                       'running':running,'stop_verified':stopped,'cancel_requested':False}}
+
+
+def align_backend(tmp_path, monkeypatch, replies):
+    from services import arming
+    monkeypatch.setattr(arming,'read',lambda _: {'armed':True})
+    b=backend(tmp_path,enable_alignment=True,poll_s=.001)
+    calls=[]
+    def command(name):
+        calls.append(name)
+        if name=='cancel':return {'result':'cancel_requested'}
+        result=replies.pop(0)
+        if isinstance(result,Exception):raise result
+        return result
+    b._command=command
+    return b,calls
+
+
+def test_fast_failure_is_matching_completed_attempt(tmp_path,monkeypatch):
+    b,calls=align_backend(tmp_path,monkeypatch,[attempt_reply(),attempt_reply(1,running=True),
+        attempt_reply(1,1,False,True,'Failed')])
+    result,_=b.call('evo_towel_align',{})
+    assert not result['ok'] and result['measured']['attempt']['completed']==1
+    assert calls==['status','start','status']
+
+
+def test_old_terminal_is_not_new_success(tmp_path,monkeypatch):
+    b,calls=align_backend(tmp_path,monkeypatch,[attempt_reply(1,1,False,True,'ReadyForFoldingSetup'),
+        attempt_reply(2,1,True),attempt_reply(2,1,True,False,'ReadyForFoldingSetup'),
+        attempt_reply(2,2,False,True,'ReadyForFoldingSetup')])
+    result,_=b.call('evo_towel_align',{})
+    assert result['ok'] and calls.count('status')==3
+
+
+@pytest.mark.parametrize('failure',[
+    attempt_reply(1,1,False,False,'Failed'),
+    attempt_reply(1,0,True,False,'Preparing','restarted'),
+    ConnectionError('lost policy connection')])
+def test_unsafe_outcome_cancels_once_without_restart(tmp_path,monkeypatch,failure):
+    b,calls=align_backend(tmp_path,monkeypatch,[attempt_reply(),attempt_reply(1,running=True),failure])
+    with pytest.raises(RuntimeError):b.call('evo_towel_align',{})
+    assert calls.count('start')==1 and calls.count('cancel')==1
+
+
+def test_disarm_during_attempt_cancels(tmp_path,monkeypatch):
+    b,calls=align_backend(tmp_path,monkeypatch,[attempt_reply(),attempt_reply(1,running=True)])
+    from services import arming
+    values=iter([True,False]);monkeypatch.setattr(arming,'read',lambda _: {'armed':next(values)})
+    with pytest.raises(RuntimeError,match='disarmed'):b.call('evo_towel_align',{})
+    assert calls[-1]=='cancel'
+
+
+def test_busy_race_does_not_cancel_another_attempt(tmp_path,monkeypatch):
+    from services.evo_v3.backend import PolicyBusy
+    b,calls=align_backend(tmp_path,monkeypatch,[attempt_reply(),PolicyBusy('busy')])
+    with pytest.raises(PolicyBusy):b.call('evo_towel_align',{})
+    assert calls==['status','start']
+
+
+def test_unversioned_runtime_refused_before_start(tmp_path,monkeypatch):
+    b,calls=align_backend(tmp_path,monkeypatch,[{'state':'Preparing'}])
+    with pytest.raises(ValueError,match='protocol v2'):b.call('evo_towel_align',{})
+    assert calls==['status']
