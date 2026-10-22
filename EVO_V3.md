@@ -206,3 +206,47 @@ Their diagnostic code is in `operator_trials/`. The exclusive backend replaces
 those agent-facing sockets and tools. It does not expose hardware parameter
 changes or hold-correction pulses to the agent. The recorded physical tracking
 problems remain unqualified by the mock-controller tests.
+
+## SAM 3.1 tools
+
+SAM inference and assets live in Evo. This client only forwards jobs, validates
+artifacts, and saves them in the workspace. It has no SAM or Triton dependency.
+The four tools are registered for interactive calls and Python programs.
+
+```mermaid
+flowchart LR
+    I[Interactive tools] --> F[RAX frontend]
+    P[Python Sam helper] --> F
+    F --> E[Evo job service]
+    E --> G[Separate SAM GPU process]
+    G --> M[Masks and source metadata]
+    M --> T[RAX towel decisions]
+```
+
+```python
+from api.runtime import Context
+from api.sam import Sam
+from api.cloth_trial import TrialContext
+
+with Context() as ctx:
+    trial = TrialContext(ctx, "trials/towel-001")
+    try:
+        observation = trial.value("evo_observe")
+        sam = Sam(trial)
+        result = sam.wait(sam.segment(observation["observation_id"], camera="base"))
+        # Inspect result["frames"][0]["overlay"]["path"] and select a candidate.
+        # Use separate task evidence before planning a grasp or fold.
+    finally:
+        trial.close()
+```
+
+The trial log saves source captures even when they were captured before the trial.
+Replay verifies image and mask hashes and never opens a robot connection. Clips
+are limited to 64 ordered frames over 10 seconds. Default coordinates are captured
+pixels. Rectified results retain calibration and an explicit pixel-space label;
+convert them back before use with captured-pixel ray tools. Detection alone cannot
+establish metric geometry, grasp retention, layers, or success.
+
+The native video profile uses different thresholds from the image profile. Empty
+tracking frames are expected when the model loses evidence. Do not fill those gaps
+with a claim that a grasp or towel identity remains valid.

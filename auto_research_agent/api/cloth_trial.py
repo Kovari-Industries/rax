@@ -12,6 +12,16 @@ def normalized(value):
     return json.loads(json.dumps(value, allow_nan=False))
 
 
+def artifacts(value):
+    """Only documented capture and SAM result artifact fields are files."""
+    yield from value.get("cameras", {}).values()
+    frame = value.get("frame")
+    if frame:
+        yield frame["overlay"]
+        for obj in frame["objects"]:
+            yield obj["mask"]
+
+
 class TrialContext:
     """Wrap Context.value. Each request is durable before dispatch; errors latch closed.
 
@@ -54,27 +64,55 @@ class TrialContext:
                 }
             )
             try:
+                inputs = []
+                if tool in ("evo_sam_segment", "evo_sam_track"):
+                    ids = (
+                        [arguments["observation_id"]]
+                        if tool == "evo_sam_segment"
+                        else arguments["observation_ids"]
+                    )
+                    for index, ident in enumerate(ids):
+                        capture = copy.deepcopy(
+                            self.context.value("evo_history", observation_id=ident)
+                        )
+                        if capture.get("observation_id") != ident:
+                            raise ValueError("SAM input capture identity mismatch")
+                        self._copy_artifacts(capture, f"input-{self.sequence}-{index}")
+                        inputs.append(capture)
                 result = self.context.value(tool, **arguments)
                 saved = copy.deepcopy(result)
-                if tool == "evo_observe":
-                    for index, camera in enumerate(saved["cameras"].values()):
-                        source = (self.workspace / camera["path"]).resolve()
-                        if not source.is_relative_to(self.workspace):
-                            raise ValueError("capture is outside workspace")
-                        data = source.read_bytes()
-                        name = f"capture-{self.sequence}-{index}.jpg"
-                        with (self.directory / name).open("xb") as image:
-                            image.write(data)
-                            image.flush()
-                            os.fsync(image.fileno())
-                        camera["path"] = name
-                        camera["trial_sha256"] = hashlib.sha256(data).hexdigest()
-                self._write({"kind": "result", "id": self.sequence, "value": saved})
+                self._copy_artifacts(saved, f"capture-{self.sequence}")
+                self._write(
+                    {
+                        "kind": "result",
+                        "id": self.sequence,
+                        "value": saved,
+                        "model_inputs": inputs,
+                    }
+                )
                 return result
             except BaseException as exc:
                 self.failed = True
                 self._write({"kind": "error", "id": self.sequence, "error": str(exc)})
                 raise
+
+    def _copy_artifacts(self, value, prefix):
+        for index, artifact in enumerate(artifacts(value)):
+            source = (self.workspace / artifact["path"]).resolve()
+            if not source.is_relative_to(self.workspace):
+                raise ValueError("capture is outside workspace")
+            data = source.read_bytes()
+            digest = hashlib.sha256(data).hexdigest()
+            if "sha256" in artifact and artifact["sha256"] != digest:
+                raise ValueError("model artifact digest mismatch")
+            suffix = ".png" if artifact.get("mime_type") == "image/png" else ".jpg"
+            name = f"{prefix}-{index}{suffix}"
+            with (self.directory / name).open("xb") as image:
+                image.write(data)
+                image.flush()
+                os.fsync(image.fileno())
+            artifact["path"] = name
+            artifact["trial_sha256"] = digest
 
     def annotate(self, outcome, note=""):
         with self.lock:
@@ -119,12 +157,15 @@ class ReplayContext:
         if result["kind"] == "error":
             raise RuntimeError("recorded error: " + result["error"])
         value = copy.deepcopy(result["value"])
-        if tool == "evo_observe":
-            for camera in value["cameras"].values():
-                path = (self.directory / camera["path"]).resolve()
-                if not path.is_relative_to(self.directory) or hashlib.sha256(
-                    path.read_bytes()
-                ).hexdigest() != camera.pop("trial_sha256"):
+        for item in [value, *result.get("model_inputs", [])]:
+            for artifact in artifacts(item):
+                path = (self.directory / artifact["path"]).resolve()
+                if (
+                    not path.is_relative_to(self.directory)
+                    or hashlib.sha256(path.read_bytes()).hexdigest()
+                    != artifact["trial_sha256"]
+                ):
                     raise ValueError("recorded image is missing or changed")
-                camera["path"] = str(path)
+                artifact.pop("trial_sha256")
+                artifact["path"] = str(path)
         return value

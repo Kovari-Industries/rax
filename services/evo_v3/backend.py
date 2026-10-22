@@ -5,11 +5,13 @@ The client never opens a sensor, controller, ROS publisher, or hardware SDK.
 """
 import base64
 import copy
+import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import socket
+import shutil
 import threading
 import uuid
 
@@ -83,7 +85,11 @@ def validate_value(value, schema):
             raise ValueError("invalid array size")
         for item in value:
             validate_value(item, schema["items"])
-    elif kind == "number":
+    elif kind in ("number", "integer"):
+        if kind == "integer" and (
+            not isinstance(value, int) or isinstance(value, bool)
+        ):
+            raise ValueError("expected an integer")
         if type(value) not in (float, int) or not math.isfinite(value):
             raise ValueError("expected a finite number")
         if "minimum" in schema and value < schema["minimum"]:
@@ -96,7 +102,9 @@ def validate_value(value, schema):
         if not isinstance(value, bool):
             raise ValueError("expected a boolean")
     elif kind == "string":
-        if not isinstance(value, str) or not value or len(value) > 1024:
+        if not isinstance(value, str) or not schema.get("minLength", 1) <= len(
+            value
+        ) <= schema.get("maxLength", 1024):
             raise ValueError("expected a nonempty bounded string")
 
 
@@ -108,7 +116,7 @@ class EvoV3Backend:
     stop_tools = frozenset({"evo_cancel", "evo_hold"})
     mutating = MOTION
     priority_tools = frozenset(
-        {"evo_cancel", "evo_hold", "evo_action_status", "evo_status"}
+        {"evo_cancel", "evo_hold", "evo_action_status", "evo_status", "evo_sam_cancel"}
     )
 
     def __init__(self, config):
@@ -272,6 +280,66 @@ class EvoV3Backend:
         os.replace(temporary, root / "meta.json")
         return value, images
 
+    def _save_sam(self, value):
+        """Persist bounded PNG data. Never use server-provided file names."""
+        value = copy.deepcopy(value)
+        frame = value.get("frame")
+        if frame is None:
+            return value, []
+        if value.get("state") != "succeeded" or not isinstance(frame, dict):
+            raise ValueError("invalid SAM result frame")
+        root = (
+            self.config.root / "agent-workspace" / "runtime" / "sam" / uuid.uuid4().hex
+        )
+        root.mkdir(parents=True, exist_ok=False)
+        try:
+            images = []
+            objects = frame.get("objects")
+            if not isinstance(objects, list) or len(objects) > 16:
+                raise ValueError("invalid SAM object count")
+            artifacts = [(f"mask-{i}", obj["mask"]) for i, obj in enumerate(objects)]
+            artifacts.append(("overlay", frame["overlay"]))
+            for name, artifact in artifacts:
+                data = base64.b64decode(artifact.pop("data"), validate=True)
+                if (
+                    artifact.get("mime_type") != "image/png"
+                    or not 24 <= len(data) <= 8 * 1024 * 1024
+                    or not data.startswith(b"\x89PNG\r\n\x1a\n")
+                    or hashlib.sha256(data).hexdigest() != artifact.get("sha256")
+                ):
+                    raise ValueError("invalid SAM PNG or digest")
+                width, height = (
+                    int.from_bytes(data[16:20], "big"),
+                    int.from_bytes(data[20:24], "big"),
+                )
+                transform = frame["transform"]
+                if (width, height) != (transform["width"], transform["height"]) or not (
+                    16 <= width <= 4096 and 16 <= height <= 4096
+                ):
+                    raise ValueError(
+                        "SAM artifact dimensions differ from pixel mapping"
+                    )
+                target = root / (name + ".png")
+                target.write_bytes(data)
+                artifact["path"] = str(
+                    target.relative_to(self.config.root / "agent-workspace")
+                )
+                if name == "overlay":
+                    images.append(
+                        {
+                            "type": "image",
+                            "mimeType": "image/png",
+                            "data": base64.b64encode(data).decode(),
+                        }
+                    )
+            (root / "meta.json").write_text(
+                json.dumps(value, allow_nan=False, indent=2)
+            )
+            return value, images
+        except BaseException:
+            shutil.rmtree(root)
+            raise
+
     def call(self, name, arguments):
         self.validate(name, arguments)
         if name in MOTION or name in ("evo_action_status", "evo_cancel", "evo_hold"):
@@ -299,6 +367,10 @@ class EvoV3Backend:
                 self._failure = str(error)
                 self._stop.set()  # No retry of an action with an unknown result.
             raise
+        if name == "evo_sam_result":
+            if value.get("job_id") != arguments["job_id"]:
+                raise ValueError("SAM job identity mismatch")
+            return self._save_sam(value)
         return (
             self._save_observation(value)
             if name == "evo_observe"

@@ -109,7 +109,7 @@ ROBOT_FACTS = {
              'safety': ('Evo owns motion. Operator arming and a live client lease are required. A stop request is not proof of physical stop.',),
              'first_reads': (('robot-interface', 'tools, frames, action results and model limits'), ('cloth-handling', 'towel routines, metric perception, grasp and pile checks')),
              'model_dir': None, 'model_note': 'Use Evo FK, IK and preview tools.',
-             'read_tools': ('evo_capabilities', 'evo_status', 'evo_observe', 'evo_history', 'evo_fk', 'evo_ik', 'evo_preview', 'evo_camera_ray')},
+             'read_tools': ('evo_capabilities', 'evo_status', 'evo_observe', 'evo_history', 'evo_fk', 'evo_ik', 'evo_preview', 'evo_camera_ray', 'evo_sam_segment', 'evo_sam_track', 'evo_sam_result', 'evo_sam_cancel')},
     'mock': {'name': 'mock robot', 'status': 'status', 'observe': 'mock_observe', 'move': 'mock_move',
              'gripper': 'mock_move', 'pixel': 'mock_observe', 'tools': ('mock_observe', 'mock_move'),
              'overview_camera': 'none', 'overview': 'no camera', 'cameras': (),

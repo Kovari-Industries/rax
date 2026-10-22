@@ -70,3 +70,25 @@ Completion does not prove cloth contact or capture of all layers. Stop requests,
 disarm, faults, and lease loss clear retention and hold measured joints. They do
 not open the fingers. Read [cloth-handling](../cloth-handling/SKILL.md) for towel
 routines, perception requirements, and recovery checks.
+
+## SAM perception
+
+Read `evo_capabilities.sam` first. SAM runs in Evo and requires an operator-enabled
+service. Call `evo_sam_segment` with an observation ID and camera. Text defaults to
+`towel`; a pixel box can limit a prompt. `evo_sam_track` takes ordered captures
+from one camera and text or labelled points on the first frame. IDs are local to
+one clip. A point prompt defines one object; `1` is positive and `0` is negative.
+
+Poll `evo_sam_result` for state, then fetch each `frame_index`. Mask and overlay
+paths are under `runtime/sam`. Use `api.sam.Sam(ctx)` for submit, wait, retrieval,
+and cancel through the same tools. Call `evo_sam_cancel` to discard a job. The GPU
+worker can remain busy until that inference ends. Robot `evo_cancel` and `evo_hold`
+remain separate and must be used to stop motion.
+
+Default coordinates are captured pixels. Rectified mode requires capture-bound
+calibration and returns its mapping. Do not pass rectified pixels directly to
+`evo_camera_ray`, which takes captured pixels. A mask is not metric position,
+verified grasp retention, full layer capture, or task success. Inspect candidate
+scores and overlays; the highest score can select a different towel. Keep empty
+and ambiguous results. Use `api.cloth_trial.TrialContext` to save input captures,
+model outputs, and task evidence for replay.
