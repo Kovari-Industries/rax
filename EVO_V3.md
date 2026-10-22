@@ -17,7 +17,8 @@ The adapter exposes discovery, RGB observation and history, FK, IK, preview, cam
 rays, arm motion, grippers, carriage, neck, bounded base velocity, action status,
 cancellation, and hold. Optional calibrated scene control adds measured base moves,
 button detections, and local doorway traversal. See [elevator primitives](docs/evo/ELEVATOR_PRIMITIVES.md)
-for the API, configuration, and qualification limits. `services/evo_v3/tools.json` is the public schema. It is
+for the API, configuration, and qualification limits. RAX task schemas are in `services/evo_v3/elevator_tools.json`.
+`services/evo_v3/tools.json` contains the generic Evo schema. It is
 identical to Evo's `evo_agent_backend/contract/tools.json`. The old towel socket and
 EVJ1 transport are removed; there is no fallback.
 
@@ -35,7 +36,8 @@ the private Evo runtime directory; the sandbox hides that complete directory. Th
 arm/disarm controls write `<session>/operator/armed.json`. Evo reads this file
 independently. Neither arming nor controller configuration is an agent tool.
 
-Operator `backend_options` are `control_socket` and `socket_timeout_s`. The default
+Operator `backend_options` are `control_socket`, `socket_timeout_s`, and optional
+absolute `elevator_binary` and `elevator_config` paths supplied together. The default
 socket is `~/.local/evo/agent/agent.sock`. Configure the exact runtime socket when
 using an isolated simulation. Unknown options are refused. The launcher hides the
 Evo socket, runtime files, Evo workspace, and session operator directory from the

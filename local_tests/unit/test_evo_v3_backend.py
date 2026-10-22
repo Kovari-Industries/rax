@@ -207,9 +207,7 @@ def test_shared_contract_fixture():
     assert fixtures["accepted_response"]["result"]["state"] == "accepted"
     names = {tool["name"] for tool in TOOLS}
     assert names == {
-        "evo_move_base",
-        "evo_scene",
-        "evo_detect_buttons",
+        "evo_camera_geometry",
         "evo_capabilities",
         "evo_status",
         "evo_observe",
@@ -360,7 +358,7 @@ def frontend_socket(client, tmp_path, audit=lambda _: None):
 
 
 @pytest.mark.parametrize("stop_tool", ["evo_cancel", "evo_hold"])
-@pytest.mark.parametrize("slow_tool", ["evo_observe", "evo_fk", "evo_detect_buttons"])
+@pytest.mark.parametrize("slow_tool", ["evo_observe", "evo_fk"])
 def test_frontend_socket_stop_bypasses_slow_request(tmp_path, stop_tool, slow_tool):
     from concurrent.futures import ThreadPoolExecutor
     from auto_research_agent.api.runtime import Context
@@ -372,7 +370,7 @@ def test_frontend_socket_stop_bypasses_slow_request(tmp_path, stop_tool, slow_to
         if request["method"] == slow_tool.removeprefix("evo_"):
             blocked.set()
             assert release.wait(3), "test did not release ordinary request"
-            return {"cameras": {}} if slow_tool in {"evo_observe", "evo_detect_buttons"} else {"poses": {}}
+            return {"cameras": {}} if slow_tool == "evo_observe" else {"poses": {}}
         if request["method"] in ("cancel", "hold"):
             return {"action_id": "action-a", "state": "stopping"}
         if request["method"] == "action_status":
@@ -400,8 +398,7 @@ def test_frontend_socket_stop_bypasses_slow_request(tmp_path, stop_tool, slow_to
                     }
                 ],
             )
-            params = {"evo_observe": {}, "evo_fk": {"links": ["left_palm"]},
-                      "evo_detect_buttons": {"camera": "left_arm", "score_threshold": 0.6}}[slow_tool]
+            params = {"evo_observe": {}, "evo_fk": {"links": ["left_palm"]}}[slow_tool]
             pending = pool.submit(ordinary.value, slow_tool, **params)
             try:
                 assert blocked.wait(1)

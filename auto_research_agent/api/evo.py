@@ -74,7 +74,6 @@ class Evo:
             "evo_move_carriage",
             "evo_move_neck",
             "evo_drive",
-            "evo_move_base",
         }
         if tool not in allowed:
             raise ValueError("not an Evo action tool")

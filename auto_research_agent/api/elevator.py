@@ -1,6 +1,6 @@
 """Elevator primitives using calibrated wrist views and measured point clouds.
 
-All motion uses public Evo tools. Configure each arm's measured viewing posture,
+Arm motion uses Evo tools; base goals use RAX tools backed by Evo actions. Configure each arm's measured viewing posture,
 pressing-tip transform, and panel offsets before physical use. This module never
 arms the robot, changes limits, or guesses missing calibration.
 """
@@ -250,7 +250,7 @@ class Elevator:
         if label not in self.settings.press_offsets:
             raise PrimitiveError("the panel has no calibrated press offset for this label")
         self.base.check_cancel()
-        observation = self.context.value("evo_detect_buttons", camera=side+"_arm", score_threshold=self.settings.min_score)
+        observation = self.context.value("rax_detect_buttons", camera=side+"_arm", score_threshold=self.settings.min_score)
         self.base.check_cancel()
         camera = observation.get("cameras", {}).get(side+"_arm", {})
         stamp = camera.get("capture_us")
@@ -278,7 +278,7 @@ class Elevator:
             raise PrimitiveError("invalid detected label box", self.evidence)
         du, dv = self.settings.press_offsets[label]
         pixel = ((x0+x1)/2+du*(x1-x0), (y0+y1)/2+dv*(y1-y0))
-        ray = self.context.value("evo_camera_ray", observation_id=observation["observation_id"], camera=side+"_arm", pixel=list(pixel))
+        ray = self.context.value("rax_camera_ray", observation_id=observation["observation_id"], camera=side+"_arm", pixel=list(pixel))
         if ray.get("frame") != "base_link" or ray.get("capture_us") != stamp:
             raise PrimitiveError("ray does not identify the detected capture", self.evidence)
         origin, direction, normal = vector(ray["origin"]), unit(ray["direction"]), unit(plane["normal"])

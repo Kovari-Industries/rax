@@ -2,12 +2,12 @@
 
 The Python API composes measured actions through the Evo motion owner. It adds
 base alignment, wrist viewing, arm selection, carriage alignment, button pressing,
-and local elevator entry and exit. The paired Evo change supplies point-cloud
-geometry, lidar pose feedback, detector capture storage, and guarded base actions.
+and local elevator entry and exit. A RAX Rust worker supplies point-cloud geometry, lidar pose feedback, detector
+capture storage, and base control. Evo supplies generic actuation and measured stops.
 
 The implementation is opt-in. A deployed profile must supply measured sensor,
-robot-envelope, arm-view, and pressing-tip calibration. The default Evo agent
-profile keeps these capabilities disabled. The code has not been qualified for
+robot-envelope, arm-view, and pressing-tip calibration. The RAX backend leaves the elevator worker disabled unless the operator supplies
+its binary and configuration. The code has not been qualified for
 physical elevator operation.
 
 ```mermaid
@@ -25,6 +25,22 @@ flowchart TD
     K --> L[Align with doorway center]
     L --> M[Cross with live geometry checks]
     M --> N[Verify complete robot clearance]
+```
+
+The implementation uses the existing local button detector models. Models and
+inference engines must be prepared before deployment. Recognition does not need
+internet access or a cloud model. Missing model files cause a refusal. A stored
+Python task can run the complete sequence without an LLM.
+
+```mermaid
+flowchart LR
+    P[Local Python task] --> A[RAX trusted adapter]
+    A --> R[RAX Rust geometry and base controller]
+    R --> D[Local button detector models]
+    R --> S[Local lidar and RGB-D transport]
+    R -->|Read-only Unix socket| E[Evo backend]
+    A -->|Drive pulses and arm actions| E
+    E --> C[Robot controllers]
 ```
 
 ## Interfaces
@@ -74,14 +90,18 @@ The Python compositions advance only after successful action results.
 
 | Tool | Contract |
 |---|---|
-| `evo_scene` | Fresh scene ID, source time, base pose, panel plane, doorway ID, aperture width, and opening state |
-| `evo_move_base` | `delta: [dx_m, dy_m, yaw_rad]`, optional `doorway_id`; separate rotation from translation |
-| `evo_detect_buttons` | `camera` and `score_threshold`; returns exact source JPEG, detections, capture-time joints, calibration, and synchronized scene |
-| `evo_camera_ray` | Uses the saved capture. For detector observations, also requires local panel depth support and rejects a nearer surface |
+| `rax_scene` | Fresh scene ID, source time, base pose, panel plane, doorway ID, aperture width, and opening state |
+| `rax_move_base` | `delta: [dx_m, dy_m, yaw_rad]`, optional `doorway_id`; separate rotation from translation |
+| `rax_detect_buttons` | `camera` and `score_threshold`; returns exact source JPEG, detections, capture-time joints, calibration, and synchronized scene |
+| `rax_camera_ray` | Uses the saved capture. For detector observations, also requires local panel depth support and rejects a nearer surface |
 
-`evo_move_base` uses the same ownership, arming, lease, recording, cancellation,
-and measured-stop checks as existing actions. It holds the complete configured
-travel posture. It checks cumulative distance, angle, drift, timeout, progress,
+`rax_base_preview` checks a proposed base goal. `rax_move_base` runs a local RAX
+action. Its adapter sends short `evo_drive` pulses through the existing Evo
+ownership, arming, lease, recording, cancellation, and measured-stop checks.
+Each pulse carries an absolute `valid_until_us`; a delayed request cannot extend
+that deadline. Evo stops an expired command independently of RAX. The adapter
+waits for measured stop and subsequent lidar evidence before another pulse.
+It checks the complete configured travel posture before each pulse. It checks cumulative distance, angle, drift, timeout, progress,
 obstacles, floor support, and doorway state. Results include residual error and
 `before`, `straddling`, or `after` for the full robot envelope.
 
@@ -120,9 +140,13 @@ all objects in the scene.
 
 ## Configuration
 
-The existing exclusive agent profile owns the actuators. Add `scene` and
-`button_service` under `evo_agent_backend` in its operator configuration. Neither
-field is available as an agent setting. `null` disables each feature.
+The existing exclusive Evo agent profile owns the actuators. RAX operator
+`backend_options` must supply absolute `elevator_binary` and `elevator_config`
+paths together. The RAX JSON configuration contains `scene`, `button_service`,
+and `ros_domain_id`. These are operator settings, not agent tools. Omit both
+backend options to disable the worker. See the
+[runtime build and deployment instructions](../../services/elevator_runtime/README.md).
+Do not add elevator settings to Evo.
 
 Use `/button_recognition/detect` for the existing detector when that service is
 running. The current sensor configurations use `/unilidar/cloud`; select and
@@ -199,33 +223,26 @@ schema validation, Unix transport, and observation storage. It also checks stale
 captures, missing calibration/depth, arm reach rejection, target loss, interrupted
 approaches, cancellation, late door closure, and unconfirmed activation.
 
-The paired Rust tests cover sensor decoding, lidar geometry, door tracking,
-obstacle/floor/sill rejection, control convergence, stop verification, and scene
-loss. Run them in the repository's Nix environment:
+The RAX Rust tests cover sensor decoding, lidar geometry, door tracking,
+obstacle/floor/sill rejection, control convergence, scene loss, and the worker's
+read-only Evo boundary. The pulse adapter tests cover deadlines, cancellation
+during dispatch, worker loss, and withdrawal of the lease after an unconfirmed
+stop. The complete Python composition test refuses network socket connections;
+it uses local Unix sockets and fake robot responses.
 
 ```bash
-KB_EXECUTION=local ./kb test packages/evo_agent_backend packages/evo_orchestrator
-KB_EXECUTION=local ./kb generate --check packages/evo_agent_backend
+cargo test --manifest-path services/elevator_runtime/Cargo.toml --locked --offline
+python3 -m pytest -q local_tests/unit/test_elevator.py local_tests/unit/test_elevator_runtime.py
 ```
 
-Validation on jetson-104 used the local Nix/Bazel environment for Rust:
+Evo's generic deadline and backend checks run in its Nix environment:
 
-| Check | Result |
-|---|---:|
-| RAX elevator and related regression tests | 116 passed |
-| Evo agent backend tests | 53 passed |
-| Orchestrator unit, CLI, process, and observation tests | 207 passed |
-| Existing hardware smoke tests | 3 ignored |
-| Shared RAX/Evo tool schema | Exact match |
-| Generated Bazel files | Check passed |
+```bash
+KB_EXECUTION=local ./kb test packages/evo_agent_backend
+```
 
-The first orchestrator process-test run failed its existing runtime-directory
-permission check. Bazel had created a test directory with broader permissions.
-The successful run used `--run_under=/tmp/elevator-test-private-dir.sh`. That test
-wrapper applies `chmod 700` only to Bazel's `TEST_TMPDIR`, then executes the test.
-It does not change production runtime paths or relax the runtime permission check.
-
-The Python fake does not replace a sensor-fed runtime test.
-Physical calibration, a complete isolated runtime replay with moving doors, the
-legacy elevator state publisher integration, and supervised physical trials remain
-separate qualification work. No physical robot runtime was started for this implementation.
+These tests do not replace a sensor-fed runtime test. Physical calibration,
+a complete isolated runtime replay with moving doors, and supervised physical
+trials remain qualification work. No physical robot runtime was started for this
+implementation. The current detector identifies labels; it does not confirm
+button activation. There is no automatic retry after an uncertain press.

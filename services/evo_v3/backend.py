@@ -1,7 +1,7 @@
 """Thin RAX client for Evo's exclusive agent backend.
 
 Evo owns arming checks, motion preparation, limits, execution, and measured stops.
-The client never opens a sensor, controller, ROS publisher, or hardware SDK.
+The optional RAX Rust worker reads existing sensor transports. Only Evo commands actuators.
 """
 import base64
 import copy
@@ -14,7 +14,8 @@ import threading
 import uuid
 
 TOOLS = json.loads(Path(__file__).with_name("tools.json").read_text())
-BY_NAME = {tool["name"]: tool for tool in TOOLS}
+ELEVATOR_TOOLS = json.loads(Path(__file__).with_name("elevator_tools.json").read_text())
+BY_NAME = {tool["name"]: tool for tool in TOOLS + ELEVATOR_TOOLS}
 MOTION = frozenset(
     "evo_" + name
     for name in (
@@ -24,7 +25,6 @@ MOTION = frozenset(
         "move_carriage",
         "move_neck",
         "drive",
-        "move_base",
         "move_body",
         "follow_path",
         "move_pair",
@@ -34,6 +34,8 @@ MOTION = frozenset(
 DEFAULTS = {
     "control_socket": str(Path.home() / ".local/evo/agent/agent.sock"),
     "socket_timeout_s": 5.0,
+    "elevator_binary": None,
+    "elevator_config": None,
 }
 MAX_RESPONSE = 40 * 1024 * 1024
 
@@ -84,6 +86,9 @@ def validate_value(value, schema):
             raise ValueError("invalid array size")
         for item in value:
             validate_value(item, schema["items"])
+    elif kind == "integer":
+        if type(value) is not int or value < schema.get("minimum", value):
+            raise ValueError("expected a bounded integer")
     elif kind == "number":
         if type(value) not in (float, int) or not math.isfinite(value):
             raise ValueError("expected a finite number")
@@ -107,7 +112,7 @@ class EvoRefused(ValueError):
 
 class EvoV3Backend:
     stop_tools = frozenset({"evo_cancel", "evo_hold"})
-    mutating = MOTION
+    mutating = MOTION | {"rax_move_base"}
     priority_tools = frozenset(
         {"evo_cancel", "evo_hold", "evo_action_status", "evo_status"}
     )
@@ -134,9 +139,18 @@ class EvoV3Backend:
         self._stop = threading.Event()
         self._heartbeat_thread = None
         self._failure = None
+        self.elevator = None
+        binary, profile = self.options["elevator_binary"], self.options["elevator_config"]
+        if bool(binary) != bool(profile):
+            raise ValueError("configure both elevator_binary and elevator_config")
+        if binary:
+            if not all(isinstance(p, str) and Path(p).is_absolute() for p in (binary, profile)):
+                raise ValueError("elevator paths must be absolute operator paths")
+            from .elevator import ElevatorRuntime
+            self.elevator = ElevatorRuntime(self, binary, profile)
 
     def tools(self):
-        return copy.deepcopy(TOOLS)
+        return copy.deepcopy(TOOLS + ELEVATOR_TOOLS)
 
     def validate(self, name, arguments):
         if name not in BY_NAME or not isinstance(arguments, dict):
@@ -275,6 +289,38 @@ class EvoV3Backend:
 
     def call(self, name, arguments):
         self.validate(name, arguments)
+        if name.startswith("rax_"):
+            if self.elevator is None:
+                raise EvoRefused("RAX elevator runtime is not configured")
+            if name == "rax_move_base":
+                self._ensure_session()
+                return self.elevator.start(arguments), []
+            method = {"rax_scene":"scene", "rax_base_preview":"preview",
+                      "rax_detect_buttons":"detect", "rax_camera_ray":"ray"}[name]
+            value = self.elevator.rpc(method, arguments, timeout=5 if method == "detect" else 0.5)
+            return self._save_observation(value) if method == "detect" else (value, [])
+        local_id = arguments.get("action_id", "").startswith("rax-base-")
+        if local_id and name in {"evo_action_status", "evo_cancel"}:
+            if self.elevator is None:
+                raise EvoRefused("unknown RAX base action")
+            if name == "evo_action_status":
+                return self.elevator.result(arguments["action_id"]), []
+            try:
+                return self.elevator.cancel(arguments["action_id"]), []
+            except Exception as error:
+                self._failure = str(error)
+                self._stop.set()
+                raise
+        if self.elevator is not None and self.elevator.active:
+            if name in MOTION:
+                raise EvoRefused("RAX base goal is active; cancel and verify stop first")
+            if name == "evo_hold":
+                try:
+                    return self.elevator.cancel(), []
+                except Exception as error:
+                    self._failure = str(error)
+                    self._stop.set()
+                    raise
         if name in MOTION or name in ("evo_action_status", "evo_cancel", "evo_hold"):
             if not (name in ("evo_cancel", "evo_hold") and self.session_id):
                 self._ensure_session()
@@ -300,9 +346,12 @@ class EvoV3Backend:
                 self._failure = str(error)
                 self._stop.set()  # No retry of an action with an unknown result.
             raise
+        if name == "evo_capabilities":
+            value["scene"] = self.elevator.capabilities if self.elevator is not None else {"configured": False}
+            value["tools"] = self.tools()
         return (
             self._save_observation(value)
-            if name in {"evo_observe", "evo_detect_buttons"}
+            if name == "evo_observe"
             or (name == "evo_history" and "observation_id" in arguments)
             else (value, [])
         )
@@ -311,6 +360,8 @@ class EvoV3Backend:
         if self.closed:
             return
         self.closed = True
+        if self.elevator is not None:
+            self.elevator.close()
         try:
             if self.session_id:
                 self._rpc("close_session", {}, timeout=0.2)

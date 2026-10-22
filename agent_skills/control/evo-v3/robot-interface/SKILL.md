@@ -76,7 +76,7 @@ routines, perception requirements, and recovery checks.
 ## Elevator primitives
 
 Use `api.base.Base` for `rotate_base`, `translate_base`, and angle, distance, or
-lateral alignment. `evo_move_base` takes `delta: [dx_m, dy_m, yaw_rad]`. Separate
+lateral alignment. `rax_move_base` takes `delta: [dx_m, dy_m, yaw_rad]`. Separate
 rotation from translation. Completion requires measured lidar pose and a verified
 stop. Both arms and the carriage must be in the configured travel posture.
 
@@ -86,8 +86,8 @@ a pressing-tip transform, a press orientation, and exact label-to-press offsets.
 Do not invent these values from an image. `press_elevator_button` turns toward the
 panel, obtains fresh wrist captures, selects a feasible arm, aligns the carriage,
 approaches in bounded steps, presses, and retracts. Each arm candidate must pass
-approach, press, and retract previews. `evo_detect_buttons` preserves the detector's
-exact image and capture state. For these captures, `evo_camera_ray` also requires
+approach, press, and retract previews. `rax_detect_buttons` preserves the detector's
+exact image and capture state. For these captures, `rax_camera_ray` also requires
 local point-cloud support at the requested press pixel.
 
 `stroke_complete_unconfirmed` means the arm completed its stroke. The current
@@ -101,3 +101,8 @@ The runtime checks the same doorway during motion and measures clearance of the
 complete travel envelope. Closed, closing, stale, blocked, or unknown geometry
 stops the action. These are local doorway primitives; they do not select a floor,
 identify a destination floor, or provide building navigation.
+
+Elevator primitives use the installed local button detector models. Prepare models
+and inference engines before the trial. No primitive uses a cloud fallback. Run
+a stored Python task when internet is unavailable; no LLM is required. RAX owns
+scene processing and base goals. Evo owns actuator commands and measured stops.

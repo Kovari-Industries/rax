@@ -1,13 +1,13 @@
 """Measured base primitives through Evo's sole motion owner.
 
-The runtime supplies lidar pose and calibrated point-cloud geometry. A duration
+The RAX Rust worker supplies lidar pose and calibrated point-cloud geometry. A duration
 or command acknowledgement is never treated as an arrival measurement.
 """
 from dataclasses import dataclass, field
 import math
 import time
 
-from .evo import Evo
+from .evo import Evo, EvoActionFailed
 
 
 def vector(value, size=3):
@@ -76,7 +76,7 @@ class Base:
 
     def observe_scene(self):
         self.check_cancel()
-        value = self.context.value("evo_scene")
+        value = self.context.value("rax_scene")
         stamp = value.get("capture_us")
         if type(stamp) is not int or not 0 <= time.time() - stamp/1e6 <= self.settings["max_age_s"]:
             raise PrimitiveError("stale or invalid point-cloud capture", self.evidence)
@@ -96,8 +96,13 @@ class Base:
         args = {"delta": list(delta)}
         if doorway_id is not None:
             args["doorway_id"] = doorway_id
-        result = self.evo.execute("evo_move_base", wait_timeout_s=95,
-                                  cancelled=self.cancelled, **args)
+        preview = self.context.value("rax_base_preview", **args)
+        if preview.get("valid") is not True:
+            raise PrimitiveError("RAX base preview refused", self.evidence)
+        self.check_cancel()
+        result = self.evo.wait(self.context.value("rax_move_base", **args), 95, self.cancelled)
+        if result.get("state") != "succeeded" or result.get("physical_stop_verified") is not True:
+            raise EvoActionFailed(result)
         measured = result.get("base_result")
         if not isinstance(measured, dict) or "residual" not in measured:
             raise PrimitiveError("base action lacks measured residual", self.evidence)

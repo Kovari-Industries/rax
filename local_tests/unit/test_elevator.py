@@ -71,7 +71,7 @@ class RobotContext:
         self.calls.append((tool, args))
         if tool == "evo_capabilities":
             return self.capabilities
-        if tool == "evo_scene":
+        if tool == "rax_scene":
             return self.scene()
         if tool == "evo_status":
             return {"feedback_fresh": True, "motion_blocked": False, "state": {"positions": self.joints.copy()}}
@@ -81,6 +81,8 @@ class RobotContext:
             xyz = p["position"].copy()
             xyz[2] += args.get("joints", {}).get("carriage_joint", self.joints["carriage_joint"])-self.joints["carriage_joint"]
             return {"poses": {side+"_palm": {"position": xyz, "quaternion_xyzw": p["quaternion_xyzw"]}}}
+        if tool == "rax_base_preview":
+            return {"valid": True}
         if tool == "evo_preview":
             action = args["action"]
             if action["kind"] == "follow_path":
@@ -90,7 +92,7 @@ class RobotContext:
             else:
                 points = []
             return {"valid": True, "plan": {"points": points}}
-        if tool == "evo_detect_buttons":
+        if tool == "rax_detect_buttons":
             self.detect_count += 1
             side = args["camera"].removesuffix("_arm")
             stamp = time.time_ns()//1000
@@ -101,7 +103,7 @@ class RobotContext:
             self.capture = {"observation_id": f"detect-{self.detect_count}", "cameras": {args["camera"]: camera},
                             "scene": self.scene(stamp), "detections": detections}
             return self.capture
-        if tool == "evo_camera_ray":
+        if tool == "rax_camera_ray":
             assert args["observation_id"] == self.capture["observation_id"]
             camera = self.capture["cameras"][args["camera"]]
             point = self.local((1., 0., 1.))
@@ -114,8 +116,8 @@ class RobotContext:
         if tool == "evo_cancel":
             self.last_result.update(state="cancelled", reason="cancelled")
             return {"state": "stopping"}
-        if tool.startswith("evo_move_") or tool == "evo_follow_path":
-            action_id = f"action-{len(self.calls)}"
+        if tool.startswith("evo_move_") or tool in {"evo_follow_path", "rax_move_base"}:
+            action_id = ("rax-base-" if tool == "rax_move_base" else "action-") + str(len(self.calls))
             self.last_result = {"action_id": action_id, "state": "succeeded", "physical_stop_verified": True}
             if self.fail_action == tool:
                 self.last_result.update(state="failed", reason="injected failure", physical_stop_verified=False)
@@ -133,7 +135,7 @@ class RobotContext:
                         if side in p:
                             self.palms[side] = {"position": list(p[side]["position"]),
                                                 "quaternion_xyzw": list(p[side]["quaternion_xyzw"])}
-            if tool == "evo_move_base":
+            if tool == "rax_move_base":
                 dx, dy, angle = args["delta"]
                 self.base_calls.append(args)
                 if self.close_on_crossing and math.hypot(dx, dy) > 0.6:
@@ -305,8 +307,10 @@ def test_cancellation_requires_verified_stop_even_if_action_just_finished():
 
 def test_cancel_before_preview_dispatches_nothing():
     context = RobotContext()
-    with pytest.raises(EvoActionFailed, match="cancelled"):
-        Evo(context).execute("evo_move_base", delta=[.1, 0, 0], cancelled=lambda: True)
+    base = Base(context, cancelled=lambda: True)
+    context.calls.clear()
+    with pytest.raises(PrimitiveError, match="cancelled"):
+        base.translate_base(.1, 0)
     assert context.calls == []
 
 
@@ -346,7 +350,7 @@ def test_plane_without_local_press_depth_is_refused():
     original = context.value
     def missing_surface(tool, **args):
         result = original(tool, **args)
-        if tool == "evo_camera_ray":
+        if tool == "rax_camera_ray":
             result.pop("surface")
         return result
     context.value = missing_surface
@@ -354,19 +358,44 @@ def test_plane_without_local_press_depth_is_refused():
         Elevator(context, settings()).observe_button("2", "left")
 
 
-def test_press_entry_and_exit_through_real_rax_frontend_and_adapter(tmp_path):
+def test_press_entry_and_exit_through_real_rax_frontend_and_adapter(tmp_path, monkeypatch):
+    import socket
+    original_connect = socket.socket.connect
+
+    def local_only(connection, address):
+        assert connection.family == socket.AF_UNIX, "task attempted a network connection"
+        return original_connect(connection, address)
+
+    monkeypatch.setattr(socket.socket, "connect", local_only)
     from auto_research_agent.api.runtime import Context
     from local_tests.unit.test_evo_v3_backend import service, frontend_socket
 
     robot = RobotContext()
+    class FakeRuntime:
+        capabilities = robot.capabilities["scene"]
+        active = False
+        calls = []
+        def rpc(self, method, args, **kwargs):
+            self.calls.append(method)
+            tool = {"scene":"rax_scene", "detect":"rax_detect_buttons", "ray":"rax_camera_ray",
+                    "preview":"rax_base_preview"}[method]
+            return robot.value(tool, **args)
+        def start(self, args):
+            self.calls.append("move_base")
+            return robot.value("rax_move_base", **args)
+        def result(self, ident):
+            return robot.value("evo_action_status", action_id=ident)
+        def close(self):
+            pass
     with service(tmp_path, lambda r: robot.value("evo_"+r["method"], **r["params"])) as (client, received):
+        client.elevator = FakeRuntime()
         with frontend_socket(client, tmp_path) as socket_path, Context(str(socket_path)) as context:
             task = Elevator(context, settings())
             assert task.press_elevator_button("2").outcome == "stroke_complete_unconfirmed"
             assert task.navigate_into_elevator(goal_depth_m=.5).outcome == "succeeded"
             assert task.navigate_out_of_elevator(goal_depth_m=.5).outcome == "succeeded"
-    assert any(r["method"] == "detect_buttons" for r in received)
-    assert any(r["method"] == "move_base" for r in received)
+    assert "detect" in FakeRuntime.calls and "move_base" in FakeRuntime.calls
+    assert not any(r["method"] in {"detect_buttons", "move_base", "scene"} for r in received)
     import json
     frames = list((tmp_path / "agent-workspace/runtime/frames").iterdir())
     assert frames
@@ -386,4 +415,4 @@ def test_elevator_api_and_scene_reads_reach_generated_workspace(tmp_path):
     assert (workspace / "api/elevator.py").is_file()
     assert (workspace / "api/base.py").is_file()
     contract = json.loads((workspace / "MCP_CONTRACT.json").read_text())
-    assert {"evo_move_base", "evo_scene", "evo_detect_buttons"} <= set(contract["tools"])
+    assert {"rax_move_base", "rax_scene", "rax_detect_buttons"} <= set(contract["tools"])
