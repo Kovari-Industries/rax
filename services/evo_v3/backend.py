@@ -24,6 +24,7 @@ MOTION = frozenset(
         "move_carriage",
         "move_neck",
         "drive",
+        "move_base",
         "move_body",
         "follow_path",
         "move_pair",
@@ -301,7 +302,7 @@ class EvoV3Backend:
             raise
         return (
             self._save_observation(value)
-            if name == "evo_observe"
+            if name in {"evo_observe", "evo_detect_buttons"}
             or (name == "evo_history" and "observation_id" in arguments)
             else (value, [])
         )

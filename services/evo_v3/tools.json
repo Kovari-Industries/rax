@@ -603,6 +603,30 @@
                 "retain"
               ],
               "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "delta": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 3,
+                  "maxItems": 3
+                },
+                "doorway_id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "const": "move_base"
+                }
+              },
+              "required": [
+                "kind",
+                "delta"
+              ],
+              "additionalProperties": false
             }
           ]
         }
@@ -1071,6 +1095,66 @@
         "side",
         "position_rad",
         "retain"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_move_base",
+    "description": "Move the swerve base by [dx metres, dy metres, yaw radians] in its start frame. Separate rotation and translation. Requires calibrated point clouds, lidar tracking and the configured travel posture. doorway_id requires a continuously open, clear doorway. Poll for measured completion.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "delta": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "doorway_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "delta"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_scene",
+    "description": "Read fresh calibrated point-cloud geometry, lidar pose, panel plane and tracked doorway state. Missing or stale geometry is refused.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "evo_detect_buttons",
+    "description": "Detect labels in a new wrist or base camera capture while stationary. Return exact saved image identity and calibrated rays; boxes are label regions, not verified press points.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "camera": {
+          "enum": [
+            "base",
+            "left_arm",
+            "right_arm"
+          ]
+        },
+        "score_threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "camera",
+        "score_threshold"
       ],
       "additionalProperties": false
     }

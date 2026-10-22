@@ -15,15 +15,18 @@ flowchart LR
 
 The adapter exposes discovery, RGB observation and history, FK, IK, preview, camera
 rays, arm motion, grippers, carriage, neck, bounded base velocity, action status,
-cancellation, and hold. `services/evo_v3/tools.json` is the public schema. It is
+cancellation, and hold. Optional calibrated scene control adds measured base moves,
+button detections, and local doorway traversal. See [elevator primitives](docs/evo/ELEVATOR_PRIMITIVES.md)
+for the API, configuration, and qualification limits. `services/evo_v3/tools.json` is the public schema. It is
 identical to Evo's `evo_agent_backend/contract/tools.json`. The old towel socket and
 EVJ1 transport are removed; there is no fallback.
 
 Use SI units and named joints. Gripper positions are radians (`position_rad`).
 Carriage position is metres (`position_m`). Cartesian targets name `base_link` or
-`carriage_link`. Quaternion order is `[x, y, z, w]`. Depth, force control, scene
-collision checks, and navigation are unavailable. Missing camera calibration
-leaves metric geometry unavailable.
+`carriage_link`. Quaternion order is `[x, y, z, w]`. Force control, arm-to-scene
+collision checks, and general navigation are unavailable. Optional point-cloud
+base control is reported under `scene` in capabilities. Missing camera calibration
+leaves metric image geometry unavailable.
 
 The operator must start Evo's explicit exclusive agent profile and set its trusted
 `session_root` to the directory that directly contains RAX sessions. The usual RAX

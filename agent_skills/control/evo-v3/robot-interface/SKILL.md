@@ -29,7 +29,8 @@ Quaternions use `[x, y, z, w]` and must have unit length. Base velocity uses
 
 Use `evo_preview` with an action before motion. Preview checks the prepared path
 against robot joint limits, self-collision, and the configured workspace. It does
-not check objects in the scene. Execution prepares the path again from fresh state.
+not check objects along arm paths. Configured measured base actions also check
+point-cloud obstacles and floor support over the swept travel envelope. Execution prepares the path again from fresh state.
 Use small steps near objects and inspect a new observation after each action.
 
 Action tools return an `action_id`. Poll `evo_action_status` until `succeeded`,
@@ -43,11 +44,12 @@ connection stops the client lease. Never retry an action with an uncertain resul
 `evo_observe` saves RGB images and metadata. Inspect each camera error and capture
 time. A partial result is not a complete camera bundle. Metric rays require valid
 calibration and capture-time state. `evo_camera_ray` takes the `observation_id`,
-`camera`, and `pixel` from that capture. A ray has no depth. Missing calibration
+`camera`, and `pixel` from that capture. An ordinary RGB ray has no depth. Missing calibration
 must not be replaced with an assumed camera pose. Use `evo_history` for recent
 measured state and the recording path.
 
-Depth, force control, scene collision checks, and navigation are unavailable.
+Force control, arm-to-scene collision checks, and general navigation remain unavailable.
+Use `scene.configured` in capabilities to check local point-cloud base control.
 Simulation checks software behavior. They do not establish physical stopping
 performance or task success.
 
@@ -70,3 +72,32 @@ Completion does not prove cloth contact or capture of all layers. Stop requests,
 disarm, faults, and lease loss clear retention and hold measured joints. They do
 not open the fingers. Read [cloth-handling](../cloth-handling/SKILL.md) for towel
 routines, perception requirements, and recovery checks.
+
+## Elevator primitives
+
+Use `api.base.Base` for `rotate_base`, `translate_base`, and angle, distance, or
+lateral alignment. `evo_move_base` takes `delta: [dx_m, dy_m, yaw_rad]`. Separate
+rotation from translation. Completion requires measured lidar pose and a verified
+stop. Both arms and the carriage must be in the configured travel posture.
+
+Use `api.elevator.Elevator` with operator-supplied `ElevatorSettings` and
+`ArmProfile` values. Profiles must contain measured elbow-bent wrist-view poses,
+a pressing-tip transform, a press orientation, and exact label-to-press offsets.
+Do not invent these values from an image. `press_elevator_button` turns toward the
+panel, obtains fresh wrist captures, selects a feasible arm, aligns the carriage,
+approaches in bounded steps, presses, and retracts. Each arm candidate must pass
+approach, press, and retract previews. `evo_detect_buttons` preserves the detector's
+exact image and capture state. For these captures, `evo_camera_ray` also requires
+local point-cloud support at the requested press pixel.
+
+`stroke_complete_unconfirmed` means the arm completed its stroke. The current
+detector cannot prove button activation. Do not repeat an uncertain press.
+After an interrupted approach or press, inspect the action result and measured
+state before an explicit `retract_arm`; do not move the base or stow first.
+
+`navigate_into_elevator` and `navigate_out_of_elevator` require a measured goal
+depth beyond the sill. They stow, wait for a stable open doorway, center, and cross.
+The runtime checks the same doorway during motion and measures clearance of the
+complete travel envelope. Closed, closing, stale, blocked, or unknown geometry
+stops the action. These are local doorway primitives; they do not select a floor,
+identify a destination floor, or provide building navigation.
