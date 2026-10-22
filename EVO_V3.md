@@ -250,3 +250,33 @@ establish metric geometry, grasp retention, layers, or success.
 The native video profile uses different thresholds from the image profile. Empty
 tracking frames are expected when the model loses evidence. Do not fill those gaps
 with a claim that a grasp or towel identity remains valid.
+
+### Text tracking during cloth motion
+
+Choose a prompt from visible evidence. For example, use
+`sam.track(capture_ids, camera="base", prompt="red towel")` for a red target.
+Review the masks before using them in a task. If text does not select the intended
+object, use a positive point inside it and negative points on distractors in the
+first frame. Do not infer that an absent mask means the object has left the scene.
+
+Evo video profile `sam31-native-video-1008-2026-10-22.3` uses a lower threshold to
+match detections to existing tracks. Its higher new-track threshold and upstream
+occlusion/removal rules stay in place. Prompt selection and task decisions remain
+in RAX. The client does not tune model thresholds or fill missing masks.
+
+| Saved-clip check | Earlier result | Current result |
+|---|---:|---:|
+| Original short text clip | 13 / 16 target frames | 16 / 16 target frames |
+| Red towel lift, generic prompt | 36 / 48 | 46 / 48 |
+| Red towel with partial occlusion, generic prompt | 19 / 48 | 19 / 48 |
+| Same partial-occlusion clip, `red towel` prompt | — | 48 / 48 |
+| White towel lift | 40 / 40 | 40 / 40 |
+| White towel fold | 32 / 32 | 32 / 32 |
+
+The longer clips span about nine seconds. Counts refer to the reviewed target ID;
+they are not pixel accuracy or task success. A separate synthetic full-occlusion
+control returned no masks during the hidden interval and resumed the target ID
+afterwards. This does not establish identity through real complete occlusion.
+See Evo's `packages/evo_sam/tracking-motion-2026-10-22.md` for source manifests,
+threshold comparisons, and limits. PNG output size can require fewer frames even
+when a clip is below the frame-count and duration limits.

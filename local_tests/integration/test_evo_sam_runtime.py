@@ -97,6 +97,28 @@ def test_sam_socket_and_stops_while_gpu_is_blocked(monkeypatch):
                 sam.track([second, first])
             with pytest.raises(RuntimeError, match="calibration"):
                 sam.segment(second, space="rectified")
+            # A specific text prompt must reach the Evo-owned tracker unchanged.
+            text_first = ctx.value("evo_observe")["observation_id"]
+            time.sleep(0.55)
+            text_second = ctx.value("evo_observe")["observation_id"]
+            text_clip = sam.wait(
+                ctx.value(
+                    "evo_sam_track",
+                    observation_ids=[text_first, text_second],
+                    camera="base",
+                    prompt="red towel",
+                )
+            )
+            assert text_clip["prompt"] == "red towel"
+            assert text_clip["thresholds"] == {
+                "detection": 0.3,
+                "new_detection": 0.65,
+                "output_probability": 0.5,
+            }
+            assert [f["observation_id"] for f in text_clip["frames"]] == [
+                text_first,
+                text_second,
+            ]
             arming.write(directory, True, by="SAM simulation test")
             for tool in ("evo_cancel", "evo_hold"):
                 for name in ("entered", "completed"):

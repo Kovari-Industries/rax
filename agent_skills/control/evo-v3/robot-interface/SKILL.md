@@ -79,6 +79,14 @@ service. Call `evo_sam_segment` with an observation ID and camera. Text defaults
 from one camera and text or labelled points on the first frame. IDs are local to
 one clip. A point prompt defines one object; `1` is positive and `0` is negative.
 
+Use a visible distinguishing property in a text prompt when selecting a towel,
+for example `prompt="red towel"`. Inspect the first mask and later overlays.
+A generic prompt can delay track creation or include other towels. If the intended
+object is not selected, use labelled points on a reviewed first frame. Keep the
+choice of object in RAX; the Evo profile owns detection and track thresholds.
+When an object is hidden, keep empty results. A returned ID after occlusion is
+model evidence, not proof of physical identity or grasp retention.
+
 Poll `evo_sam_result` for state, then fetch each `frame_index`. Mask and overlay
 paths are under `runtime/sam`. Use `api.sam.Sam(ctx)` for submit, wait, retrieval,
 and cancel through the same tools. Call `evo_sam_cancel` to discard a job. The GPU
