@@ -110,6 +110,7 @@ def test_sam_socket_and_stops_while_gpu_is_blocked(monkeypatch):
                 )
             )
             assert text_clip["prompt"] == "red towel"
+            assert text_clip["video_profile_id"] == caps["sam"]["video_profile"]
             assert text_clip["thresholds"] == {
                 "detection": 0.3,
                 "new_detection": 0.65,

@@ -280,3 +280,22 @@ afterwards. This does not establish identity through real complete occlusion.
 See Evo's `packages/evo_sam/tracking-motion-2026-10-22.md` for source manifests,
 threshold comparisons, and limits. PNG output size can require fewer frames even
 when a clip is below the frame-count and duration limits.
+
+
+SAM cancellation bypasses frontend status calls and audit writes. It has separate
+admission slots from robot cancel and hold, so blocked perception cancellations
+cannot consume the robot-stop slots. It does not acquire or revoke motion authority.
+
+```mermaid
+flowchart LR
+    A[Status and ordinary requests] --> Q[Normal frontend queues]
+    C[SAM cancel] --> P[Perception cancellation slots]
+    S[Robot cancel and hold] --> R[Separate robot-stop slots]
+```
+
+`Sam.wait(timeout_s=...)` checks its deadline after status and frame responses.
+It requests cancellation and raises `TimeoutError` instead of returning a late
+result. A cancellation failure is reported as the cause. The helper does not
+interrupt an in-flight synchronous socket call; use a separate `Context` for
+urgent cancellation. Cancelling an already completed job does not erase its
+successful terminal state.

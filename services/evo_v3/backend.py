@@ -114,6 +114,7 @@ class EvoRefused(ValueError):
 
 class EvoV3Backend:
     stop_tools = frozenset({"evo_cancel", "evo_hold"})
+    cancel_tools = frozenset({"evo_sam_cancel"})
     mutating = MOTION
     priority_tools = frozenset(
         {"evo_cancel", "evo_hold", "evo_action_status", "evo_status", "evo_sam_cancel"}

@@ -209,3 +209,136 @@ def test_shared_sam_protocol_requests():
         validate_value(
             params, BY_NAME["evo_sam_" + request["operation"]]["inputSchema"]
         )
+
+
+@pytest.mark.parametrize("blocked_at", ["status", "audit"])
+def test_sam_cancel_bypasses_priority_status_and_audit(tmp_path, blocked_at):
+    entered, release = threading.Event(), threading.Event()
+
+    def block():
+        entered.set()
+        assert release.wait(3)
+
+    def audit(event):
+        if blocked_at == "audit":
+            block()
+
+    def handler(r):
+        if r["method"] == "status" and blocked_at == "status":
+            block()
+        return dict(job_id="sam-test", state="cancelled")
+
+    with service(tmp_path, handler) as (client, received), frontend_socket(
+        client, tmp_path, audit=audit
+    ) as path:
+        with Context(str(path)) as ordinary, Context(
+            str(path)
+        ) as urgent, ThreadPoolExecutor() as pool:
+            pending = pool.submit(ordinary.value, "evo_status")
+            try:
+                assert entered.wait(1)
+                urgent._socket.settimeout(1)
+                assert (
+                    Sam(urgent).cancel({"job_id": "sam-test"})["state"] == "cancelled"
+                )
+                assert not pending.done()
+                assert any(r["method"] == "sam_cancel" for r in received)
+                assert not client.session_id and not client._stop.is_set()
+            finally:
+                release.set()
+            pending.result(timeout=2)
+
+
+@pytest.mark.parametrize("expire_at", [None, 0, 1])
+def test_wait_deadline_covers_status_and_frame_retrieval_through_frontend(
+    tmp_path, monkeypatch, expire_at
+):
+    from types import SimpleNamespace
+    from auto_research_agent.api import sam as sam_module
+
+    clock = [0.0]
+    monkeypatch.setattr(sam_module, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+
+    def handler(r):
+        if r["method"] == "sam_cancel":
+            return dict(job_id="sam-test", state="succeeded")
+        index = r["params"].get("frame_index")
+        if index == expire_at:
+            clock[0] = 2.0
+        value = result()
+        value["frame_count"] = 2
+        if index is None:
+            value.pop("frame")
+        return value
+
+    with service(tmp_path, handler) as (client, received), frontend_socket(
+        client, tmp_path
+    ) as path:
+        with Context(str(path)) as ctx:
+            with pytest.raises(TimeoutError, match="cancellation requested"):
+                Sam(ctx).wait({"job_id": "sam-test"}, timeout_s=1)
+        assert received[-1]["method"] == "sam_cancel"
+        assert sum(r["method"] == "sam_result" for r in received) == (
+            1 if expire_at is None else expire_at + 2
+        )
+
+
+def test_wait_reports_timeout_when_cancellation_fails(monkeypatch):
+    from types import SimpleNamespace
+    from auto_research_agent.api import sam as sam_module
+
+    clock = [0.0]
+    monkeypatch.setattr(sam_module, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+
+    class Waiting:
+        def value(self, tool, **kw):
+            if tool == "evo_sam_cancel":
+                raise ConnectionError("socket closed")
+            clock[0] = 2.0
+            return dict(state="running")
+
+    with pytest.raises(TimeoutError, match="cancellation failed") as error:
+        Sam(Waiting()).wait({"job_id": "job"}, timeout_s=1)
+    assert isinstance(error.value.__cause__, ConnectionError)
+
+
+@pytest.mark.parametrize("tool", ["evo_cancel", "evo_hold"])
+def test_blocked_sam_cancellations_do_not_consume_robot_stop_slots(tmp_path, tool):
+    from contextlib import ExitStack
+
+    entered, release = threading.Event(), threading.Event()
+    count = [0]
+    lock = threading.Lock()
+
+    def handler(r):
+        if r["method"] == "sam_cancel":
+            with lock:
+                count[0] += 1
+                if count[0] == 4:
+                    entered.set()
+            assert release.wait(3)
+            return dict(job_id="sam-test", state="cancelled")
+        return dict(state="stopping")
+
+    with service(tmp_path, handler) as (client, received), frontend_socket(
+        client, tmp_path
+    ) as path:
+        client._ensure_session()
+        with ExitStack() as stack, ThreadPoolExecutor(max_workers=4) as pool:
+            contexts = [stack.enter_context(Context(str(path))) for _ in range(5)]
+            pending = [
+                pool.submit(Sam(ctx).cancel, {"job_id": "sam-test"})
+                for ctx in contexts[:4]
+            ]
+            try:
+                assert entered.wait(1)
+                urgent = contexts[-1]
+                urgent._socket.settimeout(1)
+                args = {"action_id": "a"} if tool == "evo_cancel" else {}
+                assert urgent.value(tool, **args)["state"] == "stopping"
+                assert all(not job.done() for job in pending)
+                assert not client._stop.is_set()
+            finally:
+                release.set()
+            for job in pending:
+                job.result(timeout=2)
