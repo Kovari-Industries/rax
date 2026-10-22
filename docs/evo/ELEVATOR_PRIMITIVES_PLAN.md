@@ -8,7 +8,9 @@
 
 Status: primitive layer implemented and tested with synthetic inputs. Physical
 operation is not qualified. [Elevator primitives](ELEVATOR_PRIMITIVES.md) gives the
-implemented API, configuration, test results, and remaining work.
+implemented API, configuration, test results, and remaining work. The
+[robot test plan](ELEVATOR_ROBOT_TEST_PLAN.md) defines the physical trial sequence
+and task-scale command sizes.
 
 This document retains the proposal and its source baseline. The scope covers
 wrist-camera viewing poses, button pressing, arm selection, and local entry into

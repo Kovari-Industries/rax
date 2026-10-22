@@ -233,6 +233,9 @@ A doorway must independently pass the open gate before entry or exit.
 
 ## Verification and remaining qualification
 
+Use the [robot test plan](ELEVATOR_ROBOT_TEST_PLAN.md) for task-scale trial commands,
+qualification stages, fault tests, and required evidence.
+
 `local_tests/unit/test_elevator.py` supplies a deterministic fake robot. It checks
 the complete press sequence and entry/exit, including the real RAX frontend,
 schema validation, Unix transport, and observation storage. It also checks stale
