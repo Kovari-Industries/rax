@@ -91,6 +91,7 @@ class Context:
 class Perception:
     def __init__(self, state="crumpled"):
         self.state = state
+        self.corners = CORNERS
         self.checks = []
         self.folding = False
         self.stacking = False
@@ -104,6 +105,9 @@ class Perception:
             self.stacking = True
         if check.stage == "laid_down":
             self.state = "folded" if self.folding else "spread"
+        if check.stage in ("fold_supported", "fold_complete"):
+            self.state = "folded"
+            self.corners = tuple(check.target["corners"])
         if check.stage == "stack_complete":
             self.state = "stacked"
         grasps = tuple(
@@ -113,14 +117,14 @@ class Perception:
                 Q,
                 "packet" if self.stacking or self.state == "folded" else "corner",
             )
-            for i, p in enumerate(CORNERS)
+            for i, p in enumerate(self.corners)
         )
         scene = Scene(
             observation["observation_id"],
             self.state,
             "simulation",
             grasps=grasps,
-            corners=CORNERS,
+            corners=self.corners,
             held={"left": "verified", "right": "verified"},
             layers={"left": "packet", "right": "packet"},
             stable=True,

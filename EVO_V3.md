@@ -100,6 +100,11 @@ progress and stop at each waypoint. Grip targets persist during normal actions
 while operator arming, measured feedback, recording, and the client lease remain
 valid. A retained command is not evidence that cloth is held.
 
+The [composable primitive guide](CLOTH_PRIMITIVES.md) describes model-assisted
+inspection, small interactions, and trial record/replay. These live entirely in
+RAX. The geometric planner is optional; learned policies can use the same motion
+interface without it.
+
 The [cloth handling instructions](agent_skills/control/evo-v3/cloth-handling/SKILL.md)
 describe the Python routines for crumpled towel unfolding, measured half-folds,
 and folded packet stacking. A task perception function must supply current metric
@@ -125,10 +130,10 @@ socket, with the native model, bridge, and measured mock controllers.
 
 | Verification on Linux ARM64 | Result |
 |---|---|
-| RAX unit suite after merging target-branch trial changes | 248 passed, 4 skipped |
+| RAX unit suite with composable cloth primitives | 278 passed, 4 skipped |
 | Public actuator and cloth-program path | Passed |
 | Frontend cancel/hold during blocked observation | Passed for base and arm paths |
-| Rust/Python schema and protocol fixture copies | Exact match |
+| Shared protocol contract | No changes in this cloth update |
 
 The skipped tests require the optional rby1-sdk or FFmpeg dependencies, which
 were not available in this test environment. The

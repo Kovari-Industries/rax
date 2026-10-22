@@ -4,7 +4,14 @@ description: Use measured cloth routines to unfold, fold, regrasp, and stack tow
 ---
 # Towels and other cloth
 
-Use `api.cloth.Cloth` for cloth routines. Use `api.evo.Evo.execute` for individual
+Use `api.cloth_actions.ClothActions` for composable interactions and
+`api.cloth_vision.ClothVision` for the configured Gemini inspection tool. Inspect
+a new capture after each motion. Model checks and pixel candidates are not metric
+poses. Use calibrated geometry for targets. Keep `unknown` results uncertain.
+Use `api.cloth_trial.TrialContext` for task records and `ReplayContext` for strict
+offline call replay. Keep a separate live Context available for stop requests.
+
+Use `api.cloth.Cloth` for optional geometric cloth routines. Use `api.evo.Evo.execute` for individual
 previewed actions. Both use the registered Evo tools through `api.runtime.Context`.
 Evo owns motion and stop checks. RAX owns cloth perception and task checks.
 
@@ -73,7 +80,11 @@ with Context() as ctx:
 Available routines are `pinch_and_check`, `lift_and_inspect`, `spread_to_span`,
 `align_held_edge`, `anchor_and_pull`, `regrasp`, `lay_down`, `fold_over_line`,
 `unfold`, `fold`, `stack_folded`, and `crumpled_to_pile`. `fold` uses ordered corners
-to make half-folds along local `u` or `v`. It checks each new folded footprint.
+to make half-folds along local `u` or `v`. Its material-length path includes the test lift. It checks the measured half-size
+footprint, alignment, stability, and support before release and after release.
+The zero-thickness planner is optional; learned policies can use small interactions
+without it. Desired `check.target` geometry must never be copied into perception
+results as measured evidence.
 A fold of an already folded towel requires packet grasps and full-layer checks.
 Choose fold axes that fit the robot workspace. If the next edge cannot be reached,
 change the towel placement and observe it again. The unfold loop has a fixed attempt budget. It stops when a second edge is not
