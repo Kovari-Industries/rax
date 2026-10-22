@@ -104,5 +104,7 @@ identify a destination floor, or provide building navigation.
 
 Elevator primitives use the installed local button detector models. Prepare models
 and inference engines before the trial. No primitive uses a cloud fallback. Run
-a stored Python task when internet is unavailable; no LLM is required. RAX owns
-scene processing and base goals. Evo owns actuator commands and measured stops.
+a stored Python task when internet is unavailable; no LLM is required. RAX supplies
+Python task logic and wrappers. Evo owns scene processing, base planning, actuator
+commands, and measured stops. Enable its optional `evo_agent_backend.elevator`
+configuration before use; check `scene.configured` in capabilities.

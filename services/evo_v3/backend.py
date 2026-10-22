@@ -1,7 +1,7 @@
 """Thin RAX client for Evo's exclusive agent backend.
 
 Evo owns arming checks, motion preparation, limits, execution, and measured stops.
-The optional RAX Rust worker reads existing sensor transports. Only Evo commands actuators.
+Evo also owns optional local elevator perception. RAX supplies Python wrappers.
 """
 import base64
 import copy
@@ -34,8 +34,6 @@ MOTION = frozenset(
 DEFAULTS = {
     "control_socket": str(Path.home() / ".local/evo/agent/agent.sock"),
     "socket_timeout_s": 5.0,
-    "elevator_binary": None,
-    "elevator_config": None,
 }
 MAX_RESPONSE = 40 * 1024 * 1024
 
@@ -139,15 +137,8 @@ class EvoV3Backend:
         self._stop = threading.Event()
         self._heartbeat_thread = None
         self._failure = None
-        self.elevator = None
-        binary, profile = self.options["elevator_binary"], self.options["elevator_config"]
-        if bool(binary) != bool(profile):
-            raise ValueError("configure both elevator_binary and elevator_config")
-        if binary:
-            if not all(isinstance(p, str) and Path(p).is_absolute() for p in (binary, profile)):
-                raise ValueError("elevator paths must be absolute operator paths")
-            from .elevator import ElevatorRuntime
-            self.elevator = ElevatorRuntime(self, binary, profile)
+        from .elevator import ElevatorRuntime
+        self.elevator = ElevatorRuntime(self)
 
     def tools(self):
         return copy.deepcopy(TOOLS + ELEVATOR_TOOLS)
@@ -291,7 +282,7 @@ class EvoV3Backend:
         self.validate(name, arguments)
         if name.startswith("rax_"):
             if self.elevator is None:
-                raise EvoRefused("RAX elevator runtime is not configured")
+                raise EvoRefused("elevator adapter is unavailable")
             if name == "rax_move_base":
                 self._ensure_session()
                 return self.elevator.start(arguments), []
@@ -347,7 +338,6 @@ class EvoV3Backend:
                 self._stop.set()  # No retry of an action with an unknown result.
             raise
         if name == "evo_capabilities":
-            value["scene"] = self.elevator.capabilities if self.elevator is not None else {"configured": False}
             value["tools"] = self.tools()
         return (
             self._save_observation(value)

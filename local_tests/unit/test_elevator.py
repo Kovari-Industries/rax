@@ -371,31 +371,40 @@ def test_press_entry_and_exit_through_real_rax_frontend_and_adapter(tmp_path, mo
     from local_tests.unit.test_evo_v3_backend import service, frontend_socket
 
     robot = RobotContext()
-    class FakeRuntime:
-        capabilities = robot.capabilities["scene"]
-        active = False
-        calls = []
-        def rpc(self, method, args, **kwargs):
-            self.calls.append(method)
-            tool = {"scene":"rax_scene", "detect":"rax_detect_buttons", "ray":"rax_camera_ray",
-                    "preview":"rax_base_preview"}[method]
-            return robot.value(tool, **args)
-        def start(self, args):
-            self.calls.append("move_base")
-            return robot.value("rax_move_base", **args)
-        def result(self, ident):
-            return robot.value("evo_action_status", action_id=ident)
-        def close(self):
-            pass
-    with service(tmp_path, lambda r: robot.value("evo_"+r["method"], **r["params"])) as (client, received):
-        client.elevator = FakeRuntime()
+    goal = {}
+    def handle(request):
+        method, args = request["method"], request["params"]
+        if method == "elevator":
+            operation, params = args["operation"], args["params"]
+            if operation in {"scene", "detect", "ray", "preview"}:
+                tool = {"scene":"rax_scene", "detect":"rax_detect_buttons", "ray":"rax_camera_ray",
+                        "preview":"rax_base_preview"}[operation]
+                return robot.value(tool, **params)
+            if operation == "begin":
+                goal.update(params=params, done=False)
+                return {"goal_id": "evo-goal"}
+            if operation == "step":
+                if goal["done"]:
+                    return {"done": True, "base_result": robot.last_result["base_result"]}
+                return {"velocity": [.01, 0., 0.], "duration_s": .06,
+                        "valid_until_us": time.time_ns()//1000 + 150_000}
+            assert operation == "abort"
+            return {"aborted": True}
+        if method == "drive":
+            accepted = robot.value("rax_move_base", **goal["params"])
+            robot.last_result["final_state"] = {"source_us": time.time_ns()//1000}
+            goal["done"] = True
+            return accepted
+        return robot.value("evo_" + method, **args)
+
+    with service(tmp_path, handle) as (client, received):
         with frontend_socket(client, tmp_path) as socket_path, Context(str(socket_path)) as context:
             task = Elevator(context, settings())
             assert task.press_elevator_button("2").outcome == "stroke_complete_unconfirmed"
             assert task.navigate_into_elevator(goal_depth_m=.5).outcome == "succeeded"
             assert task.navigate_out_of_elevator(goal_depth_m=.5).outcome == "succeeded"
-    assert "detect" in FakeRuntime.calls and "move_base" in FakeRuntime.calls
-    assert not any(r["method"] in {"detect_buttons", "move_base", "scene"} for r in received)
+    assert any(r["method"] == "elevator" and r["params"]["operation"] == "detect" for r in received)
+    assert any(r["method"] == "drive" and "valid_until_us" in r["params"] for r in received)
     import json
     frames = list((tmp_path / "agent-workspace/runtime/frames").iterdir())
     assert frames

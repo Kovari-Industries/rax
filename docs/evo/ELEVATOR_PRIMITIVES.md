@@ -2,12 +2,13 @@
 
 The Python API composes measured actions through the Evo motion owner. It adds
 base alignment, wrist viewing, arm selection, carriage alignment, button pressing,
-and local elevator entry and exit. A RAX Rust worker supplies point-cloud geometry, lidar pose feedback, detector
-capture storage, and base control. Evo supplies generic actuation and measured stops.
+and local elevator entry and exit. The Rust library in Evo supplies point-cloud geometry, lidar pose feedback, detector
+capture storage, and base control. RAX contains Python calls, wrappers, and task
+sequences. Evo also supplies actuator control and measured stops.
 
 The implementation is opt-in. A deployed profile must supply measured sensor,
-robot-envelope, arm-view, and pressing-tip calibration. The RAX backend leaves the elevator worker disabled unless the operator supplies
-its binary and configuration. The code has not been qualified for
+robot-envelope, arm-view, and pressing-tip calibration. Evo leaves the elevator services disabled unless the operator supplies measured
+configuration under `evo_agent_backend.elevator`. The code has not been qualified for
 physical elevator operation.
 
 ```mermaid
@@ -35,11 +36,10 @@ Python task can run the complete sequence without an LLM.
 ```mermaid
 flowchart LR
     P[Local Python task] --> A[RAX trusted adapter]
-    A --> R[RAX Rust geometry and base controller]
-    R --> D[Local button detector models]
-    R --> S[Local lidar and RGB-D transport]
-    R -->|Read-only Unix socket| E[Evo backend]
-    A -->|Drive pulses and arm actions| E
+    A -->|Existing private Unix socket| E[Evo backend]
+    E --> R[Evo Rust geometry and base planner]
+    R --> D[Existing local button detector]
+    R --> S[Existing lidar and RGB-D transport]
     E --> C[Robot controllers]
 ```
 
@@ -140,13 +140,29 @@ all objects in the scene.
 
 ## Configuration
 
-The existing exclusive Evo agent profile owns the actuators. RAX operator
-`backend_options` must supply absolute `elevator_binary` and `elevator_config`
-paths together. The RAX JSON configuration contains `scene`, `button_service`,
-and `ros_domain_id`. These are operator settings, not agent tools. Omit both
-backend options to disable the worker. See the
-[runtime build and deployment instructions](../../services/elevator_runtime/README.md).
-Do not add elevator settings to Evo.
+The existing exclusive Evo agent profile owns the actuators. Add `elevator` under
+`evo_agent_backend` in the operator's Evo configuration. Its fields are `scene`
+and `button_service`. The runtime uses the existing `ROS_DOMAIN_ID`. Omit
+`elevator`, or set it to `null`, to disable these services.
+
+RAX uses only its existing `control_socket` and `socket_timeout_s` backend options.
+There is no Rust binary path, Cargo build, or separate worker process in RAX.
+The Rust library is compiled into `evo_orchestrator` by Evo's Nix/Bazel build:
+
+```bash
+KB_EXECUTION=local ./kb build packages/evo_orchestrator
+```
+
+Prepare the Evo runtime, sensor drivers, model cache, inference engines, and
+calibration before leaving network coverage. Run `kb prepare models` in Evo before
+deployment. The runtime reuses Evo's existing button detector service and generated
+message interfaces. It does not download or compile assets during a task.
+
+The perception context connects only to the local robot router. It disables
+multicast and gossip discovery. Inherited Zenoh overrides must preserve local
+client operation; remote endpoints and discovery overrides cause startup to fail.
+The local router and detector must also operate without an upstream connection.
+No primitive requires an LLM or cloud service.
 
 Use `/button_recognition/detect` for the existing detector when that service is
 running. The current sensor configurations use `/unilidar/cloud`; select and
@@ -223,22 +239,20 @@ schema validation, Unix transport, and observation storage. It also checks stale
 captures, missing calibration/depth, arm reach rejection, target loss, interrupted
 approaches, cancellation, late door closure, and unconfirmed activation.
 
-The RAX Rust tests cover sensor decoding, lidar geometry, door tracking,
-obstacle/floor/sill rejection, control convergence, scene loss, and the worker's
-read-only Evo boundary. The pulse adapter tests cover deadlines, cancellation
+The Evo Rust tests cover sensor decoding, lidar geometry, door tracking,
+obstacle/floor/sill rejection, control convergence, scene loss, and the boundary between planning and actuator execution. The pulse adapter tests cover deadlines, cancellation
 during dispatch, worker loss, and withdrawal of the lease after an unconfirmed
 stop. The complete Python composition test refuses network socket connections;
 it uses local Unix sockets and fake robot responses.
 
 ```bash
-cargo test --manifest-path services/elevator_runtime/Cargo.toml --locked --offline
 python3 -m pytest -q local_tests/unit/test_elevator.py local_tests/unit/test_elevator_runtime.py
 ```
 
-Evo's generic deadline and backend checks run in its Nix environment:
+The Rust library, deadline, and component wiring checks run in Evo's Nix environment:
 
 ```bash
-KB_EXECUTION=local ./kb test packages/evo_agent_backend
+KB_EXECUTION=local ./kb test packages/evo_agent_backend packages/evo_orchestrator
 ```
 
 These tests do not replace a sensor-fed runtime test. Physical calibration,

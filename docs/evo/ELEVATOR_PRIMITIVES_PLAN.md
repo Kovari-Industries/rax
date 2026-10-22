@@ -1,7 +1,8 @@
-> Architecture update: RAX now owns elevator perception and base control in Rust.
-> Evo provides only generic actuation, command deadlines, and capture geometry.
-> The current implementation and offline requirements are in [ELEVATOR_PRIMITIVES.md](ELEVATOR_PRIMITIVES.md).
-> The proposal below records the original design.
+> Architecture update: Evo owns all Rust perception and base planning code, built
+> into its existing agent backend. RAX contains Python calls, wrappers, and task
+> sequences. See [ELEVATOR_PRIMITIVES.md](ELEVATOR_PRIMITIVES.md) for the current
+> interfaces, configuration, and offline requirements. The proposal below records
+> the original design.
 
 # Elevator motion primitives: proposal and implementation plan
 

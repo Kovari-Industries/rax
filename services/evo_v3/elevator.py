@@ -1,62 +1,23 @@
-"""Trusted RAX adapter for the Rust elevator worker and bounded Evo drive pulses.
+"""Python wrapper for Evo elevator services and bounded drive pulses.
 
-The worker has read-only robot access. This adapter uses the existing Evo session
-for every actuator command. An expired pulse cannot be extended by a delayed call.
+Evo owns perception, model queries, and actuator execution. This adapter uses
+the existing Evo session for every actuator command. An expired pulse cannot be extended by a delayed call.
 """
-import json
-import os
-import socket
-import subprocess
 import threading
 import time
 import uuid
 
 
 class ElevatorRuntime:
-    def __init__(self, backend, binary, config):
+    def __init__(self, backend):
         self.backend = backend
-        operator = backend.config.root / "operator"
-        operator.mkdir(mode=0o700, exist_ok=True)
-        if operator.stat().st_mode & 0o077:
-            raise ValueError("elevator runtime needs a private operator directory")
-        self.path = operator / ("elevator-" + uuid.uuid4().hex[:8] + ".sock")
         self._lock = threading.Lock()
         self._active = None
         self._results = {}
         self._thread = None
-        self._log = (operator / "elevator-runtime.log").open("ab")
-        self.process = subprocess.Popen(
-            [binary, config, backend.options["control_socket"], str(self.path)],
-            stdin=subprocess.DEVNULL, stdout=self._log, stderr=self._log,
-            env={key: value for key, value in os.environ.items()
-                 if key not in {"ZENOH_SESSION_CONFIG_URI", "ZENOH_CONFIG_OVERRIDE"}},
-        )
-        try:
-            deadline = time.monotonic() + 10
-            while not self.path.exists():
-                if self.process.poll() is not None or time.monotonic() >= deadline:
-                    raise RuntimeError("elevator runtime did not start; inspect operator/elevator-runtime.log")
-                time.sleep(0.02)
-            self.capabilities = self.rpc("capabilities", {})
-        except BaseException:
-            self.close()
-            raise
 
     def rpc(self, method, params, timeout=0.5):
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
-            connection.settimeout(timeout)
-            connection.connect(str(self.path))
-            connection.sendall((json.dumps({"method": method, "params": params}, allow_nan=False) + "\n").encode())
-            with connection.makefile("rb") as reader:
-                line = reader.readline(40 * 1024 * 1024 + 1)
-        if len(line) > 40 * 1024 * 1024 or not line.endswith(b"\n"):
-            raise RuntimeError("invalid elevator worker response")
-        reply = json.loads(line)
-        if reply.get("ok") is not True:
-            raise RuntimeError("RAX elevator refused: " + str(reply.get("error")))
-        if not isinstance(reply.get("result"), dict):
-            raise RuntimeError("invalid elevator worker result")
-        return reply["result"]
+        return self.backend._rpc("elevator", {"operation": method, "params": params}, timeout=timeout)
 
     @property
     def active(self):
@@ -140,7 +101,7 @@ class ElevatorRuntime:
                 if cancelled.is_set():
                     raise RuntimeError("caller cancelled")
                 # Do not preview and then refresh this deadline. It belongs to the
-                # measured scene that the Rust worker checked for this exact pulse.
+                # measured scene that the Evo planner checked for this exact pulse.
                 if set(command) != {"velocity", "duration_s", "valid_until_us"}:
                     raise RuntimeError("invalid drive pulse")
                 stopped = False
@@ -193,12 +154,3 @@ class ElevatorRuntime:
                 self.backend._stop.set()
             if self._thread:
                 self._thread.join(timeout=4)
-        if self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait(timeout=2)
-        self._log.close()
-        self.path.unlink(missing_ok=True)

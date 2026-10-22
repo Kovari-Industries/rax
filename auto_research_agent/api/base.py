@@ -1,6 +1,6 @@
 """Measured base primitives through Evo's sole motion owner.
 
-The RAX Rust worker supplies lidar pose and calibrated point-cloud geometry. A duration
+Evo supplies lidar pose and calibrated point-cloud geometry. A duration
 or command acknowledgement is never treated as an arrival measurement.
 """
 from dataclasses import dataclass, field

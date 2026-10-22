@@ -109,3 +109,72 @@ def test_unverified_stop_withdraws_lease():
     assert result['physical_stop_verified'] is False
     assert worker.backend._stop.is_set()
     assert worker.backend._failure
+
+
+def test_wrapper_uses_existing_evo_socket_and_forwards_command_deadline(tmp_path):
+    from local_tests.unit.test_evo_v3_backend import service
+    steps = []
+    pulse = {'velocity': [.01, 0., 0.], 'duration_s': .06, 'valid_until_us': 456}
+
+    def handler(request):
+        method, params = request['method'], request['params']
+        if method == 'elevator':
+            operation = params['operation']
+            if operation == 'begin':
+                return {'goal_id': 'evo-goal'}
+            if operation == 'abort':
+                return {'aborted': True}
+            assert operation == 'step'
+            steps.append(params['params'])
+            return pulse if len(steps) == 1 else {'done': True, 'base_result': {'arrival': True}}
+        if method == 'drive':
+            assert params == pulse
+            return {'state': 'accepted', 'action_id': 'pulse'}
+        if method == 'action_status':
+            return {'state': 'succeeded', 'physical_stop_verified': True,
+                    'final_state': {'source_us': 123}}
+        raise AssertionError(method)
+
+    with service(tmp_path, handler) as (backend, requests):
+        accepted, _ = backend.call('rax_move_base', {'delta': [.1, 0., 0.]})
+        result = finish(backend.elevator, accepted['action_id'])
+        assert result['state'] == 'succeeded'
+        assert result['physical_stop_verified'] is True
+        assert steps[-1]['after_us'] == 123
+        assert all(r.get('session_id') == backend.session_id for r in requests if r['method'] == 'elevator')
+        assert not hasattr(backend.elevator, 'process')
+
+
+def test_slow_evo_detector_does_not_block_hold(tmp_path):
+    from local_tests.unit.test_evo_v3_backend import service
+    from services.evo_v3.backend import EvoRefused
+    entered, release, held = threading.Event(), threading.Event(), threading.Event()
+    errors = []
+
+    def handler(request):
+        if request['method'] == 'elevator':
+            assert request['params']['operation'] == 'detect'
+            entered.set()
+            assert release.wait(2)
+            return EvoRefused('test detector unavailable')
+        if request['method'] == 'hold':
+            held.set()
+            return {'action_id': 'hold', 'state': 'stopping'}
+        raise AssertionError(request)
+
+    with service(tmp_path, handler) as (backend, _):
+        def detect():
+            try:
+                backend.call('rax_detect_buttons', {'camera': 'left_arm', 'score_threshold': .5})
+            except EvoRefused as error:
+                errors.append(error)
+        worker = threading.Thread(target=detect)
+        worker.start()
+        try:
+            assert entered.wait(2)
+            backend.call('evo_hold', {})
+            assert held.is_set() and worker.is_alive()
+        finally:
+            release.set()
+            worker.join(2)
+        assert len(errors) == 1

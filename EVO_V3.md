@@ -36,8 +36,8 @@ the private Evo runtime directory; the sandbox hides that complete directory. Th
 arm/disarm controls write `<session>/operator/armed.json`. Evo reads this file
 independently. Neither arming nor controller configuration is an agent tool.
 
-Operator `backend_options` are `control_socket`, `socket_timeout_s`, and optional
-absolute `elevator_binary` and `elevator_config` paths supplied together. The default
+Operator `backend_options` are `control_socket` and `socket_timeout_s`.
+Optional elevator services are configured in Evo under `evo_agent_backend.elevator`. The default
 socket is `~/.local/evo/agent/agent.sock`. Configure the exact runtime socket when
 using an isolated simulation. Unknown options are refused. The launcher hides the
 Evo socket, runtime files, Evo workspace, and session operator directory from the
