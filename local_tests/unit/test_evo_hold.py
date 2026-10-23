@@ -1,6 +1,6 @@
 from types import SimpleNamespace as S
 import pytest
-from services.evo_v3.hold import check_sample
+from operator_trials.evo_hold import check_sample
 
 def sample():
  return [S(feedback_stamp=S(sec=1,nanosec=0),command_stamp=S(sec=1,nanosec=0),feedback_valid=True,command_valid=True,feedback_faulted=False,feedback_stale=False,feedback_missing=False,status=1,position=0.,velocity=0.,command_position=.05,command_velocity=0.,reported_effort=8.7,rotor_temperature_c=35.,mos_temperature_c=31.) for _ in range(7)]
@@ -17,10 +17,10 @@ def test_target_change_stale_and_future():
  for now,ref in [(1_100_000_000,None),(999_999_999,None),(1_010_000_000,[.04]*7)]:
   with pytest.raises(RuntimeError):check_sample(sample(),now,ref)
 
-def test_backend_refuses_without_operator_enablement(tmp_path):
+def test_legacy_correction_is_not_an_agent_tool(tmp_path):
  from services.evo_v3.backend import EvoV3Backend
  b=EvoV3Backend(S(root=tmp_path,backend_options={}))
- with pytest.raises(RuntimeError,match='operator enablement'):b.call('evo_hold_correct',{'arm':'left'})
+ with pytest.raises(ValueError,match='unknown Evo tool'):b.call('evo_hold_correct',{'arm':'left'})
  with pytest.raises(ValueError):b.call('evo_hold_correct',{'arm':'left','torque':1.5})
 
 @pytest.mark.parametrize('before,after,classification', [
@@ -30,14 +30,14 @@ def test_backend_refuses_without_operator_enablement(tmp_path):
  (.03,.04,'no_measurable_improvement'),
 ])
 def test_effect_exceeds_quantization_and_noise(before,after,classification):
- from services.evo_v3.hold import summarize_errors
+ from operator_trials.evo_hold import summarize_errors
  result=summarize_errors([before]*25,[after]*25)
  assert result['classification']==classification
  assert result['ok']==(classification=='observed_improvement')
 
 @pytest.mark.parametrize('profile,overload', [('default',False),('attended_peak',True)])
 def test_driver_profile_requires_exact_match(profile,overload):
- from services.evo_v3.hold import check_driver_profile
+ from operator_trials.evo_hold import check_driver_profile
  check_driver_profile(False,overload,3.,profile)
  for enabled,actual,slew in [(True,overload,3.),(False,not overload,3.),(False,overload,6.)]:
   with pytest.raises(RuntimeError):check_driver_profile(enabled,actual,slew,profile)

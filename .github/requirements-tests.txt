@@ -1,0 +1,6 @@
+# CPU-only dependencies for the Evo v3 unit and frontend socket tests.
+Jinja2==3.1.6
+numpy==2.5.4
+opencv-python-headless==5.0.0.93
+pillow==13.0.0
+pytest==9.1.1

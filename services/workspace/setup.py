@@ -1,5 +1,6 @@
 """The facts a workspace is generated from; roles live in recipes, not here."""
 from dataclasses import dataclass
+from services.evo_v3.backend import TOOLS as EVO_TOOLS
 
 # Words shared sources use for the robot instead of branching on it. Tool names are the
 # backend's MCP tools (services/backends.py); keep them in sync with the backend.
@@ -96,18 +97,19 @@ ROBOT_FACTS = {
                  'from above with clearance instead of pressing into them.',
              )},
     'evo-v3': {'name': 'Kovari Evo v3', 'status': 'evo_status', 'observe': 'evo_observe',
-             'move': None, 'gripper': None, 'pixel': None,
-             'tools': ('evo_status', 'evo_observe', 'evo_hold', 'evo_towel_align', 'evo_measured_state', 'evo_step', 'evo_hold_correct'),
+             'move': 'evo_move_eef', 'gripper': 'evo_gripper', 'pixel': 'evo_camera_ray',
+             'tools': tuple(t['name'] for t in EVO_TOOLS),
              'overview_camera': 'base', 'overview': 'head RGB camera',
              'cameras': ('base', 'left_arm', 'right_arm'),
-             'body': 'mobile two-arm robot with carriage and neck', 'move_joints': None,
-             'neutral': 'no posture command exposed',
-             'motion_example': 'evo_step takes paired delta vectors in carriage_link; use only after inspecting measured state and recording.',
-             'grasp_example': None, 'stream': None, 'look_around': None,
-             'safety': ('Evo owns IK, Ruckig and arbitration. Bounded step control is experimental; a failed measured step is not success. No validated contact targets are supplied.',),
-             'first_reads': (('robot-interface', 'available tools and current limitations'),),
-             'model_dir': None, 'model_note': None,
-             'read_tools': ('evo_status', 'evo_observe', 'evo_measured_state')},
+             'body': 'mobile two-arm robot with carriage and neck', 'move_joints': 'evo_move_joints',
+             'neutral': 'read measured joints; no automatic home command',
+             'motion_example': 'Use evo_preview, then an action tool, then evo_action_status until measured completion.',
+             'grasp_example': 'Use evo_set_grip with side, position_rad and retain for cloth; verify grasp from fresh images.',
+             'stream': 'evo_history', 'look_around': 'Use bounded neck moves and inspect fresh observations.',
+             'safety': ('Evo owns motion. Operator arming and a live client lease are required. A stop request is not proof of physical stop.',),
+             'first_reads': (('robot-interface', 'tools, frames, action results and model limits'), ('cloth-handling', 'towel routines, metric perception, grasp and pile checks')),
+             'model_dir': None, 'model_note': 'Use Evo FK, IK and preview tools.',
+             'read_tools': ('evo_capabilities', 'evo_status', 'evo_observe', 'evo_history', 'evo_fk', 'evo_ik', 'evo_preview', 'evo_camera_ray', 'evo_sam_segment', 'evo_sam_track', 'evo_sam_result', 'evo_sam_cancel')},
     'mock': {'name': 'mock robot', 'status': 'status', 'observe': 'mock_observe', 'move': 'mock_move',
              'gripper': 'mock_move', 'pixel': 'mock_observe', 'tools': ('mock_observe', 'mock_move'),
              'overview_camera': 'none', 'overview': 'no camera', 'cameras': (),

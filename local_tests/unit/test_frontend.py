@@ -194,3 +194,47 @@ def test_skill_library_merge_is_listed_with_a_clone_and_merges_through_mcp(tmp_p
         subprocess.run(['git', *args], cwd=workspace/'skill-library', check=True)
     reply = json.loads(f.call('skill_library_merge', {'message': 'add wave'})['content'][0]['text'])
     assert reply['merged'] is True and reply['skills'] == ['wave']
+
+
+def test_socket_keeps_ordinary_backend_calls_serial(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from auto_research_agent.api.runtime import Context
+
+    f = frontend(tmp_path)
+    entered = threading.Event()
+    release = threading.Event()
+    second_entered = threading.Event()
+    original = f.backend.call
+
+    def blocked(name, arguments):
+        if arguments.get('position', [None])[0] == 0.1:
+            entered.set()
+            assert release.wait(3)
+        else:
+            second_entered.set()
+        return original(name, arguments)
+
+    f.backend.call = blocked
+    stop = threading.Event()
+    path = tmp_path/'serial.sock'
+    with socket.socket(socket.AF_UNIX) as listener:
+        listener.bind(str(path))
+        listener.listen()
+        server = threading.Thread(target=f.serve_socket, args=(listener, stop), daemon=True)
+        server.start()
+        try:
+            with Context(str(path)) as first, Context(str(path)) as second, ThreadPoolExecutor(max_workers=2) as pool:
+                one = pool.submit(first.value, 'mock_move', position=[0.1, 0, 0])
+                try:
+                    assert entered.wait(1)
+                    two = pool.submit(second.value, 'mock_move', position=[0.2, 0, 0])
+                    assert not second_entered.wait(0.1)
+                finally:
+                    release.set()
+                assert one.result(timeout=2)['position'][0] == 0.1
+                assert two.result(timeout=2)['position'][0] == 0.2
+        finally:
+            release.set()
+            stop.set()
+            server.join(2)
+            f.close()

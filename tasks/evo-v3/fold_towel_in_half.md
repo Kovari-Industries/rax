@@ -8,7 +8,7 @@ Inspect the result and report whether the towel was folded in half.
 ## Execution
 
 Use the Evo backend as the single command owner. Use the existing Evo arbitration,
-IK and Ruckig path. Do not start ACT. Do not reuse historical grasp coordinates.
+IK and checked trajectory path. Do not start ACT. Do not reuse historical grasp coordinates.
 Start synchronized MCAP recording before motion and retain it through inspection.
 Save each tool request, response, phase change, camera capture, measured state,
 requested target, and motion error with timestamps and the recording identity.
@@ -31,25 +31,21 @@ mismatches rather than declaring success from command completion. Stop for lost
 feedback, rejected commands, unavailable contact targets, or a hardware fault.
 Do not continue a contact motion based only on guessed image depth.
 
-## Bounded hold assist during execution
+## Current primitives
 
-Use the existing `evo_step` and `evo_hold_correct` tools as one approach sequence:
+Use `api.cloth.Cloth.fold(axes=("v",))` with fresh ordered rectangle corners,
+measured palm grasp targets, and a task perception function. Choose the fold axis
+for the towel placement and robot workspace. Read the `cloth-handling` skill.
+Use `evo_follow_path` or `evo_move_pair` for coordinated motion and `evo_set_grip`
+for a retained finger position command. Preview and execution use Evo's checks.
+Verify that both near corners move with the hands. Verify support and alignment
+before release, then inspect the released towel.
 
-1. Execute the bounded arm segment through IK and Ruckig.
-2. After a measured stop, retain the outgoing target. If the segment completed
-   or only reported `measured settling timeout`, request one left J4 assist and
-   then one right J4 assist. Skip an assist with insufficient baseline error.
-3. Stop the sequence on a driver guard, lost feedback, or unverified withdrawal.
-   Do not retry the pulse or raise its torque limit.
-4. Capture fresh measured state and all camera views. Record residual position
-   errors against the intended segment endpoint; do not replace that endpoint
-   with measurement to declare success.
-5. Continue the fold only when the observed motion supports the next action and
-   contact targets are available. This is an execution assist, not a calibration
-   campaign or evidence that the towel was grasped.
-
-Keep MCAP active through each segment, assist, and inspection. Correction is
-withdrawn before the next moving target. Existing driver guards remain active.
+The former `evo_step` and `evo_hold_correct` interfaces are replaced. Do not invoke
+hardware parameter or torque diagnostics from the agent. Earlier physical trials
+reported tracking error; a successful mock test does not resolve that error.
+If Evo refuses a path or measured tracking fails, stop and report the constraint.
+Do not retry a correction pulse or raise a limit.
 
 ## Result
 

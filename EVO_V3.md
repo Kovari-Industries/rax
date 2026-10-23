@@ -1,75 +1,150 @@
-# Evo v3 adaptation
+# Evo v3 backend
 
-This branch starts from upstream `real/rainbow` at
-`36c926ca3cf15921c6fc746a4bf309c26b0aa3c4`. The
-[real-robot adaptation guide](https://github.com/robot-agent-exploration/rax/blob/2652c73f51514cbb84ef0fdf5a8aee2ba5b53fb7/docs/REAL_ROBOT_ADAPTATION.md)
-is the design reference. Rainbow code remains as an explicit reference backend; new
-sessions default to `evo-v3` and RGB-only. No Rainbow numbers qualify Evo motion.
+RAX uses the versioned Evo agent backend in `evo_orchestrator`. The Python adapter
+owns tool schemas, local transport, image files, and result formatting. Evo owns
+arming checks, command ownership, limits, model checks, action execution, and
+measured stop results. This follows the [RAX system interface](https://arxiv.org/html/2610.22496#S4).
 
 ```mermaid
 flowchart LR
-    A[RAX agent and learned skills] --> B[Evo RAX backend]
-    B --> C[Local Evo policy socket]
-    B --> D[Read-only EVJ1 cameras]
-    C --> E[Evo v3 Rust policy and command arbitration]
-    E --> F[Existing hardware bridges and Ruckig]
+    A[Agent or Python program] --> B[RAX tools]
+    B -->|Private Unix socket| C[Evo agent backend]
+    C --> D[Bridge and robot controllers]
+    D -->|Measured feedback| C
 ```
 
-## Implemented contract
+The adapter exposes discovery, RGB observation and history, FK, IK, preview, camera
+rays, arm motion, grippers, carriage, neck, bounded base velocity, action status,
+cancellation, and hold. `services/evo_v3/tools.json` is the public schema. It is
+identical to Evo's `evo_agent_backend/contract/tools.json`. The old towel socket and
+EVJ1 transport are removed; there is no fallback.
 
-| Tool | Effect | Limitation |
-|---|---|---|
-| `evo_status` | Read existing towel-policy status | Not a measured robot-state snapshot |
-| `evo_observe` | Save coherent, fresh camera JPEGs and metadata | No validated extrinsics or capture-time joints yet |
-| `evo_hold` | Request towel-policy cancellation | Not a global stop; acknowledgement is not stop verification |
-| `evo_towel_align` | Run one configured, identified attempt | Off by default; requires operator enablement, arming and Evo protocol v2 |
+Use SI units and named joints. Gripper positions are radians (`position_rad`).
+Carriage position is metres (`position_m`). Cartesian targets name `base_link` or
+`carriage_link`. Quaternion order is `[x, y, z, w]`. Depth, force control, scene
+collision checks, and navigation are unavailable. Missing camera calibration
+leaves metric geometry unavailable.
 
-The backend runs beside Evo on the robot. It has operator-configured local paths, no
-shell command transport, no ROS publisher, and no hardware SDK. Camera errors are
-returned individually. Frames older than the configured age, future timestamps,
-unstable generations and malformed payloads are refused. Construction and close while
-idle command nothing. Files are published by rename. Raw frames are full-resolution;
-preview downscaling remains pending.
+The operator must start Evo's explicit exclusive agent profile and set its trusted
+`session_root` to the directory that directly contains RAX sessions. The usual RAX
+layout is `$RAX_ARTIFACT_ROOT/sessions/<session>`. Keep this artifact root outside
+the private Evo runtime directory; the sandbox hides that complete directory. The existing dashboard and operator
+arm/disarm controls write `<session>/operator/armed.json`. Evo reads this file
+independently. Neither arming nor controller configuration is an agent tool.
 
-Use `python scripts/configure_session.py --robot evo-v3 --observation-profile rgb-only
---task towel_alignment --task-text 'Observe towel alignment; no motion.'` with the
-harness dependencies installed. The inherited launcher is Claude-based; this branch
-does not claim that a Codex launcher or sandbox qualification has been completed.
+Operator `backend_options` are `control_socket` and `socket_timeout_s`. The default
+socket is `~/.local/evo/agent/agent.sock`. Configure the exact runtime socket when
+using an isolated simulation. Unknown options are refused. The launcher hides the
+Evo socket, runtime files, Evo workspace, and session operator directory from the
+agent sandbox.
 
-Operator `backend_options`: `control_socket`, `camera_directory`,
-`camera_max_age_s` (default 0.3, maximum 1), `socket_timeout_s` (default 2, maximum 5).
-The defaults use `/run/evo/towel-alignment.sock` and `/run/evo/camera-shm`.
-Use the actual configured Evo socket path. Unknown options and tool fields are rejected.
+An action returns `action_id` and `state: accepted`. Poll `evo_action_status` for a
+terminal result. `evo_cancel` and `evo_hold` request a stop. Inspect
+`physical_stop_verified` before treating the robot as stopped. A lost or malformed
+motion response removes the adapter's lease; the adapter never retries that action.
 
-## Evo integration
+```python
+from api.runtime import Context
+from api.evo import Evo
 
-The existing Evo work is in `Kovari-Industries/evo`, branch
-`benson/towel-alignment-gpu`, package `evo_towel_folding`. The Rust physical adapter
-owns measured feedback, Ruckig transitions, bounded base corrections and MCAP events.
-Keep the tested policy in Evo; RAX stores exploration decisions and reusable experience.
+with Context() as ctx:
+    state = ctx.value("evo_status")
+    action = {"kind": "move_neck", "yaw_rad": 0.1, "pitch_rad": 0.0}
+    ctx.value("evo_preview", action=action)
+    result = Evo(ctx).move("evo_move_neck", yaw_rad=0.1, pitch_rad=0.0)
+    assert result["state"] == "succeeded" and result["physical_stop_verified"]
+```
 
-The updated Evo socket returns `evo.towel.control.v2` with a runtime session identity,
-requested/completed attempt numbers, running status, a cancellation latch and stop proof.
-`evo_towel_align` requires `enable_alignment: true` in operator backend options and
-operator arming. It checks arming while polling and accepts completion only for the
-same attempt after a verified stop. Old runtimes fail before start. A busy refusal does
-not cancel another attempt. Unknown start outcomes are never retried; cancellation is
-requested once, and acknowledgement is not reported as a measured stop.
+These calls use the same MCP interface as interactive agent calls. Operator arming
+and fresh measured state are still required. Evo cancel, hold, and status calls
+use a separate frontend dispatcher. A slow observation, model call, or image
+reader cannot occupy that dispatcher. A competing ordinary request is refused
+as busy; it cannot remain queued and start motion after a stop. A Python program must use a separate
+`Context` connection to stop an action while another call is pending.
 
-This is a local candidate contract, not deployed robot acceptance. The robot's recovery
-runtime remains separate. Camera geometry commissioning and deployment are still needed.
-Poll interval defaults to 0.1 s, socket timeout to 2 s, and attempt timeout to 125 s;
-these are configured bounds, not measured stop latency. There is no agent-process
-heartbeat lease in Evo yet: process death leaves the autonomous policy under Evo's own
-bounded lifetime. Do not claim immediate cancellation on RAX process loss.
+```mermaid
+flowchart LR
+    A[Ordinary calls] --> B[Ordinary dispatcher]
+    C[Cancel, hold, and status] --> D[Priority dispatcher]
+    B --> E[Evo socket]
+    D --> E
+```
 
-Next backend primitives, in order:
-1. Capture-time joint/odometry snapshot and calibrated per-camera metadata from Evo.
-2. Deploy and qualify the new attempt contract, then dry-run checks and supervised policy execution.
-3. Characterized carriage/base actions through Evo arbitration, with cancellation and
-   record-before-motion. No duplicate Python motor controller.
-4. SAM as an optional perception service; image-edge and optical-flow diagnostics as
-   separate read-only tools. Freeze settings for each evaluation trial.
+Base action duration starts when Evo sends the first velocity command. A delayed
+first control tick cannot turn an unsent action into a successful result. Gripper
+tool descriptions and parameters both specify radians. `evo_history` returns a bounded image index and can retrieve a capture by
+`observation_id`, including its original timestamp and measured state.
+
+The dedicated Evo simulation profile uses mock actuators, the existing controllers,
+and camera fixtures. Run the complete-path test after starting that isolated profile:
+
+```sh
+EVO_AGENT_TEST_SOCKET=/absolute/simulation/agent/agent.sock \
+EVO_AGENT_TEST_SESSION_ROOT=/absolute/simulation-rax/sessions \
+python -m pytest -q local_tests/integration/test_evo_agent_runtime.py
+```
+
+The test refuses to arm a runtime unless Evo reports simulated actuator modes.
+The complete-path checks passed on ARM64 Linux with all actuator groups, a Python
+program, cancellation, disarm, lease loss, recorder loss, restart, and shutdown.
+See `local_tests/README.md` for the optional failure and restart checks.
+Simulation establishes software behavior. Physical stopping and task qualification
+remain separate work.
+
+## Cloth routines
+
+The public interface now includes `evo_move_body`, `evo_follow_path`, `evo_move_pair`,
+and `evo_set_grip`. Path waypoints share timing across selected hands and body
+joints. Preview and execution check all generated samples. Segments use smooth
+progress and stop at each waypoint. Grip targets persist during normal actions
+while operator arming, measured feedback, recording, and the client lease remain
+valid. A retained command is not evidence that cloth is held.
+
+The [composable primitive guide](CLOTH_PRIMITIVES.md) describes model-assisted
+inspection, small interactions, and trial record/replay. These live entirely in
+RAX. The geometric planner is optional; learned policies can use the same motion
+interface without it.
+
+The [cloth handling instructions](agent_skills/control/evo-v3/cloth-handling/SKILL.md)
+describe the Python routines for crumpled towel unfolding, measured half-folds,
+and folded packet stacking. A task perception function must supply current metric
+geometry and cloth checks. The library includes calibrated ray triangulation and
+measured-plane helpers; it does not include a trained cloth detector. Each routine
+stops on uncertain grasp, layer, support, or alignment evidence. The unfold loop
+has a finite attempt budget. A failed handover does not release the source hand.
+
+```mermaid
+flowchart LR
+    A[Current RGB and metric geometry] --> B[Cloth scene and checks]
+    B --> C[RAX cloth routine]
+    C --> D[Public Evo path and grip tools]
+    D --> E[Measured action result]
+    E --> A
+```
+
+The cloth workflow tests use explicit perception fixtures. They check sequencing,
+geometry refusal, bounded retries, complete-packet checks, and release conditions.
+They do not simulate cloth mechanics or qualify physical folding performance.
+The complete-path mock test also runs the cloth program through the frontend
+socket, with the native model, bridge, and measured mock controllers.
+
+| Verification on Linux ARM64 | Result |
+|---|---|
+| RAX unit suite with composable cloth primitives | 278 passed, 4 skipped |
+| Public actuator and cloth-program path | Passed |
+| Frontend cancel/hold during blocked observation | Passed for base and arm paths |
+| Shared protocol contract | No changes in this cloth update |
+
+The skipped tests require the optional rby1-sdk or FFmpeg dependencies, which
+were not available in this test environment. The
+operator trial code is kept outside the backend and is not an agent fallback.
+
+## Earlier trial evidence
+
+Stop requests (`evo_cancel`, `evo_hold`) have separate frontend admission and do not wait for status calls or frontend audit storage. Evo records stop requests and action outcomes in its event log. If a stop RPC fails or is refused, RAX stops lease renewal; Evo then stops the action on lease expiry. Start a new session before further motion.
+
+The sections below describe earlier perception trials and the replaced observation
+transport. They do not qualify the new motion backend.
 
 ## Trial lessons
 
@@ -123,128 +198,104 @@ did not repeat. Keep refinement as a diagnostic, not a promoted control primitiv
 Reusable skills live in `agent_skills/control/evo-v3/` and
 `agent_skills/perception/rgb-only-evo-v3/`. They render into each new RAX workspace.
 
+## Preserved operator trials
 
-### Attempt lifecycle verification
+[Earlier arm-step and J4 hold trials](docs/evo_trials_2026_10_20.md) retain the
+recordings, measured errors, and first observed failures from the target branch.
+Their diagnostic code is in `operator_trials/`. The exclusive backend replaces
+those agent-facing sockets and tools. It does not expose hardware parameter
+changes or hold-correction pulses to the agent. The recorded physical tracking
+problems remain unqualified by the mock-controller tests.
 
-Focused RAX tests cover old terminal results, fast refusal, runtime replacement,
-connection loss, disarm, busy admission, and unversioned runtime rejection. Evo tests
-cover pending cancellation, busy starts, reset of stop proof, and failed stop. No motion
-has been issued through this new tool. The candidate Evo runtime is built separately;
-RAX source alone cannot enable the required robot geometry or motion interfaces.
+## SAM 3.1 tools
 
-## Bounded RAX arm adapter trial
+SAM inference and assets live in Evo. This client only forwards jobs, validates
+artifacts, and saves them in the workspace. It has no SAM or Triton dependency.
+The four tools are registered for interactive calls and Python programs.
 
-`evo_measured_state` and `evo_step` use the separate Rust `evo_rax_motion`
-adapter in Evo's `evo_towel_folding` package. It publishes only on the existing
-autonomy pose/gripper lanes. Evo retains arbitration, IK, Ruckig and hardware
-control. The installed recovery runtime was preserved.
+```mermaid
+flowchart LR
+    I[Interactive tools] --> F[RAX frontend]
+    P[Python Sam helper] --> F
+    F --> E[Evo job service]
+    E --> G[Separate SAM GPU process]
+    G --> M[Masks and source metadata]
+    M --> T[RAX towel decisions]
+```
 
-`motion_socket` defaults to `/run/evo/rax-motion.sock`; `enable_motion` defaults
-to false. Start recording before enabling a trial. The transport checks session
-arming during each call and closes the connection on disarm. The native adapter
-withdraws its source on disconnect, fault or completion and checks measured
-settling. A missing response never authorizes a retry. This is not a global stop.
-The event JSONL is a recording sidecar; recorder activity is checked by the
-trial operator, not enforced by the socket protocol.
+```python
+from api.runtime import Context
+from api.sam import Sam
+from api.cloth_trial import TrialContext
 
-Steps hold measured palm orientation, limit each translation to 3 cm and peak
-speed to 1.5 cm/s, and bound gripper targets to [-0.6, 0] rad. Coordinates are
-`carriage_link`, positive Z down. Completion requires measured tracking and
-settling. These bounds do not establish collision clearance or contact targets.
+with Context() as ctx:
+    trial = TrialContext(ctx, "trials/towel-001")
+    try:
+        observation = trial.value("evo_observe")
+        sam = Sam(trial)
+        result = sam.wait(sam.segment(observation["observation_id"], camera="base"))
+        # Inspect result["frames"][0]["overlay"]["path"] and select a candidate.
+        # Use separate task evidence before planning a grasp or fold.
+    finally:
+        trial.close()
+```
 
-The first live hold passed. A subsequent 2 cm upward step failed measured
-settling: modeled palm positions moved about 4 mm downward. Motion was withdrawn
-and stop was verified. No grasp or fold was attempted. The motion server was
-then stopped. MCAP: jetson-105 `/home/benson/evo_bags/2026-10-20T23-09Z_run-0000`.
-Task definition: `tasks/evo-v3/fold_towel_in_half.md`. Do not promote this
-primitive as task-confirmed until the tracking error is resolved.
+The trial log saves source captures even when they were captured before the trial.
+Replay verifies image and mask hashes and never opens a robot connection. Clips
+are limited to 64 ordered frames over 10 seconds. Default coordinates are captured
+pixels. Rectified results retain calibration and an explicit pixel-space label;
+convert them back before use with captured-pixel ray tools. Detection alone cannot
+establish metric geometry, grasp retention, layers, or success.
 
-## Fixed-target J4 correction candidate
+The native video profile uses different thresholds from the image profile. Empty
+tracking frames are expected when the model loses evidence. Do not fill those gaps
+with a claim that a grasp or towel identity remains valid.
 
-`evo_hold_correct({"arm":"left"})` runs one stationary baseline, the bounded
-hardware-loop pulse from Evo #1230, and a retained-error observation after
-withdrawal. `enable_hold_correction` defaults to false; session arming is also
-required. Start MCAP before enabling the tool. It neither sets an arm pose nor
-implements torque control in Python. All torque selection and fast guards stay
-in the C++ hardware write loop. It refuses an enabled calibration session, non-default slew, or a driver
-envelope that differs from the operator-configured profile. It stops on changed targets or unhealthy
-feedback and does not retry failed pulses. This is a pilot, not five-pair
-statistical acceptance or verified tool accuracy.
+### Text tracking during cloth motion
 
-The new driver must be loaded before this tool can operate. Its installation
-requires a controlled shutdown because the existing driver disables motors on
-deactivation. The compiled overlay is separate from the active robot install.
-No physical correction trial has been performed with this integration yet.
+Choose a prompt from visible evidence. For example, use
+`sam.track(capture_ids, camera="base", prompt="red towel")` for a red target.
+Review the masks before using them in a task. If text does not select the intended
+object, use a positive point inside it and negative points on distractors in the
+first frame. Do not infer that an absent mask means the object has left the scene.
 
-### First deployed hold pilot
+Evo video profile `sam31-native-video-1008-2026-10-22.3` uses a lower threshold to
+match detections to existing tracks. Its higher new-track threshold and upstream
+occlusion/removal rules stay in place. Prompt selection and task decisions remain
+in RAX. The client does not tune model thresholds or fill missing masks.
 
-The overlay loaded on jetson-105. MCAP `2026-10-20T23-26Z_run-0000`
-contains startup, images and the first left J4 pilot. No added correction torque
-was recorded; the driver ended with `predicted_target`. Withdrawal and measured
-stop passed, and correction was disabled afterward. The towel was not touched.
+| Saved-clip check | Earlier result | Current result |
+|---|---:|---:|
+| Original short text clip | 13 / 16 target frames | 16 / 16 target frames |
+| Red towel lift, generic prompt | 36 / 48 | 46 / 48 |
+| Red towel with partial occlusion, generic prompt | 19 / 48 | 19 / 48 |
+| Same partial-occlusion clip, `red towel` prompt | — | 48 / 48 |
+| White towel lift | 40 / 40 | 40 / 40 |
+| White towel fold | 32 / 32 | 32 / 32 |
 
-Startup commanded J4 to 1.7 rad and settled at 1.672198 rad. IK then seeded from
-measurement and published 1.672198 rad through the arm bridge. Thus the pilot
-compared measurement with a newly held measured target, not the configured pose.
-The original result incorrectly treated floating-point noise as improvement.
-The evaluator now rejects a baseline below 0.001 rad before enabling correction;
-improvement must exceed both 0.001 rad and 5% of baseline error. The raw pilot
-result remains preserved with a separate corrected review.
+The longer clips span about nine seconds. Counts refer to the reviewed target ID;
+they are not pixel accuracy or task success. A separate synthetic full-occlusion
+control returned no masks during the hidden interval and resumed the target ID
+afterwards. This does not establish identity through real complete occlusion.
+See Evo's `packages/evo_sam/tracking-motion-2026-10-22.md` for source manifests,
+threshold comparisons, and limits. PNG output size can require fewer frames even
+when a clip is below the frame-count and duration limits.
 
-Before another pilot, retain an explicit target through the authorized arm
-command path and verify its identity during baseline and correction. Do not
-claim the configuration error is fixed because a measured-pose hold has zero
-tracking error. Base controller activation also failed during this restart;
-resolve that before base motion. No full folding acceptance is established.
 
-### Fold approach with hold assist
+SAM cancellation bypasses frontend status calls and audit writes. It has separate
+admission slots from robot cancel and hold, so blocked perception cancellations
+cannot consume the robot-stop slots. It does not acquire or revoke motion authority.
 
-The 20 mm rise in MCAP `2026-10-20T23-31Z_run-0000` did not track.
-Its left J4 pulse stopped when reported effort crossed 9 Nm (9.005 Nm recorded).
-The generic driver reason was `invalid_hold_feedback`; do not interpret that
-label alone as a communication fault.
+```mermaid
+flowchart LR
+    A[Status and ordinary requests] --> Q[Normal frontend queues]
+    C[SAM cancel] --> P[Perception cancellation slots]
+    S[Robot cancel and hold] --> R[Separate robot-stop slots]
+```
 
-An authorized retry used a 5 mm rise, with unchanged guards, in MCAP
-`2026-10-20T23-35Z_run-0000`. Both pulses reached 1.5 Nm added torque and ended
-at `pulse_timeout`. Left J4 did not move; right J4 moved one encoder count
-(0.0003815 rad). Both measured stops and correction withdrawals passed. This is
-not an effective correction at this pose. The towel was not grasped. Do not
-repeat pulses or increase limits on the assumption that the earlier failure
-was only a software admission problem.
-
-### Attended peak profile
-
-The operator requested the existing PR #1230 attended envelope for continued
-fold trials. Set backend option `hold_profile: attended_peak` only with a driver
-started with `calibration_overload_trial: true`. The default profile remains
-`default`. A mismatch fails before enabling correction. The task cannot set an
-arbitrary torque limit through a tool argument.
-
-This uses the driver's existing ceiling below 15 Nm and cumulative exposure
-below 30 seconds above 9 Nm per joint. Temperature, acquisition freshness,
-target binding, cancellation and pulse caps remain active. The J4 pulse cap
-stays 1.5 Nm for at most 2 seconds. Exposure spans normal motion and idle holds,
-not just pulses. A trip is terminal for this attempt; do not restart to clear
-its counter and continue. The separate attended deployment disables automatic
-controller-manager restart. Motor-off restart still requires physical support.
-
-Prepared robot manifest: `/data/rax-hold-1230/attended-config/manifest.yaml`.
-Original manifest remains `/data/rax-hold-1230/config/manifest.yaml`.
-At preparation time the default runtime is still active; no higher-torque
-physical acceptance is claimed.
-
-### Attended approach result
-
-The attended peak profile was activated on both drivers after an operator-supported
-restart. In MCAP `2026-10-20T23-42Z_run-0000`, one J4 pulse per arm after a
-20 mm upward approach reduced retained encoder error from 3.26 to 1.66 degrees
-on the left and 3.20 to 0.93 degrees on the right. Both pulses ended normally
-at their duration limit and verified withdrawal and stop. Net modeled palm rise
-was 8.46 mm left and 14.47 mm right; independent tool accuracy is not established.
-
-The existing `ArmMotion.set_carriage` primitive then raised the carriage from
-0.29596 to 0.34980 m in small measured waypoints with a fresh-feedback cancel
-predicate, and verified stationary feedback. Images show the towel surface more
-clearly, but no corner grasp or fold was attempted. The recorded initial step
-still failed its original settling criterion before the assist; preserve that
-first divergence. Do not describe this as a complete or task-confirmed fold.
+`Sam.wait(timeout_s=...)` checks its deadline after status and frame responses.
+It requests cancellation and raises `TimeoutError` instead of returning a late
+result. A cancellation failure is reported as the cause. The helper does not
+interrupt an in-flight synchronous socket call; use a separate `Context` for
+urgent cancellation. Cancelling an already completed job does not erase its
+successful terminal state.

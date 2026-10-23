@@ -4,7 +4,7 @@ import threading
 from types import SimpleNamespace
 import pytest
 from services import arming
-from services.evo_v3.motion import validate_step, request
+from operator_trials.evo_motion import validate_step, request
 
 @pytest.mark.parametrize('args', [ {'delta':[[float('nan'),0,0],[0,0,0]]}, {'delta':[[.03,.03,0],[0,0,0]]}, {'delta':[[.03,0,0],[0,0,0]],'duration_s':2}, {'delta':[[0,0,0],[0,0,0]],'grippers':[0,.1]}, {'delta':[[0,0,0],[0,0,0]],'base':1} ])
 def test_bad_steps(args):

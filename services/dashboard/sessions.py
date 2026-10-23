@@ -195,11 +195,11 @@ class Sessions:
         if not SESSION_ID.fullmatch(task):
             raise ValueError('task id: letters, digits, _ and - only')
         command = [self.python, str(self.project/'scripts/configure_session.py'), '--task', task,
-                   '--task-text', str(form.get('task_text', '')),
+                   '--task-text', str(form.get('task_text', '')), '--robot', self.robot_kind,
                    '--agent-effort', str(form.get('effort') or 'max'),
                    '--agent-provider', str(form.get('provider') or 'claude-login'),
                    '--session-hours', str(float(form.get('session_hours') or 4)),
-                   '--observation-profile', str(form.get('observation_profile') or 'rgbd'),
+                   '--observation-profile', str(form.get('observation_profile') or ('rgb-only' if self.robot_kind == 'evo-v3' else 'rgbd')),
                    '--subagents', str(int(form['subagents']) if form.get('subagents') not in (None, '') else 2)]
         if form.get('model'):
             command += ['--agent-model', str(form['model'])]
