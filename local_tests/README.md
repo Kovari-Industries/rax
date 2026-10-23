@@ -11,9 +11,31 @@ env -u PYTHONPATH "$RAX_PYTHON" -m pytest -q
 
 The suite uses temporary artifact roots, the `mock` robot backend, a simulated RB-Y1
 behind the `SdkRobot` surface with the vendor URDF, and fake model providers. It never
-moves hardware, opens cameras, calls a model or needs credentials. It needs `rby1-sdk`
+moves hardware, opens cameras, calls a model or needs credentials. The Rainbow-specific tests need `rby1-sdk`
 (for the vendor kinematics) but no robot. Tests marked `hardware` are excluded by
 default.
+
+## Evo v3 CI
+
+One GitHub Actions job runs on PRs targeting `real/evo-v3` and pushes to that
+branch. It runs the unit suite, including frontend socket cancellation, blocked
+status/audit calls, and SAM result deadlines. It excludes the Rainbow SDK test
+module and does not install a robot SDK, GPU model, or Evo runtime. Archive tests
+run when FFmpeg is available; otherwise they skip.
+
+```text
+PR into real/evo-v3 or branch push → Python unit and frontend socket tests
+```
+
+Reproduce the job in a clean Python 3.13 environment:
+
+```bash
+python -m pip install -r .github/requirements-tests.txt
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 PYTHONPATH= python -m pytest local_tests/unit -q -ra \
+  --ignore=local_tests/unit/test_rby1_backend.py
+```
+
+## Evo runtime integration
 
 The Evo complete-path check requires the dedicated mock runtime described in
 `EVO_V3.md`. It checks the runtime's simulation flag before it arms a test session.
