@@ -1,4 +1,9 @@
 > Architecture update: Evo owns all Rust perception and base planning code, built
+
+This is the original design record. Its RGB-D sensor assumption was superseded:
+the robots have RGB cameras. Use the [current primitive guide](ELEVATOR_PRIMITIVES.md)
+and [robot test plan](ELEVATOR_ROBOT_TEST_PLAN.md) for sensor requirements and trial
+limits. The current press primitive needs local metric point-cloud support.
 > into its existing agent backend. RAX contains Python calls, wrappers, and task
 > sequences. See [ELEVATOR_PRIMITIVES.md](ELEVATOR_PRIMITIVES.md) for the current
 > interfaces, configuration, and offline requirements. The proposal below records

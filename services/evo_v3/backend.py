@@ -17,7 +17,8 @@ import uuid
 
 TOOLS = json.loads(Path(__file__).with_name("tools.json").read_text())
 ELEVATOR_TOOLS = json.loads(Path(__file__).with_name("elevator_tools.json").read_text())
-BY_NAME = {tool["name"]: tool for tool in TOOLS + ELEVATOR_TOOLS}
+CLIENT_TOOLS = TOOLS + ELEVATOR_TOOLS
+BY_NAME = {tool["name"]: tool for tool in CLIENT_TOOLS}
 MOTION = frozenset(
     "evo_" + name
     for name in (
@@ -147,7 +148,7 @@ class EvoV3Backend:
         self.elevator = ElevatorRuntime(self)
 
     def tools(self):
-        return copy.deepcopy(TOOLS + ELEVATOR_TOOLS)
+        return copy.deepcopy(CLIENT_TOOLS)
 
     def validate(self, name, arguments):
         if name not in BY_NAME or not isinstance(arguments, dict):

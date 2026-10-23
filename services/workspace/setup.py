@@ -1,7 +1,6 @@
 """The facts a workspace is generated from; roles live in recipes, not here."""
 from dataclasses import dataclass
-from services.evo_v3.backend import TOOLS, ELEVATOR_TOOLS
-EVO_TOOLS = TOOLS + ELEVATOR_TOOLS
+from services.evo_v3.backend import CLIENT_TOOLS as EVO_TOOLS
 
 # Words shared sources use for the robot instead of branching on it. Tool names are the
 # backend's MCP tools (services/backends.py); keep them in sync with the backend.

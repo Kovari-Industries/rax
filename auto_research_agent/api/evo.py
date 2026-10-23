@@ -4,18 +4,22 @@ import time
 from .runtime import Context
 
 
+def _validate_timeout(timeout_s):
+    if (
+        type(timeout_s) not in (int, float)
+        or not math.isfinite(timeout_s)
+        or timeout_s <= 0
+    ):
+        raise ValueError("timeout_s must be finite and positive")
+
+
 class Evo:
     def __init__(self, context=None):
         self.context = context or Context()
         self._owns_context = context is None
 
     def wait(self, action, timeout_s=40, cancelled=None):
-        if (
-            type(timeout_s) not in (int, float)
-            or not math.isfinite(timeout_s)
-            or timeout_s <= 0
-        ):
-            raise ValueError("timeout_s must be finite and positive")
+        _validate_timeout(timeout_s)
         action_id = action["action_id"]
         deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
@@ -75,6 +79,7 @@ class Evo:
             "evo_move_neck",
             "evo_drive",
         }
+        _validate_timeout(wait_timeout_s)
         if tool not in allowed:
             raise ValueError("not an Evo action tool")
         if cancelled is not None and cancelled():

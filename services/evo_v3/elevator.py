@@ -39,15 +39,13 @@ class ElevatorRuntime:
 
     def result(self, ident):
         with self._lock:
-            if ident not in self._results:
-                raise ValueError("unknown RAX base action")
-            return dict(self._results[ident])
+            return self._result_unlocked(ident)
 
     def cancel(self, ident=None):
         with self._lock:
             if self._active is None:
                 if ident is not None:
-                    return self.result_unlocked(ident)
+                    return self._result_unlocked(ident)
                 raise ValueError("no active RAX base action")
             active, event = self._active
             if ident is not None and ident != active:
@@ -57,7 +55,7 @@ class ElevatorRuntime:
         self.backend._rpc("hold", {}, timeout=0.2)
         return self.result(active)
 
-    def result_unlocked(self, ident):
+    def _result_unlocked(self, ident):
         if ident not in self._results:
             raise ValueError("unknown RAX base action")
         return dict(self._results[ident])
@@ -125,11 +123,9 @@ class ElevatorRuntime:
                 stopped = stop.get("physical_stop_verified") is True
             except Exception:
                 stopped = False
-                self.backend._failure = "RAX base stop is unconfirmed"
-                self.backend._stop.set()  # Evo's independent lease watchdog stops.
             if not stopped:
                 self.backend._failure = "RAX base stop is unconfirmed"
-                self.backend._stop.set()
+                self.backend._stop.set()  # Evo's independent lease watchdog stops.
             result = {"action_id": ident, "state": "cancelled" if cancelled.is_set() and stopped else "failed",
                       "reason": str(error), "physical_stop_verified": stopped, "pulse_actions": pulses}
         finally:

@@ -52,6 +52,10 @@ controller; do not bypass its freshness, deadline, or stop checks.
 - Create and validate a dedicated live agent profile. The shipped agent profile
   uses mock hardware. Check actuator modes, joint limits, collision exclusions,
   exclusive command ownership, recorder operation, and the session root/socket.
+- Use RGB captures and the installed lidar. Check that lidar coverage and
+  resolution supply local metric support at the press point. If support is
+  missing, the current primitive must refuse the press. There is no RGB-D camera
+  and no camera-only range fallback in this elevator primitive.
 - Record measured camera intrinsics, sensor-to-robot transforms, pressing-tip
   transforms, label-to-press offsets, arm viewing poses, carriage targets, and the
   complete compact robot envelope. Include attachments in that envelope.

@@ -424,4 +424,26 @@ def test_elevator_api_and_scene_reads_reach_generated_workspace(tmp_path):
     assert (workspace / "api/elevator.py").is_file()
     assert (workspace / "api/base.py").is_file()
     contract = json.loads((workspace / "MCP_CONTRACT.json").read_text())
-    assert {"rax_move_base", "rax_scene", "rax_detect_buttons"} <= set(contract["tools"])
+    from services.evo_v3.backend import CLIENT_TOOLS
+    from services.workspace import ROBOT_FACTS
+
+    names = {tool["name"] for tool in CLIENT_TOOLS}
+    assert names == set(ROBOT_FACTS["evo-v3"]["tools"])
+    assert names <= set(contract["tools"])
+    assert {"rax_move_base", "rax_scene", "rax_detect_buttons", "evo_sam_result", "evo_sam_cancel"} <= names
+    assert {"rax_scene", "rax_detect_buttons", "evo_sam_result", "evo_sam_cancel"} <= set(ROBOT_FACTS["evo-v3"]["read_tools"])
+    interface = (workspace / ".agents/skills/robot-interface/SKILL.md").read_text()
+    assert "## Elevator primitives" in interface and "## SAM perception" in interface
+
+
+@pytest.mark.parametrize("timeout", [True, 0, -1, float("inf"), float("nan"), "1", None])
+@pytest.mark.parametrize("method", ["execute", "wait"])
+def test_invalid_wait_timeout_cannot_dispatch_or_query_motion(timeout, method):
+    context = RobotContext()
+    evo = Evo(context)
+    with pytest.raises(ValueError, match="finite and positive"):
+        if method == "execute":
+            evo.execute("evo_move_joints", targets={"left_joint1": .1}, wait_timeout_s=timeout)
+        else:
+            evo.wait({"action_id": "existing"}, timeout_s=timeout)
+    assert not context.calls

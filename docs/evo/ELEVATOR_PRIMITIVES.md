@@ -39,7 +39,7 @@ flowchart LR
     A -->|Existing private Unix socket| E[Evo backend]
     E --> R[Evo Rust geometry and base planner]
     R --> D[Existing local button detector]
-    R --> S[Existing lidar and RGB-D transport]
+    R --> S[Local lidar point clouds and RGB captures]
     E --> C[Robot controllers]
 ```
 
@@ -165,9 +165,16 @@ The local router and detector must also operate without an upstream connection.
 No primitive requires an LLM or cloud service.
 
 Use `/button_recognition/detect` for the existing detector when that service is
-running. The current sensor configurations use `/unilidar/cloud`; select and
-verify the actual Orbbec point-cloud topic on the installed sensor revision.
-Do not infer an optical transform from a topic name.
+running. These robots have RGB cameras. Do not configure an RGB-D source or assume
+that an RGB capture contains depth. The current lidar configuration uses
+`/unilidar/cloud`; verify the topic, frame, coverage, and sensor-to-robot transform
+on the selected robot.
+
+The current press primitive requires local point-cloud support at the press pixel,
+in addition to a calibrated RGB ray and panel plane. Lidar must supply that support
+with sufficient resolution and coverage. If it cannot, the primitive refuses the
+press. RGB triangulation is not wired into this elevator primitive. Camera-only
+pressing needs a separate measured geometry source before physical trials.
 
 | Scene setting | Required measurement or constraint |
 |---|---|
