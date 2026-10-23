@@ -121,10 +121,10 @@ class ArmSelection:
 
 
 class Elevator:
-    def __init__(self, context, settings, *, cancelled=None):
+    def __init__(self, context, settings, *, cancelled=None, clock=time):
         settings.validate()
         self.context, self.settings = context, settings
-        self.base = Base(context, cancelled=cancelled)
+        self.base = Base(context, cancelled=cancelled, clock=clock)
         self.evo = Evo(context)
         self.profiles = {p.side: p for p in settings.arms}
         self.evidence = []
@@ -411,9 +411,15 @@ class Elevator:
         if math.dist(button.position, selection.observation.position) > button.uncertainty_m+self.settings.position_tolerance_m:
             raise PrimitiveError("button changed after arm selection", self.evidence)
         self._fresh_button(button)
-        # Allow for the full tip sweep when the palm changes orientation.
+        # Bound the actual shortest-arc orientation sweep. An unchanged palm
+        # orientation has no tool-offset sweep.
         tip = self._tip(side)
-        if dot(add(button.position, scale(tip, -1)), button.normal) <= self.settings.prepress_gap_m+button.uncertainty_m+2*math.sqrt(dot(self._profile(side).tip_in_palm_m, self._profile(side).tip_in_palm_m)):
+        current_q = self._palm(side)["quaternion_xyzw"]
+        profile = self._profile(side)
+        radius = math.sqrt(dot(profile.tip_in_palm_m, profile.tip_in_palm_m))
+        cosine = min(1.0, abs(dot(current_q, profile.press_quaternion_xyzw)))
+        sweep = 2*radius*math.sqrt(max(0.0, 1-cosine*cosine))
+        if dot(add(button.position, scale(tip, -1)), button.normal) <= self.settings.prepress_gap_m+button.uncertainty_m+sweep:
             raise PrimitiveError("insufficient gap for press-posture preparation", self.evidence)
         self._path(side, tip)
         self._selected = side
@@ -505,11 +511,11 @@ class Elevator:
         target = add(button.position, scale(button.normal, stroke))
         contact["stage"] = "press_attempted"  # Never retry after an uncertain action.
         self._path(side, target)
-        until = time.monotonic()+dwell
-        while time.monotonic() < until:
+        until = self.base.clock.monotonic()+dwell
+        while self.base.clock.monotonic() < until:
             self.base.check_cancel()
             self._contact_state(side)
-            time.sleep(min(0.05, max(0, until-time.monotonic())))
+            self.base.clock.sleep(min(0.05, max(0, until-self.base.clock.monotonic())))
         return PrimitiveResult("press_button", "stroke_complete_unconfirmed", tuple(self.evidence))
 
     def retract_arm(self, side, clearance_m=None):
@@ -558,7 +564,8 @@ class Elevator:
         self.retract_arm(side)
         activation = self.verify_button_activation(label, side)
         self.stow_arms()
-        return PrimitiveResult("press_elevator_button", "stroke_complete_unconfirmed",
+        return PrimitiveResult("press_elevator_button",
+                               "succeeded" if activation.outcome == "succeeded" else "stroke_complete_unconfirmed",
                                tuple(self.evidence+self.base.evidence), {"arm": side, "activation": activation.outcome})
 
     def observe_doorway(self):

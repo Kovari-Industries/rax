@@ -59,14 +59,18 @@ class PrimitiveResult:
 
 
 class Base:
-    def __init__(self, context, *, cancelled=None):
+    def __init__(self, context, *, cancelled=None, clock=time):
         self.context = context
+        self.clock = clock
         self.evo = Evo(context)
         self.cancelled = cancelled or (lambda: False)
         self.capabilities = context.value("evo_capabilities")
         scene = self.capabilities.get("scene", {})
         if not scene.get("configured") or not isinstance(scene.get("settings"), dict):
             raise PrimitiveError("calibrated point-cloud base control is not configured")
+        self.heading_source = "lidar_fixed_reference"
+        if self.capabilities.get("simulated") is True and scene.get("observation_source") == "simulator_ground_truth":
+            self.heading_source = "simulator_ground_truth"
         self.settings = scene["settings"]
         self.evidence = []
 
@@ -80,7 +84,7 @@ class Base:
         stamp = value.get("capture_us")
         if type(stamp) is not int or not 0 <= time.time() - stamp/1e6 <= self.settings["max_age_s"]:
             raise PrimitiveError("stale or invalid point-cloud capture", self.evidence)
-        if value.get("frame") != "base_link" or value.get("heading_source") != "lidar_fixed_reference":
+        if value.get("frame") != "base_link" or value.get("heading_source") != self.heading_source:
             raise PrimitiveError("unqualified scene frame or heading source", self.evidence)
         vector(value["pose"])
         if not value.get("observation_id"):
@@ -177,13 +181,13 @@ class Base:
 
     def wait_for_door_open(self, doorway_id=None, timeout_s=30):
         positive(timeout_s, "timeout_s")
-        deadline = time.monotonic()+timeout_s
-        while time.monotonic() < deadline:
+        deadline = self.clock.monotonic()+timeout_s
+        while self.clock.monotonic() < deadline:
             scene = self.observe_scene()
             door = scene.get("doorway")
             if door and (doorway_id is None or door.get("id") == doorway_id) and door.get("state") == "open" and door.get("stable_samples", 0) >= 3:
                 return door
-            time.sleep(0.05)
+            self.clock.sleep(0.05)
         raise PrimitiveError("doorway did not become open and clear before timeout", self.evidence)
 
     def align_to_doorway(self, doorway_id=None, *, staging_gap_m):
