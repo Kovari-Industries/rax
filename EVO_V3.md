@@ -105,6 +105,11 @@ progress and stop at each waypoint. Grip targets persist during normal actions
 while operator arming, measured feedback, recording, and the client lease remain
 valid. A retained command is not evidence that cloth is held.
 
+The [composable primitive guide](CLOTH_PRIMITIVES.md) describes model-assisted
+inspection, small interactions, and trial record/replay. These live entirely in
+RAX. The geometric planner is optional; learned policies can use the same motion
+interface without it.
+
 The [cloth handling instructions](agent_skills/control/evo-v3/cloth-handling/SKILL.md)
 describe the Python routines for crumpled towel unfolding, measured half-folds,
 and folded packet stacking. A task perception function must supply current metric
@@ -130,10 +135,10 @@ socket, with the native model, bridge, and measured mock controllers.
 
 | Verification on Linux ARM64 | Result |
 |---|---|
-| RAX unit suite after merging target-branch trial changes | 248 passed, 4 skipped |
+| RAX unit suite with composable cloth primitives | 278 passed, 4 skipped |
 | Public actuator and cloth-program path | Passed |
 | Frontend cancel/hold during blocked observation | Passed for base and arm paths |
-| Rust/Python schema and protocol fixture copies | Exact match |
+| Shared protocol contract | No changes in this cloth update |
 
 The skipped tests require the optional rby1-sdk or FFmpeg dependencies, which
 were not available in this test environment. The
@@ -206,3 +211,96 @@ Their diagnostic code is in `operator_trials/`. The exclusive backend replaces
 those agent-facing sockets and tools. It does not expose hardware parameter
 changes or hold-correction pulses to the agent. The recorded physical tracking
 problems remain unqualified by the mock-controller tests.
+
+## SAM 3.1 tools
+
+SAM inference and assets live in Evo. This client only forwards jobs, validates
+artifacts, and saves them in the workspace. It has no SAM or Triton dependency.
+The four tools are registered for interactive calls and Python programs.
+
+```mermaid
+flowchart LR
+    I[Interactive tools] --> F[RAX frontend]
+    P[Python Sam helper] --> F
+    F --> E[Evo job service]
+    E --> G[Separate SAM GPU process]
+    G --> M[Masks and source metadata]
+    M --> T[RAX towel decisions]
+```
+
+```python
+from api.runtime import Context
+from api.sam import Sam
+from api.cloth_trial import TrialContext
+
+with Context() as ctx:
+    trial = TrialContext(ctx, "trials/towel-001")
+    try:
+        observation = trial.value("evo_observe")
+        sam = Sam(trial)
+        result = sam.wait(sam.segment(observation["observation_id"], camera="base"))
+        # Inspect result["frames"][0]["overlay"]["path"] and select a candidate.
+        # Use separate task evidence before planning a grasp or fold.
+    finally:
+        trial.close()
+```
+
+The trial log saves source captures even when they were captured before the trial.
+Replay verifies image and mask hashes and never opens a robot connection. Clips
+are limited to 64 ordered frames over 10 seconds. Default coordinates are captured
+pixels. Rectified results retain calibration and an explicit pixel-space label;
+convert them back before use with captured-pixel ray tools. Detection alone cannot
+establish metric geometry, grasp retention, layers, or success.
+
+The native video profile uses different thresholds from the image profile. Empty
+tracking frames are expected when the model loses evidence. Do not fill those gaps
+with a claim that a grasp or towel identity remains valid.
+
+### Text tracking during cloth motion
+
+Choose a prompt from visible evidence. For example, use
+`sam.track(capture_ids, camera="base", prompt="red towel")` for a red target.
+Review the masks before using them in a task. If text does not select the intended
+object, use a positive point inside it and negative points on distractors in the
+first frame. Do not infer that an absent mask means the object has left the scene.
+
+Evo video profile `sam31-native-video-1008-2026-10-22.3` uses a lower threshold to
+match detections to existing tracks. Its higher new-track threshold and upstream
+occlusion/removal rules stay in place. Prompt selection and task decisions remain
+in RAX. The client does not tune model thresholds or fill missing masks.
+
+| Saved-clip check | Earlier result | Current result |
+|---|---:|---:|
+| Original short text clip | 13 / 16 target frames | 16 / 16 target frames |
+| Red towel lift, generic prompt | 36 / 48 | 46 / 48 |
+| Red towel with partial occlusion, generic prompt | 19 / 48 | 19 / 48 |
+| Same partial-occlusion clip, `red towel` prompt | — | 48 / 48 |
+| White towel lift | 40 / 40 | 40 / 40 |
+| White towel fold | 32 / 32 | 32 / 32 |
+
+The longer clips span about nine seconds. Counts refer to the reviewed target ID;
+they are not pixel accuracy or task success. A separate synthetic full-occlusion
+control returned no masks during the hidden interval and resumed the target ID
+afterwards. This does not establish identity through real complete occlusion.
+See Evo's `packages/evo_sam/tracking-motion-2026-10-22.md` for source manifests,
+threshold comparisons, and limits. PNG output size can require fewer frames even
+when a clip is below the frame-count and duration limits.
+
+
+SAM cancellation bypasses frontend status calls and audit writes. It has separate
+admission slots from robot cancel and hold, so blocked perception cancellations
+cannot consume the robot-stop slots. It does not acquire or revoke motion authority.
+
+```mermaid
+flowchart LR
+    A[Status and ordinary requests] --> Q[Normal frontend queues]
+    C[SAM cancel] --> P[Perception cancellation slots]
+    S[Robot cancel and hold] --> R[Separate robot-stop slots]
+```
+
+`Sam.wait(timeout_s=...)` checks its deadline after status and frame responses.
+It requests cancellation and raises `TimeoutError` instead of returning a late
+result. A cancellation failure is reported as the cause. The helper does not
+interrupt an in-flight synchronous socket call; use a separate `Context` for
+urgent cancellation. Cancelling an already completed job does not erase its
+successful terminal state.

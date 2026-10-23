@@ -108,3 +108,33 @@ a stored Python task when internet is unavailable; no LLM is required. RAX suppl
 Python task logic and wrappers. Evo owns scene processing, base planning, actuator
 commands, and measured stops. Enable its optional `evo_agent_backend.elevator`
 configuration before use; check `scene.configured` in capabilities.
+
+## SAM perception
+
+Read `evo_capabilities.sam` first. SAM runs in Evo and requires an operator-enabled
+service. Call `evo_sam_segment` with an observation ID and camera. Text defaults to
+`towel`; a pixel box can limit a prompt. `evo_sam_track` takes ordered captures
+from one camera and text or labelled points on the first frame. IDs are local to
+one clip. A point prompt defines one object; `1` is positive and `0` is negative.
+
+Use a visible distinguishing property in a text prompt when selecting a towel,
+for example `prompt="red towel"`. Inspect the first mask and later overlays.
+A generic prompt can delay track creation or include other towels. If the intended
+object is not selected, use labelled points on a reviewed first frame. Keep the
+choice of object in RAX; the Evo profile owns detection and track thresholds.
+When an object is hidden, keep empty results. A returned ID after occlusion is
+model evidence, not proof of physical identity or grasp retention.
+
+Poll `evo_sam_result` for state, then fetch each `frame_index`. Mask and overlay
+paths are under `runtime/sam`. Use `api.sam.Sam(ctx)` for submit, wait, retrieval,
+and cancel through the same tools. Call `evo_sam_cancel` to discard a job. The GPU
+worker can remain busy until that inference ends. Robot `evo_cancel` and `evo_hold`
+remain separate and must be used to stop motion.
+
+Default coordinates are captured pixels. Rectified mode requires capture-bound
+calibration and returns its mapping. Do not pass rectified pixels directly to
+`evo_camera_ray`, which takes captured pixels. A mask is not metric position,
+verified grasp retention, full layer capture, or task success. Inspect candidate
+scores and overlays; the highest score can select a different towel. Keep empty
+and ambiguous results. Use `api.cloth_trial.TrialContext` to save input captures,
+model outputs, and task evidence for replay.

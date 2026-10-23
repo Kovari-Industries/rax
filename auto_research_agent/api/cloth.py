@@ -8,6 +8,7 @@ from dataclasses import dataclass, field, replace
 import math
 import time
 from .evo import Evo
+from .towel_planner import plan_half_fold, footprint_matches, placement_yaw
 
 
 def _vector(value, size=3):
@@ -147,6 +148,7 @@ class Check:
     stage: str
     hands: tuple = ()
     expected: str = ""
+    target: dict | None = None  # Desired outcome, never observation evidence.
 
 
 class ClothUncertain(RuntimeError):
@@ -164,7 +166,6 @@ class ClothSettings:
     approach_clearance_m: float = 0.06
     test_lift_m: float = 0.03
     inspection_lift_m: float = 0.12
-    fold_clearance_m: float = 0.12
     transport_clearance_m: float = 0.15
     release_gap_m: float = 0.01
     max_span_m: float = 0.7
@@ -182,7 +183,6 @@ class ClothSettings:
             self.approach_clearance_m,
             self.test_lift_m,
             self.inspection_lift_m,
-            self.fold_clearance_m,
             self.transport_clearance_m,
             self.release_gap_m,
             self.max_span_m,
@@ -223,14 +223,14 @@ class Cloth:
     def _uncertain(self, reason):
         raise ClothUncertain(reason, self.evidence)
 
-    def observe(self, stage, hands=(), expected=""):
+    def observe(self, stage, hands=(), expected="", target=None):
         self._check_base()
         observation = self.context.value("evo_observe")
         cameras = observation.get("cameras", {})
         if not cameras:
             self._uncertain("no camera observation")
         stamp = min(c["capture_us"] for c in cameras.values())
-        scene = self.perceive(observation, Check(stage, tuple(hands), expected))
+        scene = self.perceive(observation, Check(stage, tuple(hands), expected, target))
         if (
             not isinstance(scene, Scene)
             or scene.observation_id != observation["observation_id"]
@@ -386,7 +386,7 @@ class Cloth:
                 self._uncertain("grasp candidate is not from the current observation")
         return {side: grasp.pose() for side, grasp in grasps.items()}
 
-    def pinch_and_check(self, grasps, packet=False):
+    def pinch_and_check(self, grasps, packet=False, *, lift_targets=None):
         targets = self._targets(grasps)
         for side in targets:
             self._grip(side, False)
@@ -407,7 +407,7 @@ class Cloth:
             )
             for s, p in targets.items()
         }
-        self._path([lifted])
+        self._path([lifted if lift_targets is None else lift_targets])
         scene = self.observe(
             "pinch_check", targets, "packet" if packet else "cloth follows the hands"
         )
@@ -561,54 +561,67 @@ class Cloth:
         return scene
 
     def fold_over_line(self, line, grasps, *, packet=False):
+        """Optional geometric half-fold strategy; general actions need no rectangle."""
         targets = self._targets(grasps)
-        a, b = (_vector(p) for p in line)
-        direction = _unit((b[0] - a[0], b[1] - a[1], 0))
-        normal = (-direction[1], direction[0], 0)
-        self.pinch_and_check(grasps, packet=packet)
-        start = self._poses()
-        points = []
-        for fraction in (0.25, 0.5, 0.75, 1.0):
-            item = {}
-            for side in targets:
-                p = start[side + "_palm"]
-                distance = sum(
-                    (grasps[side].point()[i] - a[i]) * normal[i] for i in range(3)
+        self._rectangle(self._last_scene)
+        plan = plan_half_fold(
+            self._last_scene.corners,
+            line,
+            {s: g.point() for s, g in grasps.items()},
+            test_lift_m=self.settings.test_lift_m,
+            release_gap_m=self.settings.release_gap_m,
+        )
+
+        def palms(contacts):
+            return {
+                s: _pose(
+                    _add(p, _sub(targets[s]["position"], grasps[s].point())),
+                    targets[s]["quaternion_xyzw"],
                 )
-                location = _add(p["position"], _scale(normal, -2 * distance * fraction))
-                location = _add(
-                    location,
-                    (
-                        0,
-                        0,
-                        4 * fraction * (1 - fraction) * self.settings.fold_clearance_m,
-                    ),
-                )
-                item[side] = _pose(location, p["quaternion_xyzw"])
-            points.append(item)
-        self._path(points)
-        # Remove the test-lift offset only after the complete transfer.
-        land = {
-            s: _pose(
-                _sub(
-                    p["position"],
-                    (0, 0, self.settings.test_lift_m - self.settings.release_gap_m),
-                ),
-                p["quaternion_xyzw"],
+                for s, p in contacts.items()
+            }
+
+        # The test lift follows the same material-length constraint as the fold.
+        self.pinch_and_check(
+            grasps, packet=packet, lift_targets=palms(plan.lift_contacts)
+        )
+        self._path([palms(points) for points in plan.contacts])
+        scene = self.observe(
+            "fold_supported",
+            targets,
+            "supported fold with measured target footprint",
+            plan.target(),
+        )
+        self._held(scene, targets, packet=packet)
+        self._verify_fold(scene, plan)
+        for side in targets:
+            self._grip(side, False)
+        scene = self.observe(
+            "fold_complete",
+            expected="released fold matches target",
+            target=plan.target(),
+        )
+        self._verify_fold(scene, plan)
+        return scene
+
+    def _verify_fold(self, scene, plan):
+        try:
+            matches = footprint_matches(
+                plan.expected_corners,
+                scene.corners,
+                self.settings.alignment_tolerance_m,
             )
-            for s, p in points[-1].items()
-        }
-        self.observe("fold_before_landing", targets, "surface and retained grasps")
-        scene = self.lay_down(land)
+        except ValueError:
+            matches = False
         if (
             scene.state != "folded"
             or not scene.stable
             or not scene.supported
             or scene.alignment_error_m is None
             or scene.alignment_error_m > self.settings.alignment_tolerance_m
+            or not matches
         ):
-            self._uncertain("fold alignment is not verified")
-        return scene
+            self._uncertain("fold alignment or measured footprint is not verified")
 
     @staticmethod
     def _edge_grasps(scene, corners=None):
@@ -753,15 +766,15 @@ class Cloth:
         ):
             self._uncertain("stacking needs a folded packet and measured pile")
         self._rectangle(scene)
-        edge = _sub(scene.corners[1], scene.corners[0])
-        size = (_norm(edge), _norm(_sub(scene.corners[2], scene.corners[1])))
-        if any(
-            a + 2 * self.settings.alignment_tolerance_m > b
-            for a, b in zip(size, scene.pile.size_xy)
-        ):
-            self._uncertain(
-                "folded packet does not fit the placement region with margin"
+        try:
+            placement_yaw(
+                scene.corners,
+                scene.pile.size_xy,
+                scene.pile.yaw_rad,
+                self.settings.alignment_tolerance_m,
             )
+        except ValueError as error:
+            self._uncertain(str(error))
         grasps = self._edge_grasps(
             replace(
                 scene, grasps=tuple(g for g in scene.grasps if g.feature == "packet")
@@ -778,15 +791,16 @@ class Cloth:
             self._uncertain("packet bottom or pile height is unknown")
         self._rectangle(scene)
         source_center = _mean(scene.corners)
-        edge = _sub(scene.corners[1], scene.corners[0])
-        size = (_norm(edge), _norm(_sub(scene.corners[2], scene.corners[1])))
-        source_yaw = math.atan2(edge[1], edge[0])
         pile = scene.pile
-        if any(
-            a + 2 * self.settings.alignment_tolerance_m > b
-            for a, b in zip(size, pile.size_xy)
-        ):
-            self._uncertain("updated pile footprint is too small")
+        try:
+            turn = placement_yaw(
+                scene.corners,
+                pile.size_xy,
+                pile.yaw_rad,
+                self.settings.alignment_tolerance_m,
+            )
+        except ValueError as error:
+            self._uncertain(str(error))
         poses = self._poses()
         dz = pile.center[2] + self.settings.release_gap_m - scene.packet_bottom_z
         destination = {
@@ -794,7 +808,7 @@ class Cloth:
                 poses[s + "_palm"],
                 source_center,
                 pile.center,
-                pile.yaw_rad - source_yaw,
+                turn,
                 dz,
             )
             for s in grasps

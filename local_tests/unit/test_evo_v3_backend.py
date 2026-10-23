@@ -229,6 +229,11 @@ def test_shared_contract_fixture():
         "evo_action_status",
         "evo_cancel",
         "evo_hold",
+        "evo_camera_geometry",
+        "evo_sam_segment",
+        "evo_sam_track",
+        "evo_sam_result",
+        "evo_sam_cancel",
     }
 
 

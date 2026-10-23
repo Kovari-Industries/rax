@@ -92,5 +92,60 @@
       "position_rad": 0.1,
       "retain": true
     }
+  ],
+  "sam_requests": [
+    {
+      "operation": "segment",
+      "space": "captured",
+      "prompt": "towel",
+      "roi": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "frames": [
+        {
+          "observation_id": "capture-a",
+          "camera": "base",
+          "capture_us": 1000000,
+          "width": 64,
+          "height": 48,
+          "jpeg": "test-fixture"
+        }
+      ]
+    },
+    {
+      "operation": "track",
+      "space": "captured",
+      "prompt": "towel",
+      "points": [
+        {
+          "pixel": [
+            10,
+            20
+          ],
+          "label": 1
+        }
+      ],
+      "frames": [
+        {
+          "observation_id": "capture-a",
+          "camera": "base",
+          "capture_us": 1000000,
+          "width": 64,
+          "height": 48,
+          "jpeg": "test-fixture"
+        },
+        {
+          "observation_id": "capture-b",
+          "camera": "base",
+          "capture_us": 1100000,
+          "width": 64,
+          "height": 48,
+          "jpeg": "test-fixture"
+        }
+      ]
+    }
   ]
 }

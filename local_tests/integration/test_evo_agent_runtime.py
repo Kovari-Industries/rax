@@ -33,8 +33,10 @@ pytestmark = pytest.mark.skipif(
 def _cloth_program_fixture(program):
     """Run real motion from deterministic cloth evidence, without cloth physics."""
     from auto_research_agent.api.cloth import Cloth, ClothSettings, Grasp, Pile, Scene
+    from auto_research_agent.api.cloth_actions import ClothActions
 
     assert program.value("evo_capabilities")["simulated"] is True
+    assert ClothActions(program).lift(["left", "right"], 0.001)["state"] == "succeeded"
     palms = program.value("evo_fk", links=["left_palm", "right_palm"])["poses"]
     positions = program.value("evo_status")["state"]["positions"]
     x = sum(p["position"][0] for p in palms.values()) / 2
@@ -50,10 +52,14 @@ def _cloth_program_fixture(program):
             folded = True
         if check.stage == "laid_down":
             scene_state = "folded" if folded else "spread"
+        if check.stage in ("fold_supported", "fold_complete"):
+            scene_state = "folded"
         if check.stage == "stack_complete":
             scene_state = "stacked"
         near = x - 0.025 if scene_state in ("folded", "stacked") else x
         corners = ((near, yl, z), (near, yr, z), (x - 0.05, yr, z), (x - 0.05, yl, z))
+        if check.target is not None:
+            corners = tuple(check.target["corners"])
         feature = "packet" if scene_state in ("folded", "stacked") else "corner"
         grasps = tuple(
             Grasp(str(i), p, orientations["left" if p[1] > 0 else "right"], feature)
@@ -89,7 +95,6 @@ def _cloth_program_fixture(program):
         approach_clearance_m=0.005,
         test_lift_m=0.003,
         inspection_lift_m=0.005,
-        fold_clearance_m=0.01,
         transport_clearance_m=0.01,
         release_gap_m=0.001,
         alignment_tolerance_m=0.005,

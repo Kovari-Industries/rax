@@ -72,3 +72,9 @@ def test_agents_md_links_the_rby1_limits_and_posture_skills(tmp_path):
         assert f'.agents/skills/{skill}/SKILL.md' in links
     for tool in ('rby1_fk', 'rby1_check'):
         assert tool in (workspace/'.agents/skills/robot-interface/SKILL.md').read_text()
+
+
+def test_cloth_api_modules_are_available_in_generated_workspace(tmp_path):
+    build(recipe_for(), Setup('evo-v3'), tmp_path/'ws')
+    for name in ('cloth_actions', 'cloth_vision', 'cloth_trial', 'towel_planner'):
+        assert (tmp_path/'ws'/'api'/f'{name}.py').read_bytes() == (ROOT/'auto_research_agent'/'api'/f'{name}.py').read_bytes()

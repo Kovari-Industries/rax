@@ -95,6 +95,8 @@ class Frontend:
         self._closing = threading.Event()
         self._priority_tools = frozenset(getattr(backend, "priority_tools", ()))
         self._stop_tools = frozenset(getattr(backend, "stop_tools", ()))
+        self._cancel_tools = frozenset(getattr(backend, "cancel_tools", ()))
+        self._interrupt_tools = self._stop_tools | self._cancel_tools
         self._backend_tools = {t['name']: t for t in backend.tools()}
         reserved = {'status', 'gemini_generate', 'request_operator', 'skill_library_merge'} & set(self._backend_tools)
         # The persistent skill library clone, when the launcher created one for this workspace.
@@ -138,16 +140,16 @@ class Frontend:
         call_id = uuid.uuid4().hex
         failure = {'stage': 'request'}
         priority = isinstance(name, str) and name in self._priority_tools
-        stop_request = isinstance(name, str) and name in self._stop_tools
-        dispatch = nullcontext() if stop_request else (self._priority_dispatch if priority else self._dispatch)
+        interrupt_request = isinstance(name, str) and name in self._interrupt_tools
+        dispatch = nullcontext() if interrupt_request else (self._priority_dispatch if priority else self._dispatch)
         with dispatch, self.timings.measure(name if isinstance(name, str) else 'invalid'):
             try:
                 if self._closing.is_set():
                     raise RuntimeError('Frontend is closing')
                 if not isinstance(arguments, dict):
                     raise ValueError('Arguments must be an object')
-                # Evo records stops itself. Frontend audit I/O must never delay a stop.
-                if not stop_request:
+                # Backend interruptions must not wait for frontend audit I/O.
+                if not interrupt_request:
                     self.s.audit({'event': 'mcp_request', 'call_id': call_id, 'tool': name, 'arguments': arguments})
                 if name == 'status':
                     if arguments:
@@ -188,7 +190,7 @@ class Frontend:
                     raise PermissionError('Unknown tool')
                 value = jsonable(value)
                 result = {'content': [{'type': 'text', 'text': json.dumps(value, allow_nan=False)}, *images]}
-                if not stop_request:
+                if not interrupt_request:
                     self.s.audit({'event': 'mcp_result', 'call_id': call_id, 'tool': name,
                                   'result': result['content'][0]['text'][:65536], 'images': len(images)})
                 return result
@@ -199,7 +201,7 @@ class Frontend:
                 error = jsonable(public_failure(exc, operation=name, stage=failure['stage'],
                                                 traceback_tail=not handled))
                 try:
-                    if not stop_request:
+                    if not interrupt_request:
                         self.s.audit({'event': 'mcp_error', 'call_id': call_id, **error})
                 except Exception:
                     error['audit_recording_failed'] = True
@@ -252,6 +254,8 @@ class Frontend:
         ordinary = threading.BoundedSemaphore(1 if self._priority_tools else 4)
         priority = threading.BoundedSemaphore(4)
         stops = threading.BoundedSemaphore(4)
+        # Perception cancellation must not consume robot-stop admission slots.
+        cancels = threading.BoundedSemaphore(4)
 
         def respond(line):
             try:
@@ -268,9 +272,10 @@ class Frontend:
                 request.get('method') in ('initialize', 'ping', 'tools/list')
                 or (request.get('method') == 'tools/call'
                     and isinstance(name, str) and name in self._priority_tools)))
-            stop_request = (isinstance(request, dict) and request.get("method") == "tools/call"
-                            and isinstance(name, str) and name in self._stop_tools)
-            admission = stops if stop_request else (priority if urgent else ordinary)
+            interrupt_request = (isinstance(request, dict) and request.get("method") == "tools/call"
+                            and isinstance(name, str) and name in self._interrupt_tools)
+            admission = ((stops if name in self._stop_tools else cancels) if interrupt_request
+                         else (priority if urgent else ordinary))
             if not admission.acquire(blocking=False):
                 return None, {'jsonrpc': '2.0',
                               'id': request.get('id') if isinstance(request, dict) else None,
