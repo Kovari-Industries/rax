@@ -134,8 +134,8 @@ def test_invalid_artifacts_and_job_identity_fail_closed(tmp_path, change):
             client.call("evo_sam_result", dict(job_id="sam-test", frame_index=0))
 
 
-@pytest.mark.parametrize("index", [True, 0.5, -1])
-def test_frame_index_is_an_integer(tmp_path, index):
+@pytest.mark.parametrize("index", [True, 0.5, -1, 64])
+def test_frame_index_requires_a_bounded_integer(tmp_path, index):
     with service(tmp_path, lambda _: {}) as (client, received):
         with pytest.raises(ValueError):
             client.call("evo_sam_result", dict(job_id="j", frame_index=index))

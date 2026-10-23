@@ -207,6 +207,7 @@ def test_shared_contract_fixture():
     assert fixtures["accepted_response"]["result"]["state"] == "accepted"
     names = {tool["name"] for tool in TOOLS}
     assert names == {
+        "evo_camera_geometry",
         "evo_capabilities",
         "evo_status",
         "evo_observe",
@@ -402,7 +403,7 @@ def test_frontend_socket_stop_bypasses_slow_request(tmp_path, stop_tool, slow_to
                     }
                 ],
             )
-            params = {} if slow_tool == "evo_observe" else {"links": ["left_palm"]}
+            params = {"evo_observe": {}, "evo_fk": {"links": ["left_palm"]}}[slow_tool]
             pending = pool.submit(ordinary.value, slow_tool, **params)
             try:
                 assert blocked.wait(1)

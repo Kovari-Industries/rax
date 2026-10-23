@@ -15,15 +15,19 @@ flowchart LR
 
 The adapter exposes discovery, RGB observation and history, FK, IK, preview, camera
 rays, arm motion, grippers, carriage, neck, bounded base velocity, action status,
-cancellation, and hold. `services/evo_v3/tools.json` is the public schema. It is
+cancellation, and hold. Optional calibrated scene control adds measured base moves,
+button detections, and local doorway traversal. See [elevator primitives](docs/evo/ELEVATOR_PRIMITIVES.md)
+for the API, configuration, and qualification limits. RAX task schemas are in `services/evo_v3/elevator_tools.json`.
+`services/evo_v3/tools.json` contains the generic Evo schema. It is
 identical to Evo's `evo_agent_backend/contract/tools.json`. The old towel socket and
 EVJ1 transport are removed; there is no fallback.
 
 Use SI units and named joints. Gripper positions are radians (`position_rad`).
 Carriage position is metres (`position_m`). Cartesian targets name `base_link` or
-`carriage_link`. Quaternion order is `[x, y, z, w]`. Depth, force control, scene
-collision checks, and navigation are unavailable. Missing camera calibration
-leaves metric geometry unavailable.
+`carriage_link`. Quaternion order is `[x, y, z, w]`. Force control, arm-to-scene
+collision checks, and general navigation are unavailable. Optional point-cloud
+base control is reported under `scene` in capabilities. Missing camera calibration
+leaves metric image geometry unavailable.
 
 The operator must start Evo's explicit exclusive agent profile and set its trusted
 `session_root` to the directory that directly contains RAX sessions. The usual RAX
@@ -32,7 +36,8 @@ the private Evo runtime directory; the sandbox hides that complete directory. Th
 arm/disarm controls write `<session>/operator/armed.json`. Evo reads this file
 independently. Neither arming nor controller configuration is an agent tool.
 
-Operator `backend_options` are `control_socket` and `socket_timeout_s`. The default
+Operator `backend_options` are `control_socket` and `socket_timeout_s`.
+Optional elevator services are configured in Evo under `evo_agent_backend.elevator`. The default
 socket is `~/.local/evo/agent/agent.sock`. Configure the exact runtime socket when
 using an isolated simulation. Unknown options are refused. The launcher hides the
 Evo socket, runtime files, Evo workspace, and session operator directory from the
