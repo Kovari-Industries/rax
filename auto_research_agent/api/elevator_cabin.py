@@ -4,6 +4,7 @@ The scene provider supplies calibrated geometry or explicit simulator geometry.
 Landing identity must come from image OCR. A simulator floor state is not an OCR
 observation. This module does not provide a hardware perception qualification.
 """
+from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 import math
 import time
@@ -176,7 +177,13 @@ class CabinRide:
         self._cabin_id = cabin["id"]
         return cabin, planes, min(clearances)
 
-    def _verify_lighting_receipt(self, scene, receipt, purpose, *, minimum_capture_us=0):
+    def _verify_lighting_receipt(self, scene, receipt, purpose, *, minimum_capture_us=0, current_scene=None):
+        if (not isinstance(scene, dict) or scene.get("frame") != "base_link"
+                or scene.get("heading_source") != self.base.heading_source
+                or not scene.get("observation_id")):
+            raise PrimitiveError("unqualified cabin image scene frame or heading source", self.evidence)
+        self._fresh(scene.get("capture_us"), self.settings.floor_max_age_s, post_motion=True)
+        capture_pose = vector(scene.get("pose"))
         cabin, _, _ = self._cabin(scene, allow_unverified_image=True)
         if (receipt.get("cabin_id") != cabin["id"] or receipt.get("scene_id") != self._scene_id
                 or receipt.get("configuration_id") != self._light_configuration_id
@@ -192,16 +199,42 @@ class CabinRide:
         luma = vector((receipt.get("mean_luma"),), 1)[0]
         if not self.settings.min_image_luma <= luma <= 1:
             raise PrimitiveError("cabin image is too dark", self.evidence)
-        self._light_receipt = dict(receipt)
+        current_evidence = {}
+        if current_scene is not None:
+            current_cabin, _, _ = self._cabin(current_scene, allow_unverified_image=True)
+            if current_cabin["lighting"]["source"] != cabin["lighting"]["source"]:
+                raise PrimitiveError("cabin lighting source changed since image capture", self.evidence)
+            current_pose = vector(current_scene["pose"])
+            position_error = math.dist(capture_pose[:2], current_pose[:2])
+            yaw_error = math.atan2(math.sin(current_pose[2]-capture_pose[2]),
+                                   math.cos(current_pose[2]-capture_pose[2]))
+            if (position_error > self.base.settings["position_tolerance_m"]
+                    or abs(yaw_error) > self.base.settings["angle_tolerance_rad"]):
+                raise PrimitiveError("base moved since cabin image capture", self.evidence)
+            current_evidence = {"current_scene_id": current_scene["observation_id"],
+                                "current_capture_us": current_scene["capture_us"],
+                                "current_pose": current_pose, "position_error_m": position_error,
+                                "yaw_error_rad": yaw_error}
+        self._light_receipt = deepcopy(receipt)
         self.evidence.append({"stage": "lighting_verified", "purpose": purpose,
-                              "minimum_capture_us": minimum_capture_us, "receipt": dict(receipt)})
+                              "minimum_capture_us": minimum_capture_us,
+                              "receipt": deepcopy(receipt), **current_evidence})
 
     def _refresh_lighting(self, purpose, *, minimum_capture_us=0):
         scene = self._scene()
         cabin, _, _ = self._cabin(scene, allow_unverified_image=True)
         self.base.check_cancel()
-        receipt = self.context.value("rax_cabin_image", doorway_id=self._doorway_id, cabin_id=cabin["id"])
-        self._verify_lighting_receipt(self._scene(), receipt, purpose, minimum_capture_us=minimum_capture_us)
+        receipt = deepcopy(self.context.value("rax_cabin_image", doorway_id=self._doorway_id, cabin_id=cabin["id"]))
+        if not isinstance(receipt, dict):
+            raise PrimitiveError("cabin image receipt is unavailable", self.evidence)
+        current_scene = self._scene()
+        # Inference can finish after exposure. Its immutable scene remains tied
+        # to that exposure; a fresh scene separately proves that the base and
+        # lighting still match. Adapters without a capture scene retain the
+        # original exact-sync requirement.
+        capture_scene = receipt.get("capture_scene", current_scene)
+        self._verify_lighting_receipt(capture_scene, receipt, purpose,
+                                      minimum_capture_us=minimum_capture_us, current_scene=current_scene)
 
     def _inside(self, scene):
         cabin, planes, clearance = self._cabin(scene)

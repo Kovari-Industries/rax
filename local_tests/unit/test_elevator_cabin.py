@@ -47,7 +47,11 @@ class CabinContext(SimulationContext):
         self.image_edit = None
 
     def scene(self, stamp=None):
-        stamp = stamp or time.time_ns()//1000
+        if stamp is None:
+            # Synthetic moves complete in one call. Let the wall clock advance
+            # before exposure so its microsecond stamp is after the stop.
+            time.sleep(0)
+            stamp = time.time_ns()//1000
         value = super().scene(stamp)
         value['heading_source'] = 'simulator_ground_truth'
         value['panel'] = dict(id='test-panel', location=self.panel_location, cabin_id='cabin-1',
