@@ -509,3 +509,26 @@ def test_preexisting_button_observer_override_is_restored():
     task.task.observe_button = override
     assert task.run('2').outcome == 'succeeded'
     assert task.task.observe_button is override
+
+
+@pytest.mark.parametrize("reported_normal_sign", [-1., 1.])
+def test_forward_exit_orients_stable_door_normal_after_turn(reported_normal_sign):
+    context, task = ride()
+    context.pose = [2., 0., math.pi]
+    original_scene = context.scene
+
+    def scene(stamp=None):
+        value = original_scene(stamp)
+        # Stable world +X is body -X after the turn. Either plane-normal sign
+        # must yield the same forward exit direction without mutating the scene.
+        value["doorway"]["normal"] = [reported_normal_sign, 0., 0.]
+        return value
+
+    context.scene = scene
+    _, door, center, normal = task.base.target("doorway", context.door_id)
+    assert center[0] > 0
+    assert normal == pytest.approx([1., 0., 0.])
+    assert door["normal"] == [reported_normal_sign, 0., 0.]
+    goal = [center[i]+normal[i]*task.settings.exit_depth_m for i in range(2)]
+    assert goal[0] > center[0]
+    assert goal[1] == pytest.approx(0., abs=1e-12)
