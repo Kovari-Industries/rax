@@ -217,16 +217,13 @@ def prepare_destination(context, task):
     context.capture_positions.clear()
 
 
-def test_destination_requires_new_capture_and_restores_before_forward_exit_check():
+def test_default_destination_restoration_invalidates_pre_motion_capture():
     context, task = configured()
     prepare_destination(context, task)
-    result = task.wait_for_destination('2')
-    assert result.outcome == 'succeeded'
+    with pytest.raises(PrimitiveError, match='predates the last motion'):
+        task.wait_for_destination('2')
     assert context.head_actions == [task.settings.destination_floor_views[0], REST]
-    first_capture = result.measured['observation']['capture_us']
-    next_result = task.wait_for_destination('2')
-    assert next_result.measured['observation']['capture_us'] > first_capture
-    assert len(context.head_actions) == 4
+    assert not context.base_calls
 
 
 @pytest.mark.parametrize('fault', ['wrong_floor', 'pressure'])
@@ -237,7 +234,7 @@ def test_readable_wrong_destination_or_pressure_does_not_repeat_head_scan(fault)
         context.floor_edit = lambda v: v['ocr'].update(text='1')
     else:
         context.baro_height = 0.
-    with pytest.raises(PrimitiveError, match='did not verify the destination'):
+    with pytest.raises(PrimitiveError, match='predates the last motion'):
         task.wait_for_destination('2')
     assert context.head_actions == [task.settings.destination_floor_views[0], REST]
     assert len(context.capture_positions) == 1
@@ -249,7 +246,7 @@ def test_cancellation_during_capture_cannot_report_success_or_move_rest():
     cancelled = [False]
     task.base.cancelled = lambda: cancelled[0]
     context.floor_edit = lambda value: cancelled.__setitem__(0, True)
-    with pytest.raises(PrimitiveError, match='return-to-rest is unconfirmed'):
+    with pytest.raises(PrimitiveError, match='cancelled'):
         task.capture_origin()
     assert context.head_actions == [VIEWS[0]]
     assert task._baseline is None
