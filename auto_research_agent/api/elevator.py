@@ -4,12 +4,13 @@ Arm motion uses Evo tools; base goals use RAX tools backed by Evo actions. Confi
 pressing-tip transform, and panel offsets before physical use. This module never
 arms the robot, changes limits, or guesses missing calibration.
 """
+from copy import deepcopy
 from dataclasses import dataclass
 import math
 import time
 
 from .base import Base, PrimitiveError, PrimitiveResult, vector, positive, dot, add, scale, unit
-from .evo import Evo
+from .evo import Evo, EvoActionFailed
 
 
 def rotate_vector(v, q):
@@ -52,6 +53,24 @@ class ArmProfile:
 
 
 @dataclass(frozen=True)
+class FinalContactPolicy:
+    """Explicit optical qualification for a single guarded contact transaction."""
+    visible_gap_m: float
+    max_inward_travel_m: float
+    occlusion_qualification_id: str
+
+    def validate(self, settings):
+        positive(self.visible_gap_m, "visible_gap_m")
+        positive(self.max_inward_travel_m, "max_inward_travel_m")
+        if not isinstance(self.occlusion_qualification_id, str) or not self.occlusion_qualification_id:
+            raise ValueError("guarded contact requires an optical qualification identity")
+        if self.visible_gap_m <= settings.prepress_gap_m+settings.max_geometry_uncertainty_m:
+            raise ValueError("visible gap must exceed the uncertain prepress gap")
+        if not self.visible_gap_m+settings.stroke_m <= self.max_inward_travel_m <= settings.approach_budget_m:
+            raise ValueError("guarded inward travel must cover the stroke within the existing approach budget")
+
+
+@dataclass(frozen=True)
 class ElevatorSettings:
     arms: tuple
     panel_id: str
@@ -76,6 +95,8 @@ class ElevatorSettings:
     reverse_exit: bool = False
     synchronized_view: bool = False
     direct_press_alignment: bool = False
+    final_contact: FinalContactPolicy | None = None
+    coarse_panel_lateral_offset_m: float | None = None
 
     def validate(self):
         for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment"):
@@ -98,6 +119,12 @@ class ElevatorSettings:
             raise ValueError("press settings exceed supported bounds")
         if self.prepress_gap_m <= self.max_geometry_uncertainty_m or self.retract_gap_m <= self.prepress_gap_m:
             raise ValueError("press and retract gaps must exceed measurement uncertainty")
+        if self.coarse_panel_lateral_offset_m is not None:
+            vector((self.coarse_panel_lateral_offset_m,), 1)
+        if self.final_contact is not None:
+            if not isinstance(self.final_contact, FinalContactPolicy):
+                raise ValueError("final_contact must be an explicit FinalContactPolicy")
+            self.final_contact.validate(self)
         vector(self.search_turns_rad, len(self.search_turns_rad))
         if sum(abs(x) for x in self.search_turns_rad) > self.max_search_rotation_rad:
             raise ValueError("search turns exceed their total angle budget")
@@ -116,6 +143,9 @@ class ButtonObservation:
     image_error: float
     scene_pose: tuple
     score: float
+    receipt_id: str | None = None
+    image_sha256: str | None = None
+    surface_face: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -138,11 +168,16 @@ class Elevator:
         self._selected = None
         self._contact = None
         self._last_stop_us = 0
+        self._guarded_attempted = False
+        self._guarded_sequence_started = False
         if not self.base.capabilities.get("scene", {}).get("button_detection"):
             raise PrimitiveError("button detector is not configured")
         tools = {t["name"] for t in self.base.capabilities.get("tools", [])}
         if "evo_follow_path" not in tools:
             raise PrimitiveError("checked Cartesian paths are unavailable")
+        if settings.final_contact is not None and (self.base.capabilities["scene"].get("guarded_contact") is not True
+                                                  or "evo_guarded_contact" not in tools):
+            raise PrimitiveError("guarded contact requires explicit runtime capability and tool admission")
 
     def _run(self, tool, **args):
         self.base.check_cancel()
@@ -317,7 +352,10 @@ class Elevator:
             raise PrimitiveError("local depth and the panel projection disagree", self.evidence)
         button = ButtonObservation(label, self.settings.panel_id, side+"_arm", observation["observation_id"], stamp,
                                    point, normal, uncertainty, math.hypot(pixel[0]/width-.5, pixel[1]/height-.5),
-                                   vector(scene["pose"]), detection["score"])
+                                   vector(scene["pose"]), detection["score"],
+                                   receipt_id=observation.get("model_receipt"),
+                                   image_sha256=camera.get("image_sha256", observation.get("image_sha256")),
+                                   surface_face=deepcopy(surface.get("face")))
         self.evidence.append({"observation_id": button.observation_id, "camera": button.camera,
                               "label": label, "calibration_id": profile.calibration_id, "point": point})
         return button
@@ -528,6 +566,8 @@ class Elevator:
         return contact
 
     def press_button(self, label, side, *, stroke_m=None, dwell_s=None):
+        if self.settings.final_contact is not None:
+            raise PrimitiveError("configured guarded contact must use its single transaction")
         contact = self._contact_state(side)
         if contact["label"] != label or contact["stage"] != "prepress":
             raise PrimitiveError("press must follow a fresh approach and cannot be repeated automatically")
@@ -552,6 +592,8 @@ class Elevator:
         return PrimitiveResult("press_button", "stroke_complete_unconfirmed", tuple(self.evidence))
 
     def retract_arm(self, side, clearance_m=None):
+        if self._contact is not None and self._contact.get("guarded"):
+            raise PrimitiveError("guarded contact requires explicit verified recovery; generic retraction cannot clear it")
         contact = self._contact_state(side)
         gap = self.settings.retract_gap_m if clearance_m is None else positive(clearance_m, "clearance_m")
         if gap < self.settings.retract_gap_m:
@@ -570,11 +612,223 @@ class Elevator:
         return PrimitiveResult("verify_button_activation", "unknown", tuple(self.evidence),
                                {"button_visible": button is not None})
 
+    def _finite_contact_target(self, button):
+        face = button.surface_face
+        if not isinstance(face, dict) or not isinstance(face.get("source"), str) or not face["source"]:
+            raise PrimitiveError("guarded contact requires a finite qualified panel face", self.evidence)
+        center = vector(face.get("center"))
+        horizontal, vertical = (unit(face.get(name)) for name in ("horizontal_axis", "vertical_axis"))
+        if max(abs(dot(horizontal, vertical)), abs(dot(horizontal, button.normal)),
+               abs(dot(vertical, button.normal))) > 1e-6:
+            raise PrimitiveError("guarded panel axes are not orthogonal", self.evidence)
+        offset = add(button.position, scale(center, -1))
+        if abs(dot(offset, button.normal)) > button.uncertainty_m:
+            raise PrimitiveError("guarded target is not on the captured panel face", self.evidence)
+        for axis, size in ((horizontal, "width_m"), (vertical, "height_m")):
+            if abs(dot(offset, axis))+button.uncertainty_m > positive(face.get(size), size)/2:
+                raise PrimitiveError("guarded target uncertainty extends outside the finite panel", self.evidence)
+        identity = button.receipt_id
+        image_hash = button.image_sha256
+        valid_hash = (isinstance(image_hash, str) and len(image_hash) == 64
+                      and all(c in "0123456789abcdef" for c in image_hash))
+        if not (isinstance(identity, str) and identity or valid_hash):
+            raise PrimitiveError("guarded target lacks an immutable image or receipt identity", self.evidence)
+        if image_hash is not None and not valid_hash:
+            raise PrimitiveError("guarded target image hash is invalid", self.evidence)
+
+    def guarded_press_button(self, selection):
+        """Use one fresh target for an explicitly guarded occluded transaction."""
+        if self.settings.final_contact is None:
+            raise PrimitiveError("guarded contact is disabled", self.evidence)
+        if self._guarded_sequence_started or self._guarded_attempted or self._contact is not None:
+            raise PrimitiveError("guarded contact cannot repeat or replace an uncertain contact", self.evidence)
+        if selection.side is None:
+            raise PrimitiveError("guarded contact requires a selected feasible arm", self.evidence)
+        self._guarded_sequence_started = True
+        record = {"stage": "guarded_contact", "state": "preparing", "side": selection.side,
+                  "label": selection.observation.label}
+        self.evidence.append(record)
+        try:
+            return self._guarded_press_once(selection, record)
+        except BaseException as error:
+            record.update(state="failed", reason=str(error))
+            if isinstance(error, EvoActionFailed):
+                record["result"] = deepcopy(error.result)
+            if self._contact is None:
+                self._contact = {"side": selection.side, "label": selection.observation.label,
+                                 "stage": "guarded_preparation_failed", "guarded": True}
+            else:
+                self._contact["guarded"] = True
+            raise
+
+    def _guarded_press_once(self, selection, record):
+        policy = self.settings.final_contact
+        if policy is None:
+            raise PrimitiveError("guarded contact is disabled", self.evidence)
+        if self._guarded_attempted or self._contact is not None:
+            raise PrimitiveError("guarded contact cannot repeat or replace an uncertain contact", self.evidence)
+        if selection.side is None:
+            raise PrimitiveError("guarded contact requires a selected feasible arm", self.evidence)
+        side, label = selection.side, selection.observation.label
+        profile = self._profile(side)
+        button = self._look(label, side)
+        self._fresh_button(button)
+        self._finite_contact_target(button)
+        if math.dist(button.position, selection.observation.position) > button.uncertainty_m+self.settings.position_tolerance_m:
+            raise PrimitiveError("button changed after arm selection", self.evidence)
+        tip = self._preparation_tip(button, side)
+        if dot(add(button.position, scale(tip, -1)), button.normal) < policy.visible_gap_m+button.uncertainty_m:
+            raise PrimitiveError("guarded preparation starts inside the qualified visible gap", self.evidence)
+        # Rotate at the current tip/gap. Never use the old preparation route's
+        # inward aim. Finish all carriage and tangential alignment while visible.
+        self._path(side, tip)
+        button = self.align_carriage_height(label, side)
+        tip = self._tip(side)
+        gap = dot(add(button.position, scale(tip, -1)), button.normal)
+        if gap < policy.visible_gap_m+button.uncertainty_m:
+            raise PrimitiveError("guarded alignment lost its qualified visible gap", self.evidence)
+        if gap+self.settings.stroke_m > self.settings.approach_budget_m:
+            raise PrimitiveError("visible approach and guarded stroke exceed the existing approach budget", self.evidence)
+        self._path(side, add(button.position, scale(button.normal, -gap)))
+        self._selected = side
+        button = self.approach_button(label, side, standoff_m=policy.visible_gap_m)
+        self._finite_contact_target(button)
+        self._fresh_button(button)
+        point, normal = button.position, button.normal
+        gap = dot(add(point, scale(self._tip(side), -1)), normal)
+        if gap < policy.visible_gap_m or gap+self.settings.stroke_m > policy.max_inward_travel_m:
+            raise PrimitiveError("guarded final motion exceeds its visible gap or travel budget", self.evidence)
+        carriage = vector((self._state()["positions"]["carriage_joint"],), 1)[0]
+        args = dict(frame="base_link", side=side, observation=dict(
+            observation_id=button.observation_id, camera=button.camera, capture_us=button.capture_us,
+            panel_id=button.panel_id, label=label, receipt_id=button.receipt_id,
+            image_sha256=button.image_sha256, position=list(point), normal=list(normal),
+            uncertainty_m=button.uncertainty_m, scene_pose=list(button.scene_pose),
+            carriage_position_m=carriage, surface_face=deepcopy(button.surface_face)),
+            tip_in_palm_m=list(profile.tip_in_palm_m), press_quaternion_xyzw=list(profile.press_quaternion_xyzw),
+            occlusion_qualification_id=policy.occlusion_qualification_id,
+            visible_gap_m=policy.visible_gap_m, max_inward_travel_m=policy.max_inward_travel_m,
+            prepress_gap_m=self.settings.prepress_gap_m, approach_step_m=self.settings.approach_step_m,
+            segment_s=self.settings.segment_s, stroke_m=self.settings.stroke_m, dwell_s=self.settings.dwell_s,
+            retract_gap_m=max(self.settings.retract_gap_m, policy.visible_gap_m),
+            position_tolerance_m=min(self.settings.position_tolerance_m, .004),
+            angle_tolerance_rad=min(self.base.settings["angle_tolerance_rad"], .01))
+        record.update(state="prepared", request=deepcopy(args))
+        self._contact.update(stage="guarded_prepared", guarded=True)
+
+        def before_dispatch():
+            self._fresh_button(button)  # Original stamp, after potentially slow preview.
+            self._guarded_fixed_state(args)
+            # Recheck age after the state/FK queries as well; do not retimestamp.
+            if not 0 <= time.time()-button.capture_us/1e6 <= self.settings.max_observation_age_s:
+                raise PrimitiveError("guarded target expired before dispatch", self.evidence)
+            self._guarded_attempted = True
+            self._contact["stage"] = "guarded_attempted"
+            record.update(state="attempted", dispatch_wall_us=time.time_ns()//1000)
+
+        try:
+            result = self.evo.execute("evo_guarded_contact", cancelled=self.base.cancelled,
+                                      before_dispatch=before_dispatch, **deepcopy(args))
+            self._last_stop_us = time.time_ns()//1000
+            record["result"] = deepcopy(result)
+            receipt = result.get("guarded_contact", {})
+            if (receipt.get("observation_id") != button.observation_id or receipt.get("capture_us") != button.capture_us
+                    or receipt.get("side") != side or receipt.get("target") != label
+                    or any(receipt.get(name) is not True for name in (
+                        "prepress_stop_verified", "press_stop_verified", "withdrawal_stop_verified",
+                        "source_limits_verified", "fixed_geometry_verified", "single_correct_press", "released"))):
+                raise PrimitiveError("guarded contact result lacks matching measured completion", self.evidence)
+            self._verify_guarded_withdrawal(args)
+            observed = self._look(label, side)
+            self._fresh_button(observed)
+            self._finite_contact_target(observed)
+            if (math.dist(observed.position, point) > observed.uncertainty_m+args["position_tolerance_m"]
+                    or math.acos(max(-1., min(1., dot(observed.normal, normal)))) > args["angle_tolerance_rad"]):
+                raise PrimitiveError("postwithdraw image does not confirm the frozen target", self.evidence)
+            self._verify_guarded_withdrawal(args)
+            if not 0 <= time.time()-observed.capture_us/1e6 <= self.settings.max_observation_age_s:
+                raise PrimitiveError("postwithdraw image expired during final verification", self.evidence)
+            record.update(state="verified", postwithdraw_observation_id=observed.observation_id,
+                          postwithdraw_capture_us=observed.capture_us)
+            self._contact = None
+            return PrimitiveResult("guarded_press_button", "succeeded", tuple(self.evidence),
+                                   {"arm": side, "activation": "succeeded", "guarded_contact": receipt})
+        except BaseException as error:
+            record.update(state="failed", reason=str(error))
+            if isinstance(error, EvoActionFailed):
+                record["result"] = deepcopy(error.result)
+            # An attempted or refused transaction stays visible in contact state.
+            # No automatic recovery, second press, or stow follows this failure.
+            raise
+
+    def _guarded_fixed_state(self, args):
+        state = self._state()["positions"]
+        carriage = vector((state["carriage_joint"],), 1)[0]
+        scene = self.base.observe_scene()
+        pose, captured = vector(scene["pose"]), args["observation"]["scene_pose"]
+        yaw = math.atan2(math.sin(pose[2]-captured[2]), math.cos(pose[2]-captured[2]))
+        if (math.dist(pose[:2], captured[:2]) > args["position_tolerance_m"]
+                or abs(yaw) > args["angle_tolerance_rad"]
+                or abs(carriage-args["observation"]["carriage_position_m"]) > args["position_tolerance_m"]):
+            raise PrimitiveError("base or carriage moved during guarded contact", self.evidence)
+        panel = scene.get("panel", {})
+        if panel.get("id") != self.settings.panel_id:
+            raise PrimitiveError("guarded panel identity changed", self.evidence)
+        face, captured_face = panel.get("face"), args["observation"]["surface_face"]
+        uncertainty = args["observation"]["uncertainty_m"]
+        if (not isinstance(face, dict) or face.get("source") != captured_face["source"]
+                or any(abs(positive(face.get(size), size)-captured_face[size]) > uncertainty
+                       for size in ("width_m", "height_m"))
+                or math.dist(vector(face.get("center")), captured_face["center"]) > uncertainty+args["position_tolerance_m"]
+                or any(math.acos(max(-1., min(1., dot(unit(face.get(axis)), unit(captured_face[axis])))))
+                       > args["angle_tolerance_rad"] for axis in ("horizontal_axis", "vertical_axis"))):
+            raise PrimitiveError("guarded finite panel geometry changed", self.evidence)
+
+    def _verify_guarded_withdrawal(self, args):
+        self._guarded_fixed_state(args)
+        palm = self._palm(args["side"])
+        tip = add(vector(palm["position"]), rotate_vector(args["tip_in_palm_m"], palm["quaternion_xyzw"]))
+        expected = add(args["observation"]["position"],
+                       scale(args["observation"]["normal"], -args["retract_gap_m"]))
+        if math.dist(tip, expected) > args["position_tolerance_m"]:
+            raise PrimitiveError("guarded withdrawal did not reach the visible endpoint", self.evidence)
+        angle = 2*math.acos(min(1., abs(dot(vector(palm["quaternion_xyzw"], 4), args["press_quaternion_xyzw"]))))
+        if angle > args["angle_tolerance_rad"]:
+            raise PrimitiveError("guarded withdrawal orientation was not reached", self.evidence)
+
+    def _coarse_panel_stage(self):
+        offset = self.settings.coarse_panel_lateral_offset_m
+        if offset is None:
+            return
+        if self._contact is not None:
+            raise PrimitiveError("retract before coarse panel staging", self.evidence)
+        state = self._state()["positions"]
+        if any(abs(vector((state[n],), 1)[0]-v) > self.base.capabilities["joint_limits"][n]["tolerance"]
+               for n, v in self.base.settings["travel_joints"].items()):
+            raise PrimitiveError("coarse panel staging requires compact measured arms", self.evidence)
+        scene, panel, point, normal = self.base.target()
+        if panel.get("id") != self.settings.panel_id or not isinstance(panel.get("face"), dict):
+            raise PrimitiveError("coarse staging requires identified finite panel geometry", self.evidence)
+        face = panel["face"]
+        vector(face.get("center"))
+        positive(face.get("width_m"), "panel width")
+        positive(face.get("height_m"), "panel height")
+        tangent = (-normal[1], normal[0], 0.)
+        desired = dot(point, tangent)-offset
+        if abs(desired) > self.base.settings["max_step_m"]:
+            raise PrimitiveError("coarse panel staging exceeds the existing base step bound", self.evidence)
+        result = self.base.translate_base(desired*tangent[0], desired*tangent[1])
+        self._last_stop_us = time.time_ns()//1000
+        self.evidence.append({"stage": "coarse_panel_staging", "offset_m": offset,
+                              "source": "configured panel frame; no observed label or button center",
+                              "base_result": result.measured})
+
     def press_elevator_button(self, label, arm="auto", *, panel_bearing_rad=None):
         if label not in self.settings.press_offsets:
             raise PrimitiveError("unknown calibrated press point")
         self.orient_base_to_panel(panel_bearing_rad)
         self.base.align_base_distance(self.settings.panel_standoff_m)
+        self._coarse_panel_stage()
         observations = self.search_button(label, arm)
         selection = self.select_press_arm(observations, arm)
         if selection.side is None:
@@ -584,12 +838,18 @@ class Elevator:
         offset = self.profiles[side].lateral_offset_m
         scene, _, point, normal = self.base.target()
         desired = dot(selection.observation.position, (-normal[1], normal[0], 0))-offset
-        if abs(desired) > self.base.settings["position_tolerance_m"]:
+        if self.settings.coarse_panel_lateral_offset_m is None and abs(desired) > self.base.settings["position_tolerance_m"]:
             self.stow_arms()
             tangent = (-normal[1], normal[0], 0)
             self.base.translate_base(desired*tangent[0], desired*tangent[1])
             observations = self.search_button(label, side)
             selection = self.select_press_arm(observations, side)
+        if self.settings.final_contact is not None:
+            activation = self.guarded_press_button(selection)
+            self.stow_arms()
+            return PrimitiveResult("press_elevator_button", "succeeded", tuple(self.evidence+self.base.evidence),
+                                   {"arm": side, "activation": activation.measured["activation"],
+                                    "guarded_contact": activation.measured["guarded_contact"]})
         self.prepare_press_arm(selection)
         if not self.settings.direct_press_alignment:
             self.align_arm_to_button(label, side)

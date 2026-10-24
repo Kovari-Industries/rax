@@ -361,6 +361,15 @@ class CabinRide:
         if selection.side is None:
             raise PrimitiveError("neither arm has a checked cabin approach", selection.candidates)
         side = selection.side
+        if self.task.settings.final_contact is not None:
+            activation = self.task.guarded_press_button(selection)
+            self._stationary_panel()
+            self.task.stow_arms()
+            self._stationary_panel()
+            return PrimitiveResult("press_cabin_button", "succeeded", tuple(self.evidence+self.task.evidence),
+                                   {"arm": side, "activation": activation.measured["activation"],
+                                    "arm_candidates": selection.candidates,
+                                    "guarded_contact": activation.measured["guarded_contact"]})
         self.task.prepare_press_arm(selection)
         if not self.task.settings.direct_press_alignment:
             self.task.align_arm_to_button(label, side)
