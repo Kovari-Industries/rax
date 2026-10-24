@@ -480,3 +480,50 @@ def test_direct_staging_retains_total_alignment_budget():
     with pytest.raises(PrimitiveError, match="travel budget"):
         Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
     assert sum(math.hypot(*c["delta"][:2]) for c in context.base_calls) <= 1.
+
+
+@pytest.mark.parametrize("direct", [False, True])
+def test_reverse_exit_retains_entry_heading_and_checked_rear_motion(direct):
+    context = RobotContext()
+    task = Elevator(context, settings(direct_doorway_staging=direct, reverse_exit=True))
+    assert task.navigate_into_elevator(goal_depth_m=.5).measured["location"] == "inside"
+    first_exit_call = len(context.base_calls)
+    assert task.navigate_out_of_elevator(goal_depth_m=.5).measured["location"] == "outside"
+    assert context.pose == pytest.approx([.5, 0., 0.])
+    assert all(call["delta"][0] < 0 and abs(call["delta"][2]) < 1e-12
+               for call in context.base_calls[first_exit_call:])
+    assert all(call["doorway_id"] == "door-1" for call in context.base_calls)
+    assert len([tool for tool, _ in context.calls if tool == "rax_base_preview"]) == len(context.base_calls)
+
+
+def test_reverse_exit_refuses_missing_rear_clearance_before_motion():
+    class RearBlocked(RobotContext):
+        def value(self, tool, **args):
+            if tool == "rax_base_preview" and args["delta"][0] < 0:
+                return {"valid": False}
+            return super().value(tool, **args)
+    context = RearBlocked()
+    context.pose = [1.5, 0., 0.]
+    task = Elevator(context, settings(direct_doorway_staging=True, reverse_exit=True))
+    with pytest.raises(PrimitiveError, match="preview refused"):
+        task.navigate_out_of_elevator(goal_depth_m=.5)
+    assert not context.base_calls
+
+
+def test_reverse_exit_door_closure_cannot_report_arrival():
+    context = RobotContext()
+    context.pose = [1.5, 0., 0.]
+    context.close_on_crossing = True
+    task = Elevator(context, settings(direct_doorway_staging=True, reverse_exit=True))
+    with pytest.raises(EvoActionFailed, match="closing"):
+        task.navigate_out_of_elevator(goal_depth_m=.5)
+    assert context.pose[0] > 1.
+
+
+def test_reverse_exit_option_requires_boolean_before_motion():
+    context = RobotContext()
+    with pytest.raises(ValueError, match="boolean"):
+        Elevator(context, settings(reverse_exit="yes"))
+    with pytest.raises(ValueError, match="boolean"):
+        Base(context).align_to_doorway(staging_gap_m=.5, reverse=1)
+    assert not context.base_calls

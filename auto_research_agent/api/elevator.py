@@ -73,10 +73,11 @@ class ElevatorSettings:
     search_turns_rad: tuple = ()
     max_search_rotation_rad: float = math.pi
     direct_doorway_staging: bool = False
+    reverse_exit: bool = False
 
     def validate(self):
-        if type(self.direct_doorway_staging) is not bool:
-            raise ValueError("direct doorway staging must be boolean")
+        if type(self.direct_doorway_staging) is not bool or type(self.reverse_exit) is not bool:
+            raise ValueError("direct doorway staging and reverse exit must be boolean")
         if not self.arms or len({p.side for p in self.arms}) != len(self.arms) or not self.panel_id:
             raise ValueError("specify unique arm profiles and the panel identity")
         for arm in self.arms:
@@ -590,7 +591,9 @@ class Elevator:
             raise ValueError("goal must put the complete robot beyond the doorway")
         self.stow_arms()
         door = self.base.wait_for_door_open(doorway_id)
-        door = self.base.align_to_doorway(door["id"], staging_gap_m=extent+0.15, direct=self.settings.direct_doorway_staging)
+        door = self.base.align_to_doorway(door["id"], staging_gap_m=extent+0.15,
+                                          direct=self.settings.direct_doorway_staging,
+                                          reverse=direction == "out_of" and self.settings.reverse_exit)
         _, door, center, normal = self.base.target("doorway", door["id"])
         goal = add(center, scale(normal, goal_depth_m))
         result = self.base.translate_base(goal[0], goal[1], doorway_id=door["id"])
