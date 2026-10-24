@@ -28,11 +28,23 @@ Press preparation uses a bound on the actual orientation change of the tool.
 An unchanged orientation requires no rotational clearance. A nonzero rotation
 still requires clearance for the tool offset along the shortest orientation arc.
 
-The current ML pilot uses an assumed palm stylus, a planar base, fixture geometry,
-and model gravity compensation as an explicit control option. These observations
+The ML pilot uses an assumed palm stylus and fixture geometry. Each run records
+its fixed, planar or free-base constraint and model-gravity option. These observations
 do not establish camera perception, a real tool calibration, tipping stability,
 or transfer to hardware. See the ML campaign report for measured outcomes and
 immutable evidence links. Failed runs remain failures.
+
+The [ML Hilton reference](https://github.com/Kovari-Industries/ml/blob/benson/rax-isaac-elevator-navigation/packages/evo_isaac/docs/HILTON-REFERENCE.md)
+uses the user-supplied UH and Texas Lodging maps. It selects the north-wing guest
+elevator and keeps the adjacent garage shaft distinct. The first- and second-floor
+profiles retain source hashes and map assumptions. Metric sizes and the test panel
+remain assumed. The same added walls feed physical collision and the privileged
+navigation geometry. A plotted lobby route is not a completed robot run.
+
+The campaign saves raw state, USD scenes, phase images, sampled GIF/MP4 replays,
+and verified S3 archive hashes. A local straight-motion control passes with the
+native travel and measured-stop checks. Lateral steering startup and the combined
+button/entry/exit task remain under test. This is simulation evidence only.
 
 Run focused task checks from the Rax root:
 
