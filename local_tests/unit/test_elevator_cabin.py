@@ -39,6 +39,12 @@ class CabinContext(SimulationContext):
         self.turn_stop_verified = True
         self.panel_location = 'inside_cabin'
         self.confirm_activation = True
+        self.light_enabled = True
+        self.light_configuration_id = "light-v1"
+        self.cabin_scene_id = "scene-v1"
+        self.light_image_age_us = 0
+        self.image_calls = 0
+        self.image_edit = None
 
     def scene(self, stamp=None):
         stamp = stamp or time.time_ns()//1000
@@ -47,15 +53,24 @@ class CabinContext(SimulationContext):
         value['panel'] = dict(id='test-panel', location=self.panel_location, cabin_id='cabin-1',
                               point=self.local((1.2, self.panel_y, 1.0)),
                               normal=[-math.cos(self.pose[2]), math.sin(self.pose[2]), 0.], uncertainty_m=.001)
-        value['cabin'] = dict(id='cabin-1', doorway_id=self.door_id, panel_id='test-panel',
+        value['cabin'] = dict(id='cabin-1', scene_id=self.cabin_scene_id, doorway_id=self.door_id, panel_id='test-panel',
                               polygon_m=[self.local(p)[:2] for p in [(1., -self.width/2, 0.),
                                   (3.4, -self.width/2, 0.), (3.4, self.width/2, 0.), (1., self.width/2, 0.)]],
                               ceiling_height_m=2.5, geometry_uncertainty_m=.001,
-                              lighting=dict(enabled=True, source='authored_simulation', capture_us=stamp,
+                              lighting=dict(enabled=self.light_enabled, configuration_id=self.light_configuration_id,
+                                            source='authored_simulation', capture_us=stamp-self.light_image_age_us,
                                             image_sha256='a'*64, mean_luma=self.luma))
         return value
 
     def value(self, tool, **args):
+        if tool == 'rax_cabin_image':
+            self.calls.append((tool, args))
+            self.image_calls += 1
+            scene = self.scene()
+            value = dict(scene['cabin']['lighting'], cabin_id='cabin-1', scene_id=self.cabin_scene_id)
+            if self.image_edit:
+                self.image_edit(value)
+            return value
         if tool == 'rax_floor_observation':
             self.calls.append((tool, args))
             self.floor_reads += 1
@@ -328,3 +343,169 @@ def test_stale_destination_observation_after_press_cannot_authorize_exit():
     with pytest.raises(PrimitiveError, match='stale'):
         task.run('2')
     assert context.pose[0] == pytest.approx(2.)
+
+
+def test_intermediate_turn_checks_do_not_request_images_or_reject_old_rgb_receipt():
+    context, task = ride()
+    counts = {}
+    def callback(event):
+        if event['stage'] == 'entry' and event['event'] == 'finished':
+            counts['before'] = context.image_calls
+            context.light_image_age_us = 10_000_000
+        if event['stage'] == 'turn' and event['event'] == 'finished':
+            counts['after'] = context.image_calls
+            context.light_image_age_us = 0
+    assert task.run('2', on_stage=callback).outcome == 'succeeded'
+    assert counts == {'before': 1, 'after': 1}
+    captures = sum(t == 'sim_button_observation' for t, _ in context.calls)
+    assert context.image_calls == captures+1  # Admission plus cached panel images; floor reuses its RGB.
+
+
+@pytest.mark.parametrize('change', ['light_off', 'scene_changed', 'light_changed', 'geometry_stale'])
+def test_continuous_cheap_state_and_geometry_gates_still_refuse(change):
+    context, task = ride()
+    def callback(event):
+        if event['stage'] == 'entry' and event['event'] == 'finished':
+            if change == 'light_off':
+                context.light_enabled = False
+            elif change == 'scene_changed':
+                context.cabin_scene_id = 'scene-v2'
+            elif change == 'light_changed':
+                context.light_configuration_id = 'light-v2'
+            else:
+                context.stale = True
+    with pytest.raises(PrimitiveError):
+        task.run('2', on_stage=callback)
+    assert context.image_calls == 1
+    assert not any(t == 'rax_move_base' and a['delta'][2] for t, a in context.calls)
+
+
+@pytest.mark.parametrize('change,reason', [('dark', 'too dark'), ('stale', 'stale'),
+                                         ('other_scene', 'does not match'), ('old_capture', 'predates')])
+def test_each_panel_capture_requires_current_matching_rgb_and_restores_observer(change, reason):
+    context, task = ride()
+    original = task.task.observe_button
+    def edit(value):
+        if context.image_calls > 1:
+            if change == 'dark':
+                value['mean_luma'] = .01
+            elif change == 'stale':
+                value['capture_us'] -= 4_000_000
+            elif change == 'other_scene':
+                value['scene_id'] = 'another-scene'
+            else:
+                value['capture_us'] -= 1000
+    context.image_edit = edit
+    with pytest.raises(PrimitiveError, match=reason):
+        task.run('2')
+    assert task.task.observe_button == original
+    assert 'observe_button' not in task.task.__dict__
+    assert context.pose[0] == pytest.approx(2.)
+
+
+def test_floor_capture_requires_its_fresh_brightness_receipt_without_extra_image_call():
+    context, task = ride()
+    def edit(value):
+        if context.floor == '2':
+            value['scene']['cabin']['lighting']['capture_us'] -= 4_000_000
+    context.floor_edit = edit
+    with pytest.raises(PrimitiveError, match='stale'):
+        task.run('2')
+    captures = sum(t == 'sim_button_observation' for t, _ in context.calls)
+    assert context.image_calls == captures+1
+    assert context.pose[0] == pytest.approx(2.)
+
+
+@pytest.mark.parametrize('entry_depth,can_turn', [(.65, False), (.84, True), (.87, True), (.90, True)])
+def test_new_cabin_entry_depth_uses_front_wall_not_door_plane(entry_depth, can_turn):
+    context, task = ride()
+    original = context.scene
+    def rectangle(stamp=None):
+        scene = original(stamp)
+        scene['cabin']['polygon_m'] = [context.local(p)[:2] for p in
+            [(2., -1.05, 0.), (4., -1.05, 0.), (4., 1.05, 0.), (2., 1.05, 0.)]]
+        return scene
+    context.scene = rectangle
+    context.pose = [1.89+entry_depth, 0., 0.]
+    context.scene_cfg.update(footprint=[.387847231, .379347231, 1.8], margin_m=.03,
+                             position_tolerance_m=.015)
+    task._doorway_id = context.door_id
+    task._refresh_lighting('admission')
+    if can_turn:
+        _, _, clearance = task._cabin(task._scene(), turn_clearance=True)
+        assert clearance > 0
+    else:
+        with pytest.raises(PrimitiveError, match='rotation envelope'):
+            task._cabin(task._scene(), turn_clearance=True)
+    assert not context.base_calls
+
+
+@pytest.mark.parametrize('lateral', [-.35, .35])
+def test_optional_lateral_staging_is_inside_after_entry_before_turn(lateral):
+    context, task = ride(cabin_staging_lateral_m=lateral)
+    events = []
+    assert task.run('2', on_stage=events.append).outcome == 'succeeded'
+    names = [e['stage'] for e in events if e['event'] == 'finished']
+    assert names == ['origin', 'entry', 'cabin_staging', 'turn', 'button', 'destination', 'exit']
+    staging = next(e['result']['measured'] for e in events if e['stage'] == 'cabin_staging' and e['event'] == 'finished')
+    assert staging['start_pose'] == pytest.approx([2., 0., 0.])
+    assert staging['final_pose'] == pytest.approx([2., lateral, 0.])
+    assert staging['minimum_target_turn_clearance_m'] > 0
+    moves = [(i, args) for i, (tool, args) in enumerate(context.calls) if tool == 'rax_move_base']
+    shift = next((i, args) for i, args in moves if args['delta'] == [0., lateral, 0.])
+    turn = next((i, args) for i, args in moves if args['delta'][2])
+    assert shift[0] < turn[0]
+    assert shift[1].get('doorway_id') is None  # The robot is already wholly inside.
+
+
+def test_lateral_target_turn_envelope_refusal_precedes_translation():
+    context, task = ride(cabin_staging_lateral_m=.9)
+    with pytest.raises(PrimitiveError, match='rotation envelope'):
+        task.run('2')
+    assert context.pose == pytest.approx([2., 0., 0.])
+    assert not any(t == 'rax_move_base' and a['delta'][1] for t, a in context.calls)
+
+
+@pytest.mark.parametrize('failure', ['preview', 'stop', 'endpoint'])
+def test_lateral_staging_requires_preview_stop_and_measured_endpoint(failure):
+    context, task = ride(cabin_staging_lateral_m=.35)
+    original = context.value
+    def value(tool, **args):
+        is_staging = args.get('delta') == [0., .35, 0.]
+        if is_staging and tool == 'rax_base_preview' and failure == 'preview':
+            return {'valid': False}
+        result = original(tool, **args)
+        if is_staging and tool == 'rax_move_base':
+            if failure == 'stop':
+                context.last_result['physical_stop_verified'] = False
+            elif failure == 'endpoint':
+                context.pose[1] += .02
+        return result
+    context.value = value
+    with pytest.raises(RuntimeError):
+        task.run('2')
+    assert not any(t == 'rax_move_base' and a['delta'][2] for t, a in context.calls)
+    assert context.floor_reads == 1
+
+
+def test_ordinary_scene_requires_only_cheap_light_state_fields():
+    context, task = ride()
+    original = context.value
+    def value(tool, **args):
+        result = original(tool, **args)
+        if tool == 'rax_scene':
+            light = result['cabin']['lighting']
+            for key in ('capture_us', 'mean_luma', 'image_sha256'):
+                light.pop(key)
+        return result
+    context.value = value
+    assert task.run('2').outcome == 'succeeded'
+
+
+def test_preexisting_button_observer_override_is_restored():
+    context, task = ride()
+    original = task.task.observe_button
+    override = lambda *args, **kwargs: original(*args, **kwargs)
+    task.task.observe_button = override
+    assert task.run('2').outcome == 'succeeded'
+    assert task.task.observe_button is override

@@ -19,6 +19,7 @@ class CabinRideSettings:
     exit_depth_m: float
     turn_rad: float = math.pi
     hall_call_label: str = "CALL"
+    cabin_staging_lateral_m: float = 0.0
     arrival_timeout_s: float = 90.0
     floor_max_age_s: float = 3.0
     floor_max_skew_s: float = 0.1
@@ -42,6 +43,7 @@ class CabinRideSettings:
                      "floor_max_skew_s", "max_geometry_uncertainty_m", "max_pressure_uncertainty_pa",
                      "max_pressure_span_pa", "height_tolerance_m"):
             positive(getattr(self, name), name)
+        vector((self.cabin_staging_lateral_m,), 1)
         if abs(abs(vector((self.turn_rad,), 1)[0])-math.pi) > 1e-12:
             raise ValueError("cabin turn must be exactly 180 degrees")
         if not 0 < self.min_ocr_confidence <= 1 or not 0 < self.min_image_luma < 1:
@@ -70,6 +72,9 @@ class CabinRide:
             raise ValueError("cabin button search must not turn the base")
         self.evidence = []
         self._cabin_id = None
+        self._scene_id = None
+        self._light_configuration_id = None
+        self._light_receipt = None
         self._doorway_id = None
         self._last_motion_us = 0
         self._baseline = None
@@ -91,7 +96,7 @@ class CabinRide:
         self._fresh(scene["capture_us"], self.base.settings["max_age_s"], post_motion=True)
         return scene
 
-    def _cabin(self, scene, *, turn_clearance=False):
+    def _cabin(self, scene, *, turn_clearance=False, allow_unverified_image=False, center_offset_m=(0., 0.)):
         cabin = scene.get("cabin")
         if not isinstance(cabin, dict) or not isinstance(cabin.get("id"), str) or not cabin["id"]:
             raise PrimitiveError("cabin geometry is unavailable", self.evidence)
@@ -119,17 +124,19 @@ class CabinRide:
                 raise PrimitiveError("cabin polygon must be convex", self.evidence)
             planes.append((a, inward))
         lighting = cabin.get("lighting", {})
+        scene_id, configuration_id = cabin.get("scene_id"), lighting.get("configuration_id")
+        if not isinstance(scene_id, str) or not scene_id or not isinstance(configuration_id, str) or not configuration_id:
+            raise PrimitiveError("cabin scene or lighting configuration identity is unavailable", self.evidence)
+        if (self._scene_id is not None and scene_id != self._scene_id
+                or self._light_configuration_id is not None and configuration_id != self._light_configuration_id):
+            raise PrimitiveError("cabin scene or lighting configuration changed", self.evidence)
         if (lighting.get("enabled") is not True
                 or lighting.get("source") not in {"authored_simulation", "camera_observation"}
-                or lighting.get("source") == "authored_simulation" and self.base.capabilities.get("simulated") is not True
-                or not self._image_hash(lighting.get("image_sha256"))):
-            raise PrimitiveError("lit cabin image evidence is unavailable", self.evidence)
-        self._fresh(lighting.get("capture_us"), self.settings.floor_max_age_s)
-        if abs(lighting["capture_us"]-scene["capture_us"])/1e6 > self.settings.floor_max_skew_s:
-            raise PrimitiveError("cabin image and geometry are not synchronized", self.evidence)
-        luma = vector((lighting.get("mean_luma"),), 1)[0]
-        if not self.settings.min_image_luma <= luma <= 1:
-            raise PrimitiveError("cabin image is too dark", self.evidence)
+                or lighting.get("source") == "authored_simulation" and self.base.capabilities.get("simulated") is not True):
+            raise PrimitiveError("cabin lighting is not continuously enabled", self.evidence)
+        if self._light_receipt is None and not allow_unverified_image:
+            raise PrimitiveError("cabin admission image has not been verified", self.evidence)
+        self._scene_id, self._light_configuration_id = scene_id, configuration_id
         hx, hy, height = vector(self.base.settings["footprint"])
         margin = positive(self.base.settings["margin_m"], "base margin")
         if min(hx, hy, height) <= 0:
@@ -140,7 +147,8 @@ class CabinRide:
         # The circle contains every yaw of the complete source travel envelope.
         reserve = margin+uncertainty+self.base.settings["position_tolerance_m"]
         radius = math.hypot(hx, hy)
-        clearances = [-a[0]*n[0]-a[1]*n[1]
+        center = vector(center_offset_m, 2)
+        clearances = [(center[0]-a[0])*n[0]+(center[1]-a[1])*n[1]
                       -(radius if turn_clearance else abs(n[0])*hx+abs(n[1])*hy)-reserve
                       for a, n in planes]
         if turn_clearance and min(clearances) < 0:
@@ -148,11 +156,66 @@ class CabinRide:
         self._cabin_id = cabin["id"]
         return cabin, planes, min(clearances)
 
+    def _verify_lighting_receipt(self, scene, receipt, purpose, *, minimum_capture_us=0):
+        cabin, _, _ = self._cabin(scene, allow_unverified_image=True)
+        if (receipt.get("cabin_id") != cabin["id"] or receipt.get("scene_id") != self._scene_id
+                or receipt.get("configuration_id") != self._light_configuration_id
+                or receipt.get("enabled") is not True
+                or receipt.get("source") != cabin["lighting"]["source"]
+                or not self._image_hash(receipt.get("image_sha256"))):
+            raise PrimitiveError("cabin image receipt does not match the scene and lighting", self.evidence)
+        self._fresh(receipt.get("capture_us"), self.settings.floor_max_age_s, post_motion=True)
+        if receipt["capture_us"] < minimum_capture_us:
+            raise PrimitiveError("cabin image predates the decision capture", self.evidence)
+        if abs(receipt["capture_us"]-scene["capture_us"])/1e6 > self.settings.floor_max_skew_s:
+            raise PrimitiveError("cabin image and geometry are not synchronized", self.evidence)
+        luma = vector((receipt.get("mean_luma"),), 1)[0]
+        if not self.settings.min_image_luma <= luma <= 1:
+            raise PrimitiveError("cabin image is too dark", self.evidence)
+        self._light_receipt = dict(receipt)
+        self.evidence.append({"stage": "lighting_verified", "purpose": purpose,
+                              "minimum_capture_us": minimum_capture_us, "receipt": dict(receipt)})
+
+    def _refresh_lighting(self, purpose, *, minimum_capture_us=0):
+        scene = self._scene()
+        cabin, _, _ = self._cabin(scene, allow_unverified_image=True)
+        self.base.check_cancel()
+        receipt = self.context.value("rax_cabin_image", doorway_id=self._doorway_id, cabin_id=cabin["id"])
+        self._verify_lighting_receipt(self._scene(), receipt, purpose, minimum_capture_us=minimum_capture_us)
+
     def _inside(self, scene):
         cabin, planes, clearance = self._cabin(scene)
         if clearance < 0:
             raise PrimitiveError("complete robot is not inside the cabin", self.evidence)
         return cabin, planes, clearance
+
+    def stage_inside(self):
+        if self.task._contact is not None:
+            raise PrimitiveError("retract before cabin staging")
+        self.task.stow_arms()
+        scene = self._scene()
+        self._inside(scene)
+        start = vector(scene["pose"])
+        lateral = self.settings.cabin_staging_lateral_m
+        if abs(lateral) > self.base.settings["max_step_m"]:
+            raise PrimitiveError("cabin staging exceeds the existing translation bound", self.evidence)
+        # The cabin polygon is convex. Containment of the current footprint and
+        # the target rotation circle contains the straight translation sweep.
+        _, _, target_clearance = self._cabin(scene, turn_clearance=True, center_offset_m=(0., lateral))
+        result = self.base.translate_base(0., lateral)
+        self._last_motion_us = time.time_ns()//1000
+        final_scene = self._scene()
+        _, _, final_clearance = self._cabin(final_scene, turn_clearance=True)
+        final = vector(final_scene["pose"])
+        expected = (start[0]-math.sin(start[2])*lateral, start[1]+math.cos(start[2])*lateral)
+        yaw_error = math.atan2(math.sin(final[2]-start[2]), math.cos(final[2]-start[2]))
+        if math.dist(final[:2], expected) > self.base.settings["position_tolerance_m"] or abs(yaw_error) > self.base.settings["angle_tolerance_rad"]:
+            raise PrimitiveError("measured inside cabin staging endpoint was not reached", self.evidence)
+        measured = {"lateral_m": lateral, "start_pose": start, "final_pose": final,
+                    "minimum_target_turn_clearance_m": min(target_clearance, final_clearance),
+                    "base_result": result.measured}
+        self.evidence.append({"stage": "cabin_staging", **measured})
+        return PrimitiveResult("stage_inside_cabin", "succeeded", tuple(self.evidence+self.base.evidence), measured)
 
     def turn_inside(self):
         if self.task._contact is not None:
@@ -205,6 +268,28 @@ class CabinRide:
         return scene
 
     def press_cabin_button(self, label):
+        # Reuse each detector's just-captured RGB evidence. The image tool can
+        # return that receipt without another render or OCR inference. Geometry
+        # queries between captures remain cheap and retain their original age gate.
+        original = self.task.observe_button
+        had_override = "observe_button" in self.task.__dict__
+        previous_override = self.task.__dict__.get("observe_button")
+
+        def checked_observation(*args, **kwargs):
+            observation = original(*args, **kwargs)
+            self._refresh_lighting("panel_capture", minimum_capture_us=observation.capture_us if observation else 0)
+            return observation
+
+        self.task.observe_button = checked_observation
+        try:
+            return self._press_cabin_button(label)
+        finally:
+            if had_override:
+                self.task.observe_button = previous_override
+            else:
+                del self.task.observe_button
+
+    def _press_cabin_button(self, label):
         if label not in self.task.settings.press_offsets:
             raise PrimitiveError("unknown calibrated cabin press point")
         self._stationary_panel()
@@ -268,6 +353,13 @@ class CabinRide:
             vector(scene["pose"])
         if abs(scene["capture_us"]-value["capture_us"])/1e6 > self.settings.floor_max_skew_s:
             raise PrimitiveError("floor sensors and door state are not synchronized", self.evidence)
+        if self._light_receipt is not None:
+            # The floor tool already captured an image. Require its matching
+            # brightness receipt; never render or run OCR in ordinary scene checks.
+            cabin = scene.get("cabin", {})
+            receipt = {**cabin.get("lighting", {}), "cabin_id": cabin.get("id"),
+                       "scene_id": cabin.get("scene_id")}
+            self._verify_lighting_receipt(scene, receipt, "floor_capture", minimum_capture_us=ocr["capture_us"])
         return value, scene
 
     def _open(self, scene):
@@ -382,9 +474,11 @@ class CabinRide:
         if not self._open(self._scene()):
             stage("hall_call", self.call_elevator)
         self.base.wait_for_door_open(self._doorway_id, self.settings.arrival_timeout_s)
-        self._cabin(self._scene())  # Check light and geometry before entry.
+        self._refresh_lighting("admission")  # One fresh RGB check before entry.
         stage("entry", lambda: self.task.navigate_into_elevator(self._doorway_id, goal_depth_m=self.settings.entry_depth_m))
         self._last_motion_us = time.time_ns()//1000
+        if self.settings.cabin_staging_lateral_m:
+            stage("cabin_staging", self.stage_inside)
         stage("turn", self.turn_inside)
         stage("button", lambda: self.press_cabin_button(destination_floor))
         stage("destination", lambda: self.wait_for_destination(destination_floor))

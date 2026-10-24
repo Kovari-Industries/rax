@@ -12,7 +12,8 @@ flowchart TD
   B -- Yes --> E[Check cabin light and geometry]
   D --> E
   E --> F[Enter with arms stowed]
-  F --> G[Check full rotation envelope; turn 180 degrees and stop]
+  F --> S[Optional checked lateral staging wholly inside]
+  S --> G[Check full rotation envelope; turn 180 degrees and stop]
   G --> H[Fresh left and right observations; preview reach, press and withdrawal]
   H --> I[Select feasible arm; press inside floor button; release and stow]
   I --> J[Wait for destination jamb OCR plus pressure change plus open door]
@@ -50,6 +51,15 @@ is no repeated press after an uncertain result. If the two tasks share a context
 the adapter must route each task to its own panel observations. A context facade
 can do this while retaining the same motion owner.
 
+`cabin_staging_lateral_m` defaults to zero. A nonzero value is a signed shift
+along the incoming robot's local Y axis. This is an explicit fixture staging
+profile. It runs after full entry with arms stowed. The current footprint and the
+target rotation circle must fit the same convex cabin before movement. The native
+translation preview, endpoint and measured stop must then pass. A fresh scene
+checks the final pose and full turn clearance. Staging does not change the
+aperture crossing, cabin walls, clearance margin or motion bounds. Its separate
+callback stage is `cabin_staging`.
+
 The controller uses a circle with radius `hypot(half_length, half_width)` for the
 turn sweep. It adds the existing clearance margin, measured geometry uncertainty
 and existing position tolerance. This circle contains every yaw of the complete
@@ -66,9 +76,22 @@ effort, position, Cartesian completion, contact and stop limits are unchanged.
 A separate adapter must provide the actual panel detector; a simulated button
 observation is still privileged geometry, not a test of OCR.
 
-The entry RGB receipt establishes that the cabin image is lit. The lighting
-source records an authored simulation or camera observation. An authored lux
-target does not establish measured illuminance or physical photometry.
+A fresh RGB receipt establishes that the cabin image is lit at admission and
+at each interior panel or destination-floor capture. The controller uses
+`rax_cabin_image(doorway_id=..., cabin_id=...)` at admission. After each panel
+observation, the same tool can return that observation's cached RGB receipt. It
+must not return an image from before the panel capture. This does not require a
+second render or a second OCR call. The temporary observation check is removed
+on success and on exceptions. Destination-floor checks reuse the image receipt
+in the floor tool's synchronized scene.
+
+Intermediate scene and turn checks do not request an image. They require fresh
+geometry, continuously enabled lighting, and unchanged cabin, scene and lighting
+configuration identities. An old image receipt cannot authorize a new decision
+capture. This limits redundant work when controls already use part of an embedded
+CPU. It is an interface property, not a measured Jetson load or latency result.
+The lighting source records an authored simulation or camera observation. An
+authored lux target does not establish measured illuminance or physical photometry.
 
 | Sensor or decision setting | Default |
 |---|---:|
@@ -124,16 +147,19 @@ omitted, a fresh scene must meet the same skew bound. The robot is stationary
 during the floor capture. The floor-sensor age allowance does not change the
 existing motion observation limits.
 
-`rax_scene.cabin` contains `id`, `doorway_id`, `panel_id`, convex `polygon_m` in
+`rax_scene.cabin` contains `id`, stable `scene_id`, `doorway_id`, `panel_id`, convex `polygon_m` in
 current base-link XY coordinates, `ceiling_height_m`, `geometry_uncertainty_m`,
-and `lighting`. Lighting contains `enabled`, `source`, `capture_us`,
-`image_sha256`, and normalized `mean_luma`. `scene.panel` must identify its `id`,
+and `lighting`. Every lighting state contains `enabled`, `source`, and stable
+`configuration_id`. A decision capture also contains `capture_us`, `image_sha256`,
+and normalized `mean_luma`. The `rax_cabin_image` result repeats these fields and
+adds `cabin_id` and `scene_id`. The floor tool places its matching image fields in
+`scene.cabin.lighting`. Ordinary scene queries need only the cheap state fields. `scene.panel` must identify its `id`,
 `cabin_id`, and `location: inside_cabin`, with its existing point and normal.
 The panel point must be inside the cabin polygon.
 
 `on_stage` receives a dictionary with `stage`, `event`, and optional `result` or
 `reason`. Stage names are `origin`, optional `hall_call`, `entry`, `turn`, `button`,
-`destination`, and `exit`. Events are `started`, `finished`, or `failed`. Results
+`destination`, and `exit`, with optional `cabin_staging` between entry and turn. Events are `started`, `finished`, or `failed`. Results
 retain the turn observations, arm candidates, sensor evidence and action checks.
 Callbacks can record simulation timestamps. The full ride and button stage have
 separate boundaries; the controller does not reset a simulator clock or assert a
@@ -141,9 +167,12 @@ hardware timing result. A used controller cannot repeat a press or resume an
 uncertain ride.
 
 CPU checks cover mirrored arm selection, turn clearance, missing measured stops,
-refused motion previews, inside-panel identity, a separate hall call, stale or
+refused motion previews, bounded lateral staging, inside-panel identity, a separate hall call, stale or
 wrong OCR, pressure mismatch/drift, and a door that closes after verification.
-They do not qualify physical contact, OCR accuracy or elevator hardware.
+They also check that intermediate turns need no image calls, that changed light
+or scene identities are refused, and that stale images cannot authorize a new
+panel or floor decision. They do not qualify physical contact, OCR accuracy or
+elevator hardware.
 
 ```sh
 uv run --with pytest --with jinja2 --with numpy --with pillow python -m pytest -q \
