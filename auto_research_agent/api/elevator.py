@@ -74,10 +74,13 @@ class ElevatorSettings:
     max_search_rotation_rad: float = math.pi
     direct_doorway_staging: bool = False
     reverse_exit: bool = False
+    synchronized_view: bool = False
+    direct_press_alignment: bool = False
 
     def validate(self):
-        if type(self.direct_doorway_staging) is not bool or type(self.reverse_exit) is not bool:
-            raise ValueError("direct doorway staging and reverse exit must be boolean")
+        for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment"):
+            if type(getattr(self, name)) is not bool:
+                raise ValueError(f"{name} must be boolean")
         if not self.arms or len({p.side for p in self.arms}) != len(self.arms) or not self.panel_id:
             raise ValueError("specify unique arm profiles and the panel identity")
         for arm in self.arms:
@@ -222,11 +225,25 @@ class Elevator:
         sides = tuple(arms or self.profiles)
         if not sides or any(s not in self.profiles for s in sides):
             raise ValueError("unknown viewing arm")
-        self._run("evo_move_carriage", position_m=self.settings.viewing_carriage_m)
-        for side in sides:
-            profile = self._profile(side)
-            self._run("evo_move_joints", targets=dict(profile.view_joints))
-            self._verify_view(side, profile.view_joints)
+        if self.settings.synchronized_view:
+            targets = {"carriage_joint": self.settings.viewing_carriage_m}
+            for side in sides:
+                targets.update(self._profile(side).view_joints)
+            # One normal preview and action covers the complete joint path.
+            # A refused preview or unverified stop must not trigger a fallback.
+            self._run("evo_move_joints", targets=targets)
+            measured = self._state()["positions"]["carriage_joint"]
+            tolerance = self.base.capabilities["joint_limits"]["carriage_joint"]["tolerance"]
+            if abs(measured-self.settings.viewing_carriage_m) > tolerance:
+                raise PrimitiveError("viewing carriage height not reached", self.evidence)
+            for side in sides:
+                self._verify_view(side, self._profile(side).view_joints)
+        else:
+            self._run("evo_move_carriage", position_m=self.settings.viewing_carriage_m)
+            for side in sides:
+                profile = self._profile(side)
+                self._run("evo_move_joints", targets=dict(profile.view_joints))
+                self._verify_view(side, profile.view_joints)
         return PrimitiveResult("prepare_button_view", "succeeded", tuple(self.evidence))
 
     def _verify_view(self, side, targets):
@@ -415,8 +432,22 @@ class Elevator:
         if math.dist(button.position, selection.observation.position) > button.uncertainty_m+self.settings.position_tolerance_m:
             raise PrimitiveError("button changed after arm selection", self.evidence)
         self._fresh_button(button)
+        target = self._preparation_tip(button, side)
+        if self.settings.direct_press_alignment:
+            # Keep the original gap/sweep check before any carriage motion.
+            # Height correction still uses bounded steps and fresh observations.
+            button = self.align_carriage_height(button.label, side)
+            self._fresh_button(button)
+            target = self._preparation_tip(button, side)
+            gap = dot(add(button.position, scale(target, -1)), button.normal)
+            target = add(button.position, scale(button.normal, -gap))
+        self._path(side, target)
+        self._selected = side
+        return self._look(button.label, side)
+
+    def _preparation_tip(self, button, side):
         # Bound the actual shortest-arc orientation sweep. An unchanged palm
-        # orientation has no tool-offset sweep.
+        # orientation has no tool-offset sweep. Keep this check for both routes.
         tip = self._tip(side)
         current_q = self._palm(side)["quaternion_xyzw"]
         profile = self._profile(side)
@@ -425,9 +456,7 @@ class Elevator:
         sweep = 2*radius*math.sqrt(max(0.0, 1-cosine*cosine))
         if dot(add(button.position, scale(tip, -1)), button.normal) <= self.settings.prepress_gap_m+button.uncertainty_m+sweep:
             raise PrimitiveError("insufficient gap for press-posture preparation", self.evidence)
-        self._path(side, tip)
-        self._selected = side
-        return self._look(button.label, side)
+        return tip
 
     def align_carriage_height(self, label, side):
         if self._contact is not None:
@@ -562,7 +591,8 @@ class Elevator:
             observations = self.search_button(label, side)
             selection = self.select_press_arm(observations, side)
         self.prepare_press_arm(selection)
-        self.align_arm_to_button(label, side)
+        if not self.settings.direct_press_alignment:
+            self.align_arm_to_button(label, side)
         self.approach_button(label, side)
         self.press_button(label, side)
         self.retract_arm(side)

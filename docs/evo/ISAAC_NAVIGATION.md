@@ -63,3 +63,34 @@ stop checks. The total alignment budget remains 1 m. Clearance refusal stops the
 routine. The default staging mode remains unchanged. This option is under Isaac
 validation after sideways-to-forward controls exceeded a heading-travel bound;
 it does not qualify arbitrary direction changes or physical operation.
+
+### Full button-action timing target
+
+The target is less than 20 simulated seconds from task start through correct
+activation, release, withdrawal, arm stow and the final measured stop. About
+10 seconds is the stretch target. Activation time alone does not satisfy it.
+Earlier physical passes remain valid for their original checks, but do not
+establish this new timing target.
+
+Two preparation controls default to `False`:
+
+| Setting | Change | Checks retained |
+|---|---|---|
+| `synchronized_view` | Send carriage and selected viewing-arm targets in one `evo_move_joints` action | One matching preview; measured stop; carriage and each arm endpoint |
+| `direct_press_alignment` | Combine press orientation and lateral aim after bounded carriage correction | Fresh observations; original gap and orientation-sweep check before and after correction; tip endpoint |
+
+```mermaid
+flowchart LR
+  A[Combined viewing move] --> B[Fresh button observation]
+  B --> C[Bounded height correction]
+  C --> D[Combined orientation and aim]
+  D --> E[Approach and press]
+  E --> F[Release and withdraw]
+  F --> G[Stow and measured stop]
+```
+
+The existing `segment_s` setting controls Cartesian path duration. These controls
+do not change its default, the approach step, stroke, dwell, gain, source motion
+limits or stop thresholds. Preview refusal has no fallback path. Deterministic
+tests cover success, rejected previews, missing stops, wrong endpoints and loss
+of preparation clearance. Simulator timing qualification is pending.
