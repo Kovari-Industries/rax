@@ -94,3 +94,9 @@ do not change its default, the approach step, stroke, dwell, gain, source motion
 limits or stop thresholds. Preview refusal has no fallback path. Deterministic
 tests cover success, rejected previews, missing stops, wrong endpoints and loss
 of preparation clearance. Simulator timing qualification is pending.
+
+The separate [interior cabin routine](CABIN_NAVIGATION.md) adds the new sequence:
+origin OCR and pressure baseline, one exterior hall call if needed, entry,
+checked turnaround, inside floor-panel press with arm selection, destination
+OCR plus barometer verification, then forward exit. Its CPU contract checks do
+not change or reclassify earlier simulation evidence.

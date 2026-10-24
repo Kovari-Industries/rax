@@ -65,7 +65,7 @@ class Evo:
     def move(self, tool, **arguments):
         return self.wait(self.context.value(tool, **arguments))
 
-    def execute(self, tool, *, wait_timeout_s=40, cancelled=None, **arguments):
+    def execute(self, tool, *, wait_timeout_s=40, cancelled=None, before_dispatch=None, **arguments):
         """Preview, execute, and require measured success before the next stage."""
         allowed = {
             "evo_move_joints",
@@ -74,6 +74,7 @@ class Evo:
             "evo_set_grip",
             "evo_move_body",
             "evo_follow_path",
+            "evo_guarded_contact",
             "evo_move_pair",
             "evo_move_carriage",
             "evo_move_neck",
@@ -82,6 +83,11 @@ class Evo:
         _validate_timeout(wait_timeout_s)
         if tool not in allowed:
             raise ValueError("not an Evo action tool")
+        if tool == "evo_guarded_contact":
+            capabilities = self.context.value("evo_capabilities")
+            if (capabilities.get("scene", {}).get("guarded_contact") is not True
+                    or tool not in {entry["name"] for entry in capabilities.get("tools", ())}):
+                raise ValueError("guarded contact is not explicitly admitted")
         if cancelled is not None and cancelled():
             raise EvoActionFailed({"state": "cancelled", "reason": "cancelled before motion"})
         preview = self.context.value(
@@ -89,6 +95,8 @@ class Evo:
         )
         if preview.get("valid") is not True:
             raise ValueError("Evo preview did not validate the path")
+        if before_dispatch is not None:
+            before_dispatch()
         if cancelled is not None and cancelled():
             raise EvoActionFailed({"state": "cancelled", "reason": "cancelled after preview"})
         result = self.wait(self.context.value(tool, **arguments), wait_timeout_s, cancelled)

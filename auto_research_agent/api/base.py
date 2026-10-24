@@ -92,7 +92,7 @@ class Base:
         self.evidence.append({"scene_id": value["observation_id"], "capture_us": stamp})
         return value
 
-    def _move(self, delta, doorway_id=None):
+    def _move(self, delta, doorway_id=None, *, before_dispatch=None):
         self.check_cancel()
         delta = vector(delta)
         if not any(delta):
@@ -103,6 +103,8 @@ class Base:
         preview = self.context.value("rax_base_preview", **args)
         if preview.get("valid") is not True:
             raise PrimitiveError("RAX base preview refused", self.evidence)
+        if before_dispatch is not None:
+            before_dispatch()
         self.check_cancel()
         result = self.evo.wait(self.context.value("rax_move_base", **args), 95, self.cancelled)
         if result.get("state") != "succeeded" or result.get("physical_stop_verified") is not True:
@@ -119,8 +121,8 @@ class Base:
     def rotate_base(self, angle_rad, *, doorway_id=None):
         return self._move((0, 0, vector((angle_rad,), 1)[0]), doorway_id)
 
-    def translate_base(self, dx_m, dy_m, *, doorway_id=None):
-        return self._move((dx_m, dy_m, 0), doorway_id)
+    def translate_base(self, dx_m, dy_m, *, doorway_id=None, before_dispatch=None):
+        return self._move((dx_m, dy_m, 0), doorway_id, before_dispatch=before_dispatch)
 
     def target(self, kind="panel", doorway_id=None):
         scene = self.observe_scene()
