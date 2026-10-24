@@ -304,3 +304,11 @@ result. A cancellation failure is reported as the cause. The helper does not
 interrupt an in-flight synchronous socket call; use a separate `Context` for
 urgent cancellation. Cancelling an already completed job does not erase its
 successful terminal state.
+
+
+The explicit elevator settings also support `reverse_exit=True`. Entry keeps
+its normal approach. Exit aligns the rear to the aperture and uses the same
+bounded staging and full-footprint crossing checks. This option can avoid a
+turn inside the cabin. It requires fresh doorway geometry and a valid swept
+path behind the robot; missing rear floor or obstacle evidence must refuse in
+the native preview. The default remains a forward exit after turning.

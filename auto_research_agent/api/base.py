@@ -200,16 +200,16 @@ class Base:
             self.clock.sleep(0.05)
         raise PrimitiveError("doorway did not become open and clear before timeout", self.evidence)
 
-    def align_to_doorway(self, doorway_id=None, *, staging_gap_m, direct=False):
-        if type(direct) is not bool:
-            raise ValueError("direct staging must be boolean")
+    def align_to_doorway(self, doorway_id=None, *, staging_gap_m, direct=False, reverse=False):
+        if type(direct) is not bool or type(reverse) is not bool:
+            raise ValueError("direct staging and reverse travel must be boolean")
         positive(staging_gap_m, "staging_gap_m")
         minimum = self.settings["footprint"][0]+self.settings["margin_m"]
         if staging_gap_m <= minimum:
             raise ValueError("staging gap must keep the complete base before the sill")
         door = self.wait_for_door_open(doorway_id)
         args = {"kind": "doorway", "doorway_id": door["id"]}
-        self.align_base_angle(**args)
+        self.align_base_angle(math.pi if reverse else 0., **args)
         if direct:
             self._align("staging", staging_gap_m, **args)
         else:
