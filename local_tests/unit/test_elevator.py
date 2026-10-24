@@ -149,9 +149,10 @@ class RobotContext:
         raise AssertionError((tool, args))
 
 
-def test_complete_press_uses_fresh_views_and_reports_unconfirmed_activation():
+@pytest.mark.parametrize("optimized", [False, True])
+def test_complete_press_uses_fresh_views_and_reports_unconfirmed_activation(optimized):
     context = RobotContext()
-    task = Elevator(context, settings())
+    task = Elevator(context, settings(synchronized_view=optimized, direct_press_alignment=optimized))
     result = task.press_elevator_button("2")
     assert result.outcome == "stroke_complete_unconfirmed"
     assert result.measured["activation"] == "unknown"
@@ -248,9 +249,10 @@ def test_target_lost_during_approach_stops_sequence():
     assert task._contact is None
 
 
-def test_enter_and_exit_face_the_same_doorway_from_opposite_sides():
+@pytest.mark.parametrize("direct", [False, True])
+def test_enter_and_exit_face_the_same_doorway_from_opposite_sides(direct):
     context = RobotContext()
-    task = Elevator(context, settings())
+    task = Elevator(context, replace(settings(), direct_doorway_staging=direct))
     assert task.navigate_into_elevator(goal_depth_m=.5).measured["location"] == "inside"
     assert context.pose[0] == pytest.approx(1.5)
     assert task.navigate_out_of_elevator(goal_depth_m=.5).measured["location"] == "outside"
@@ -447,3 +449,172 @@ def test_invalid_wait_timeout_cannot_dispatch_or_query_motion(timeout, method):
         else:
             evo.wait({"action_id": "existing"}, timeout_s=timeout)
     assert not context.calls
+
+
+def test_direct_doorway_staging_uses_bounded_previewed_diagonal_moves():
+    context = RobotContext()
+    context.pose = [0., -.2, 0.]
+    Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
+    assert context.pose == pytest.approx([.5, 0., 0.])
+    assert all(math.hypot(*c["delta"][:2]) <= .15+1e-12 for c in context.base_calls)
+    assert all(c["doorway_id"] == "door-1" for c in context.base_calls)
+    assert context.base_calls[0]["delta"][0] > 0 and context.base_calls[0]["delta"][1] > 0
+    assert len([t for t, _ in context.calls if t == "rax_base_preview"]) == len(context.base_calls)
+
+
+def test_direct_staging_stops_on_clearance_refusal():
+    class Blocked(RobotContext):
+        def value(self, tool, **args):
+            if tool == "rax_base_preview":
+                return {"valid": False}
+            return super().value(tool, **args)
+    context = Blocked()
+    context.pose = [0., -.2, 0.]
+    with pytest.raises(PrimitiveError, match="preview refused"):
+        Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
+    assert not context.base_calls
+
+
+def test_direct_staging_retains_total_alignment_budget():
+    context = RobotContext()
+    context.pose = [-2., -.2, 0.]
+    with pytest.raises(PrimitiveError, match="travel budget"):
+        Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
+    assert sum(math.hypot(*c["delta"][:2]) for c in context.base_calls) <= 1.
+
+
+@pytest.mark.parametrize("direct", [False, True])
+def test_reverse_exit_retains_entry_heading_and_checked_rear_motion(direct):
+    context = RobotContext()
+    task = Elevator(context, settings(direct_doorway_staging=direct, reverse_exit=True))
+    assert task.navigate_into_elevator(goal_depth_m=.5).measured["location"] == "inside"
+    first_exit_call = len(context.base_calls)
+    assert task.navigate_out_of_elevator(goal_depth_m=.5).measured["location"] == "outside"
+    assert context.pose == pytest.approx([.5, 0., 0.])
+    assert all(call["delta"][0] < 0 and abs(call["delta"][2]) < 1e-12
+               for call in context.base_calls[first_exit_call:])
+    assert all(call["doorway_id"] == "door-1" for call in context.base_calls)
+    assert len([tool for tool, _ in context.calls if tool == "rax_base_preview"]) == len(context.base_calls)
+
+
+def test_reverse_exit_refuses_missing_rear_clearance_before_motion():
+    class RearBlocked(RobotContext):
+        def value(self, tool, **args):
+            if tool == "rax_base_preview" and args["delta"][0] < 0:
+                return {"valid": False}
+            return super().value(tool, **args)
+    context = RearBlocked()
+    context.pose = [1.5, 0., 0.]
+    task = Elevator(context, settings(direct_doorway_staging=True, reverse_exit=True))
+    with pytest.raises(PrimitiveError, match="preview refused"):
+        task.navigate_out_of_elevator(goal_depth_m=.5)
+    assert not context.base_calls
+
+
+def test_reverse_exit_door_closure_cannot_report_arrival():
+    context = RobotContext()
+    context.pose = [1.5, 0., 0.]
+    context.close_on_crossing = True
+    task = Elevator(context, settings(direct_doorway_staging=True, reverse_exit=True))
+    with pytest.raises(EvoActionFailed, match="closing"):
+        task.navigate_out_of_elevator(goal_depth_m=.5)
+    assert context.pose[0] > 1.
+
+
+def test_reverse_exit_option_requires_boolean_before_motion():
+    context = RobotContext()
+    with pytest.raises(ValueError, match="boolean"):
+        Elevator(context, settings(reverse_exit="yes"))
+    with pytest.raises(ValueError, match="boolean"):
+        Base(context).align_to_doorway(staging_gap_m=.5, reverse=1)
+    assert not context.base_calls
+
+
+@pytest.mark.parametrize("name", ["synchronized_view", "direct_press_alignment"])
+def test_press_timing_options_require_booleans(name):
+    with pytest.raises(ValueError, match="boolean"):
+        settings(**{name: 1}).validate()
+
+
+def test_synchronized_view_requires_one_preview_and_all_measured_endpoints():
+    context = RobotContext()
+    task = Elevator(context, settings(synchronized_view=True, viewing_carriage_m=.2))
+    task.prepare_button_view()
+    moves = [(t, a) for t, a in context.calls if t.startswith("evo_move_")]
+    assert len(moves) == 1
+    assert moves[0][0] == "evo_move_joints"
+    assert set(moves[0][1]["targets"]) == set(context.joints)
+    assert context.joints["carriage_joint"] == .2
+    assert len([t for t, _ in context.calls if t == "evo_preview"]) == 1
+    assert task.evidence[-1]["physical_stop_verified"]
+
+
+@pytest.mark.parametrize("fault", ["preview", "stop", "carriage", "arm"])
+def test_synchronized_view_refuses_without_capture_or_fallback(fault):
+    context = RobotContext()
+    original = context.value
+    def value(tool, **args):
+        result = original(tool, **args)
+        if fault == "preview" and tool == "evo_preview":
+            result["valid"] = False
+        if tool == "evo_move_joints":
+            if fault == "stop":
+                context.last_result.update(state="failed", physical_stop_verified=False)
+            elif fault == "carriage":
+                context.joints["carriage_joint"] = .1
+            elif fault == "arm":
+                context.joints["left_joint4"] = 0.
+        return result
+    context.value = value
+    task = Elevator(context, settings(synchronized_view=True, viewing_carriage_m=.2))
+    with pytest.raises(ValueError if fault == "preview" else (PrimitiveError, EvoActionFailed)):
+        task.search_button("2")
+    assert context.detect_count == 0
+    assert not any(t == "evo_move_carriage" for t, _ in context.calls)
+
+
+@pytest.mark.parametrize("direct", [False, True])
+def test_direct_press_alignment_preserves_gap_and_full_sequence(direct):
+    context = RobotContext()
+    task = Elevator(context, settings(direct_press_alignment=direct, synchronized_view=True))
+    choice = task.select_press_arm(task.search_button("2"))
+    gap_before = 1.-task._tip(choice.side)[0]
+    before = len(context.calls)
+    task.prepare_press_arm(choice)
+    if not direct:
+        task.align_arm_to_button("2", choice.side)
+    paths = [a for t, a in context.calls[before:] if t == "evo_follow_path"]
+    assert len(paths) == (1 if direct else 2)
+    assert 1.-task._tip(choice.side)[0] == pytest.approx(gap_before)
+    assert task._tip(choice.side)[1:] == pytest.approx((0., 1.))
+    task.approach_button("2", choice.side)
+    task.press_button("2", choice.side)
+    task.retract_arm(choice.side)
+    task.stow_arms()
+    assert task._contact is None
+    assert context.joints == context.scene_cfg["travel_joints"]
+
+
+def test_direct_preparation_keeps_orientation_sweep_refusal_before_carriage():
+    context = RobotContext()
+    task = Elevator(context, settings(direct_press_alignment=True))
+    choice = task.select_press_arm(task.search_button("2"))
+    context.palms[choice.side]["position"][0] = .98
+    before = len(context.calls)
+    with pytest.raises(PrimitiveError, match="insufficient gap"):
+        task.prepare_press_arm(choice)
+    assert not any(t.startswith("evo_move_") or t == "evo_follow_path" for t, _ in context.calls[before:])
+
+
+def test_direct_preparation_rechecks_gap_after_carriage_alignment():
+    context = RobotContext()
+    task = Elevator(context, settings(direct_press_alignment=True))
+    choice = task.select_press_arm(task.search_button("2"))
+    def aligned(label, side):
+        context.palms[side]["position"][0] = .98
+        return task._look(label, side)
+    task.align_carriage_height = aligned
+    before = len(context.calls)
+    with pytest.raises(PrimitiveError, match="insufficient gap"):
+        task.prepare_press_arm(choice)
+    assert not any(t == "evo_follow_path" for t, _ in context.calls[before:])

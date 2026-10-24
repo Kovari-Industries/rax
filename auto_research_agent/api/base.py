@@ -59,14 +59,18 @@ class PrimitiveResult:
 
 
 class Base:
-    def __init__(self, context, *, cancelled=None):
+    def __init__(self, context, *, cancelled=None, clock=time):
         self.context = context
+        self.clock = clock
         self.evo = Evo(context)
         self.cancelled = cancelled or (lambda: False)
         self.capabilities = context.value("evo_capabilities")
         scene = self.capabilities.get("scene", {})
         if not scene.get("configured") or not isinstance(scene.get("settings"), dict):
             raise PrimitiveError("calibrated point-cloud base control is not configured")
+        self.heading_source = "lidar_fixed_reference"
+        if self.capabilities.get("simulated") is True and scene.get("observation_source") == "simulator_ground_truth":
+            self.heading_source = "simulator_ground_truth"
         self.settings = scene["settings"]
         self.evidence = []
 
@@ -80,7 +84,7 @@ class Base:
         stamp = value.get("capture_us")
         if type(stamp) is not int or not 0 <= time.time() - stamp/1e6 <= self.settings["max_age_s"]:
             raise PrimitiveError("stale or invalid point-cloud capture", self.evidence)
-        if value.get("frame") != "base_link" or value.get("heading_source") != "lidar_fixed_reference":
+        if value.get("frame") != "base_link" or value.get("heading_source") != self.heading_source:
             raise PrimitiveError("unqualified scene frame or heading source", self.evidence)
         vector(value["pose"])
         if not value.get("observation_id"):
@@ -88,7 +92,7 @@ class Base:
         self.evidence.append({"scene_id": value["observation_id"], "capture_us": stamp})
         return value
 
-    def _move(self, delta, doorway_id=None):
+    def _move(self, delta, doorway_id=None, *, before_dispatch=None):
         self.check_cancel()
         delta = vector(delta)
         if not any(delta):
@@ -99,6 +103,8 @@ class Base:
         preview = self.context.value("rax_base_preview", **args)
         if preview.get("valid") is not True:
             raise PrimitiveError("RAX base preview refused", self.evidence)
+        if before_dispatch is not None:
+            before_dispatch()
         self.check_cancel()
         result = self.evo.wait(self.context.value("rax_move_base", **args), 95, self.cancelled)
         if result.get("state") != "succeeded" or result.get("physical_stop_verified") is not True:
@@ -115,8 +121,8 @@ class Base:
     def rotate_base(self, angle_rad, *, doorway_id=None):
         return self._move((0, 0, vector((angle_rad,), 1)[0]), doorway_id)
 
-    def translate_base(self, dx_m, dy_m, *, doorway_id=None):
-        return self._move((dx_m, dy_m, 0), doorway_id)
+    def translate_base(self, dx_m, dy_m, *, doorway_id=None, before_dispatch=None):
+        return self._move((dx_m, dy_m, 0), doorway_id, before_dispatch=before_dispatch)
 
     def target(self, kind="panel", doorway_id=None):
         scene = self.observe_scene()
@@ -153,6 +159,16 @@ class Base:
                     raise PrimitiveError("alignment angle budget exceeded", self.evidence)
                 result = self.rotate_base(step, doorway_id=door)
                 rotated += result.measured["angle_travelled_rad"]
+            elif mode == "staging":
+                delta = (point[0]-normal[0]*target_value, point[1]-normal[1]*target_value, 0.)
+                error = math.hypot(*delta[:2])
+                if error <= self.settings["position_tolerance_m"]:
+                    return PrimitiveResult("stage_at_doorway", "succeeded", tuple(self.evidence), {"error_m": error})
+                step = min(0.15, error)
+                if travelled + step > max_travel_m:
+                    raise PrimitiveError("alignment travel budget exceeded", self.evidence)
+                result = self.translate_base(delta[0]*step/error, delta[1]*step/error, doorway_id=door)
+                travelled += result.measured["distance_travelled_m"]
             else:
                 axis = normal if mode == "distance" else (-normal[1], normal[0], 0)
                 error = dot(point, axis) - target_value
@@ -177,23 +193,28 @@ class Base:
 
     def wait_for_door_open(self, doorway_id=None, timeout_s=30):
         positive(timeout_s, "timeout_s")
-        deadline = time.monotonic()+timeout_s
-        while time.monotonic() < deadline:
+        deadline = self.clock.monotonic()+timeout_s
+        while self.clock.monotonic() < deadline:
             scene = self.observe_scene()
             door = scene.get("doorway")
             if door and (doorway_id is None or door.get("id") == doorway_id) and door.get("state") == "open" and door.get("stable_samples", 0) >= 3:
                 return door
-            time.sleep(0.05)
+            self.clock.sleep(0.05)
         raise PrimitiveError("doorway did not become open and clear before timeout", self.evidence)
 
-    def align_to_doorway(self, doorway_id=None, *, staging_gap_m):
+    def align_to_doorway(self, doorway_id=None, *, staging_gap_m, direct=False, reverse=False):
+        if type(direct) is not bool or type(reverse) is not bool:
+            raise ValueError("direct staging and reverse travel must be boolean")
         positive(staging_gap_m, "staging_gap_m")
         minimum = self.settings["footprint"][0]+self.settings["margin_m"]
         if staging_gap_m <= minimum:
             raise ValueError("staging gap must keep the complete base before the sill")
         door = self.wait_for_door_open(doorway_id)
         args = {"kind": "doorway", "doorway_id": door["id"]}
-        self.align_base_angle(**args)
-        self.align_base_lateral(**args)
-        self.align_base_distance(staging_gap_m, **args)
+        self.align_base_angle(math.pi if reverse else 0., **args)
+        if direct:
+            self._align("staging", staging_gap_m, **args)
+        else:
+            self.align_base_lateral(**args)
+            self.align_base_distance(staging_gap_m, **args)
         return self.target(**args)[1]
