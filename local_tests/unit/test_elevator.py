@@ -248,9 +248,10 @@ def test_target_lost_during_approach_stops_sequence():
     assert task._contact is None
 
 
-def test_enter_and_exit_face_the_same_doorway_from_opposite_sides():
+@pytest.mark.parametrize("direct", [False, True])
+def test_enter_and_exit_face_the_same_doorway_from_opposite_sides(direct):
     context = RobotContext()
-    task = Elevator(context, settings())
+    task = Elevator(context, replace(settings(), direct_doorway_staging=direct))
     assert task.navigate_into_elevator(goal_depth_m=.5).measured["location"] == "inside"
     assert context.pose[0] == pytest.approx(1.5)
     assert task.navigate_out_of_elevator(goal_depth_m=.5).measured["location"] == "outside"
@@ -447,3 +448,35 @@ def test_invalid_wait_timeout_cannot_dispatch_or_query_motion(timeout, method):
         else:
             evo.wait({"action_id": "existing"}, timeout_s=timeout)
     assert not context.calls
+
+
+def test_direct_doorway_staging_uses_bounded_previewed_diagonal_moves():
+    context = RobotContext()
+    context.pose = [0., -.2, 0.]
+    Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
+    assert context.pose == pytest.approx([.5, 0., 0.])
+    assert all(math.hypot(*c["delta"][:2]) <= .15+1e-12 for c in context.base_calls)
+    assert all(c["doorway_id"] == "door-1" for c in context.base_calls)
+    assert context.base_calls[0]["delta"][0] > 0 and context.base_calls[0]["delta"][1] > 0
+    assert len([t for t, _ in context.calls if t == "rax_base_preview"]) == len(context.base_calls)
+
+
+def test_direct_staging_stops_on_clearance_refusal():
+    class Blocked(RobotContext):
+        def value(self, tool, **args):
+            if tool == "rax_base_preview":
+                return {"valid": False}
+            return super().value(tool, **args)
+    context = Blocked()
+    context.pose = [0., -.2, 0.]
+    with pytest.raises(PrimitiveError, match="preview refused"):
+        Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
+    assert not context.base_calls
+
+
+def test_direct_staging_retains_total_alignment_budget():
+    context = RobotContext()
+    context.pose = [-2., -.2, 0.]
+    with pytest.raises(PrimitiveError, match="travel budget"):
+        Base(context).align_to_doorway(staging_gap_m=.5, direct=True)
+    assert sum(math.hypot(*c["delta"][:2]) for c in context.base_calls) <= 1.

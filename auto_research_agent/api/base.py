@@ -157,6 +157,16 @@ class Base:
                     raise PrimitiveError("alignment angle budget exceeded", self.evidence)
                 result = self.rotate_base(step, doorway_id=door)
                 rotated += result.measured["angle_travelled_rad"]
+            elif mode == "staging":
+                delta = (point[0]-normal[0]*target_value, point[1]-normal[1]*target_value, 0.)
+                error = math.hypot(*delta[:2])
+                if error <= self.settings["position_tolerance_m"]:
+                    return PrimitiveResult("stage_at_doorway", "succeeded", tuple(self.evidence), {"error_m": error})
+                step = min(0.15, error)
+                if travelled + step > max_travel_m:
+                    raise PrimitiveError("alignment travel budget exceeded", self.evidence)
+                result = self.translate_base(delta[0]*step/error, delta[1]*step/error, doorway_id=door)
+                travelled += result.measured["distance_travelled_m"]
             else:
                 axis = normal if mode == "distance" else (-normal[1], normal[0], 0)
                 error = dot(point, axis) - target_value
@@ -190,7 +200,9 @@ class Base:
             self.clock.sleep(0.05)
         raise PrimitiveError("doorway did not become open and clear before timeout", self.evidence)
 
-    def align_to_doorway(self, doorway_id=None, *, staging_gap_m):
+    def align_to_doorway(self, doorway_id=None, *, staging_gap_m, direct=False):
+        if type(direct) is not bool:
+            raise ValueError("direct staging must be boolean")
         positive(staging_gap_m, "staging_gap_m")
         minimum = self.settings["footprint"][0]+self.settings["margin_m"]
         if staging_gap_m <= minimum:
@@ -198,6 +210,9 @@ class Base:
         door = self.wait_for_door_open(doorway_id)
         args = {"kind": "doorway", "doorway_id": door["id"]}
         self.align_base_angle(**args)
-        self.align_base_lateral(**args)
-        self.align_base_distance(staging_gap_m, **args)
+        if direct:
+            self._align("staging", staging_gap_m, **args)
+        else:
+            self.align_base_lateral(**args)
+            self.align_base_distance(staging_gap_m, **args)
         return self.target(**args)[1]
