@@ -1,0 +1,330 @@
+"""CPU contract checks. Sensor observations are synthetic; no physics runs here."""
+from dataclasses import replace
+import math
+import time
+
+import pytest
+
+from test_elevator import settings
+from test_elevator_sim import SimulationContext
+from auto_research_agent.api.base import PrimitiveError
+from auto_research_agent.api.elevator_cabin import CabinRide, CabinRideSettings
+from auto_research_agent.api.elevator_sim import SimulationElevator
+
+
+class Clock:
+    def __init__(self):
+        self.t = 0.0
+
+    def monotonic(self):
+        return self.t
+
+    def sleep(self, seconds):
+        self.t += seconds
+
+
+class CabinContext(SimulationContext):
+    def __init__(self, panel_y=-0.35):
+        super().__init__()
+        self.simulation_clock = Clock()
+        self.panel_y = panel_y
+        self.floor = '1'
+        self.floor_reads = 0
+        self.width = 2.4
+        self.luma = .4
+        self.baro_height = 3.6
+        self.floor_edit = None
+        self.turn_refused = False
+        self.turn_endpoint_error = 0.
+        self.turn_stop_verified = True
+        self.panel_location = 'inside_cabin'
+        self.confirm_activation = True
+
+    def scene(self, stamp=None):
+        stamp = stamp or time.time_ns()//1000
+        value = super().scene(stamp)
+        value['heading_source'] = 'simulator_ground_truth'
+        value['panel'] = dict(id='test-panel', location=self.panel_location, cabin_id='cabin-1',
+                              point=self.local((1.2, self.panel_y, 1.0)),
+                              normal=[-math.cos(self.pose[2]), math.sin(self.pose[2]), 0.], uncertainty_m=.001)
+        value['cabin'] = dict(id='cabin-1', doorway_id=self.door_id, panel_id='test-panel',
+                              polygon_m=[self.local(p)[:2] for p in [(1., -self.width/2, 0.),
+                                  (3.4, -self.width/2, 0.), (3.4, self.width/2, 0.), (1., self.width/2, 0.)]],
+                              ceiling_height_m=2.5, geometry_uncertainty_m=.001,
+                              lighting=dict(enabled=True, source='authored_simulation', capture_us=stamp,
+                                            image_sha256='a'*64, mean_luma=self.luma))
+        return value
+
+    def value(self, tool, **args):
+        if tool == 'rax_floor_observation':
+            self.calls.append((tool, args))
+            self.floor_reads += 1
+            stamp = time.time_ns()//1000
+            height = 0 if self.floor == '1' else self.baro_height
+            pressure = 101325*math.exp(-height*9.80665/(287.05*293.15))
+            value = dict(observation_id=f'floor-{self.floor_reads}', capture_us=stamp,
+                         ocr=dict(source='image_ocr', text=self.floor, text_readable=True, confidence=.98,
+                                  capture_us=stamp, image_sha256='b'*64, doorway_id=self.door_id,
+                                  location='landing_door_jamb'),
+                         barometer=dict(source='simulated_barometer', pressure_pa=pressure,
+                                        uncertainty_pa=.25, capture_us=stamp, stable=True,
+                                        sample_count=5, span_pa=.2), scene=self.scene(stamp))
+            if self.floor_edit:
+                self.floor_edit(value)
+            return value
+        if tool == 'sim_button_observation':
+            self.calls.append((tool, args))
+            return dict(source='simulator_ground_truth', label=args['label'],
+                        position=self.local((1.2, self.panel_y, 1.0)),
+                        normal=[-math.cos(self.pose[2]), math.sin(self.pose[2]), 0.],
+                        scene_pose=self.pose.copy(), capture_us=time.time_ns()//1000,
+                        observation_id=f'button-{len(self.calls)}', uncertainty_m=.001)
+        if tool == 'sim_button_activation':
+            self.floor = '2'
+            return dict(source='simulator_ground_truth', target='2', single_correct_press=self.confirm_activation,
+                        released=True)
+        if tool == 'rax_base_preview' and args['delta'][2] and self.turn_refused:
+            self.calls.append((tool, args))
+            return dict(valid=False)
+        value = super().value(tool, **args)
+        if tool == 'rax_move_base' and args['delta'][2]:
+            self.pose[2] += self.turn_endpoint_error
+            self.last_result['physical_stop_verified'] = self.turn_stop_verified
+        return value
+
+
+def ride(context=None, **changes):
+    context = context or CabinContext()
+    cfg = CabinRideSettings('1', {'1': 0., '2': 3.6}, entry_depth_m=1.0,
+                            exit_depth_m=.5, arrival_timeout_s=.2, **changes)
+    return context, CabinRide(SimulationElevator(context, settings(direct_doorway_staging=True)), cfg)
+
+
+@pytest.mark.parametrize('panel_y,expected_arm', [(-.35, 'left'), (.35, 'right')])
+def test_complete_ride_enters_then_turns_and_selects_mirrored_arm(panel_y, expected_arm):
+    context, task = ride(CabinContext(panel_y))
+    events = []
+    result = task.run('2', on_stage=events.append)
+    assert result.outcome == 'succeeded'
+    assert result.measured['stages']['button']['measured']['arm'] == expected_arm
+    assert context.pose == pytest.approx([.5, 0., math.pi])
+    assert [e['stage'] for e in events if e['event'] == 'finished'] == [
+        'origin', 'entry', 'turn', 'button', 'destination', 'exit']
+    moves = [(i, a) for i, (t, a) in enumerate(context.calls) if t == 'rax_move_base']
+    turn = [(i, a) for i, a in moves if a['delta'][2]]
+    assert len(turn) == 1 and turn[0][1]['delta'][2] == math.pi
+    assert turn[0][0] < next(i for i, (t, _) in enumerate(context.calls) if t == 'sim_button_observation')
+    assert moves[-1][1]['delta'][0] > 0 and moves[-1][1]['doorway_id'] == context.door_id
+    assert context.floor_reads >= 3  # Origin, destination, fresh pre-exit recheck.
+    assert context.joints == context.scene_cfg['travel_joints']
+    with pytest.raises(PrimitiveError, match='cannot repeat'):
+        task.run('2')
+
+
+def test_arm_refusal_selects_other_arm_without_relaxing_preview():
+    context, task = ride()
+    context.preview_refused.add('left')
+    result = task.run('2')
+    selection = result.measured['stages']['button']['measured']
+    assert selection['arm'] == 'right'
+    assert any(c['side'] == 'left' and not c['feasible'] for c in selection['arm_candidates'])
+
+
+def test_no_reachable_arm_stops_before_contact_or_exit():
+    context, task = ride()
+    context.preview_refused.update({'left', 'right'})
+    with pytest.raises(PrimitiveError, match='neither arm'):
+        task.run('2')
+    assert context.pose[0] == pytest.approx(2.)
+    assert not any(t == 'evo_follow_path' for t, _ in context.calls)
+
+
+@pytest.mark.parametrize('change,reason', [
+    ('small_cabin', 'rotation envelope'), ('dark', 'too dark'), ('outside_panel', 'interior panel'),
+    ('refused_turn', 'preview refused'), ('bad_turn_endpoint', 'turnaround endpoint'),
+    ('turn_not_stopped', 'did not succeed'), ('unconfirmed_activation', 'activation')])
+def test_unsafe_turn_or_interior_press_cannot_complete(change, reason):
+    context, task = ride()
+    if change == 'small_cabin':
+        context.width = .7
+    elif change == 'dark':
+        context.luma = .01
+    elif change == 'outside_panel':
+        context.panel_location = 'outside_cabin'
+    elif change == 'refused_turn':
+        context.turn_refused = True
+    elif change == 'bad_turn_endpoint':
+        context.turn_endpoint_error = .02
+    elif change == 'turn_not_stopped':
+        context.turn_stop_verified = False
+    elif change == 'unconfirmed_activation':
+        context.confirm_activation = False
+    with pytest.raises(RuntimeError, match=reason):
+        task.run('2')
+    assert context.floor_reads == 1
+    if change in {'small_cabin', 'dark', 'refused_turn'}:
+        assert not any(t == 'rax_move_base' and a['delta'][2] for t, a in context.calls)
+
+
+@pytest.mark.parametrize('mode', ['wrong_ocr', 'pressure_wrong_floor', 'pressure_drift'])
+def test_destination_needs_both_correct_ocr_and_pressure_delta(mode):
+    context, task = ride()
+    def edit(value):
+        if context.floor == '2' and mode == 'wrong_ocr':
+            value['ocr']['text'] = '1'
+    context.floor_edit = edit
+    if mode == 'pressure_wrong_floor':
+        context.baro_height = 0.
+    elif mode == 'pressure_drift':
+        context.baro_height = 5.
+    with pytest.raises(PrimitiveError, match='did not agree'):
+        task.run('2')
+    assert context.pose[0] == pytest.approx(2.)
+    assert task.evidence[-1]['accepted'] is False
+
+
+@pytest.mark.parametrize('mode,reason', [
+    ('missing_ocr', 'OCR'), ('ground_truth', 'OCR'), ('stale', 'stale'),
+    ('uncertain', 'uncertainty'), ('unstable', 'stable'), ('low_confidence', 'confidence'),
+    ('wrong_door', 'OCR'), ('bad_image_hash', 'OCR'), ('bad_sync', 'synchronized'),
+    ('few_samples', 'samples')])
+def test_invalid_floor_observation_fails_before_entry(mode, reason):
+    context, task = ride()
+    def edit(value):
+        if mode == 'missing_ocr':
+            value.pop('ocr')
+        elif mode == 'ground_truth':
+            value['ocr']['source'] = 'simulator_ground_truth'
+        elif mode == 'stale':
+            value['capture_us'] -= 4_000_000
+        elif mode == 'uncertain':
+            value['barometer']['uncertainty_pa'] = 10.
+        elif mode == 'unstable':
+            value['barometer']['stable'] = False
+        elif mode == 'low_confidence':
+            value['ocr']['confidence'] = .2
+        elif mode == 'wrong_door':
+            value['ocr']['doorway_id'] = 'another-door'
+        elif mode == 'bad_image_hash':
+            value['ocr']['image_sha256'] = ''
+        elif mode == 'bad_sync':
+            value['barometer']['capture_us'] -= 200000
+        elif mode == 'few_samples':
+            value['barometer']['sample_count'] = 1
+    context.floor_edit = edit
+    with pytest.raises(PrimitiveError, match=reason):
+        task.run('2')
+    assert not context.base_calls
+
+
+def test_late_floor_change_or_door_closure_cannot_reuse_verified_destination():
+    for change in ('wrong_floor', 'close_door'):
+        context, task = ride()
+        def callback(event):
+            if event['stage'] == 'destination' and event['event'] == 'finished':
+                if change == 'close_door':
+                    context.door_state = 'closing'
+                else:
+                    context.floor = '1'
+        with pytest.raises(PrimitiveError, match='did not agree'):
+            task.run('2', on_stage=callback)
+        assert context.pose[0] == pytest.approx(2.)
+
+
+def test_checked_turn_respects_existing_per_command_rotation_limit():
+    context, task = ride()
+    context.scene_cfg['max_turn_rad'] = math.pi/2
+    result = task.run('2')
+    turns = result.measured['stages']['turn']['measured']['turns']
+    assert len(turns) == 2
+    assert all(t['measured']['angle_travelled_rad'] == math.pi/2 for t in turns)
+
+
+def test_turn_bound_does_not_use_only_axis_aligned_endpoint_footprint():
+    context, task = ride()
+    context.width = .7
+    # Current half-width .2 fits, but its .320m rotation radius plus reserve does not.
+    assert context.width/2 > context.scene_cfg['footprint'][1]+.061
+    with pytest.raises(PrimitiveError, match='rotation envelope'):
+        task.run('2')
+
+
+def test_settings_reject_overlap_partial_turn_and_single_arm():
+    context, task = ride()
+    with pytest.raises(ValueError, match='180'):
+        replace(task.settings, turn_rad=math.pi/2).validate()
+    with pytest.raises(ValueError, match='overlap'):
+        replace(task.settings, floor_heights_m={'1': 0., '2': 1.}).validate()
+    with pytest.raises(ValueError, match='both'):
+        CabinRide(SimulationElevator(context, settings(arms=settings().arms[:1])), task.settings)
+    with pytest.raises(ValueError, match='must not turn'):
+        CabinRide(SimulationElevator(context, settings(search_turns_rad=(.1,))), task.settings)
+
+
+class HallTask:
+    """A CPU action stub. Physics validation must supply a real Elevator task."""
+    def __init__(self, context, *, confirmed=True):
+        self.settings = settings(panel_id='hall-panel', press_offsets={'CALL': (0, 0)})
+        self.context, self.confirmed, self.calls = context, confirmed, []
+
+    def press_elevator_button(self, label):
+        from auto_research_agent.api.base import PrimitiveResult
+        self.calls.append(label)
+        if self.confirmed:
+            self.context.door_state = 'open'
+        return PrimitiveResult('press_elevator_button', 'succeeded' if self.confirmed else 'stroke_complete_unconfirmed',
+                               measured={'activation': 'succeeded' if self.confirmed else 'unknown'})
+
+
+def test_closed_origin_uses_single_separate_hall_button_before_entry():
+    context, task = ride()
+    context.door_state = 'closed'
+    hall = HallTask(context)
+    task = CabinRide(task.task, task.settings, hall_task=hall)
+    events = []
+    result = task.run('2', on_stage=events.append)
+    assert result.outcome == 'succeeded'
+    assert hall.calls == ['CALL']
+    assert [e['stage'] for e in events if e['event'] == 'finished'][:3] == ['origin', 'hall_call', 'entry']
+
+
+@pytest.mark.parametrize('supply_hall', [False, True])
+def test_closed_origin_without_confirmed_hall_call_cannot_enter(supply_hall):
+    context, task = ride()
+    context.door_state = 'closed'
+    hall = HallTask(context, confirmed=False) if supply_hall else None
+    task = CabinRide(task.task, task.settings, hall_task=hall)
+    with pytest.raises(PrimitiveError, match='hall call'):
+        task.run('2')
+    assert not context.base_calls
+    assert context.floor_reads == 1
+
+
+def test_hall_task_cannot_reuse_inside_panel_or_have_destination_controls():
+    context, task = ride()
+    hall = HallTask(context)
+    hall.settings = replace(hall.settings, panel_id='test-panel')
+    with pytest.raises(ValueError, match='distinct'):
+        CabinRide(task.task, task.settings, hall_task=hall)
+    hall.settings = replace(hall.settings, panel_id='hall-panel', press_offsets={'CALL': (0, 0), '2': (0, 0)})
+    with pytest.raises(ValueError, match='exactly one'):
+        CabinRide(task.task, task.settings, hall_task=hall)
+
+
+def test_full_robot_height_must_fit_cabin_before_entry():
+    context, task = ride()
+    context.scene_cfg['footprint'][2] = 2.49
+    with pytest.raises(PrimitiveError, match='ceiling'):
+        task.run('2')
+    assert not context.base_calls
+
+
+def test_stale_destination_observation_after_press_cannot_authorize_exit():
+    context, task = ride()
+    def edit(value):
+        if context.floor == '2':
+            value['ocr']['capture_us'] = 1
+    context.floor_edit = edit
+    with pytest.raises(PrimitiveError, match='stale'):
+        task.run('2')
+    assert context.pose[0] == pytest.approx(2.)
