@@ -34,6 +34,19 @@ do not establish camera perception, a real tool calibration, tipping stability,
 or transfer to hardware. See the ML campaign report for measured outcomes and
 immutable evidence links. Failed runs remain failures.
 
+The [ML Hilton reference](https://github.com/Kovari-Industries/ml/blob/benson/rax-isaac-elevator-navigation/packages/evo_isaac/docs/HILTON-REFERENCE.md)
+uses the user-supplied UH and Texas Lodging maps. It selects the north-wing guest
+elevator and keeps the adjacent garage shaft distinct. The first- and second-floor
+profiles retain source hashes and map assumptions. Metric sizes and the test panel
+remain assumed. The same added walls feed physical collision and the privileged
+navigation geometry. A plotted lobby route is not a completed robot run.
+
+The campaign saves raw state, USD scenes, phase images, sampled GIF/MP4 replays,
+and verified S3 archive hashes. A local straight-motion control passes with the
+native travel and measured-stop checks. Lateral controls also pass after a measured
+steering-stop repair. Direction changes and the combined button/entry/exit task
+remain under test. This is simulation evidence only.
+
 Run focused task checks from the Rax root:
 
 ```sh
@@ -41,3 +54,12 @@ uv run --with pytest --with jinja2 --with numpy --with pillow python -m pytest -
   local_tests/unit/test_elevator.py local_tests/unit/test_elevator_sim.py \
   local_tests/unit/test_evo_motion.py
 ```
+
+
+`ElevatorSettings.direct_doorway_staging=True` opts into a direct staging path.
+After facing the door, Rax approaches a point centered before the sill in steps
+of at most 0.15 m. Every step uses fresh geometry, native preview and measured
+stop checks. The total alignment budget remains 1 m. Clearance refusal stops the
+routine. The default staging mode remains unchanged. This option is under Isaac
+validation after sideways-to-forward controls exceeded a heading-travel bound;
+it does not qualify arbitrary direction changes or physical operation.
