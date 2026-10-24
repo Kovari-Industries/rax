@@ -4,11 +4,12 @@ The scene provider supplies calibrated geometry or explicit simulator geometry.
 Landing identity must come from image OCR. A simulator floor state is not an OCR
 observation. This module does not provide a hardware perception qualification.
 """
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 import math
 import time
 
 from .base import PrimitiveError, PrimitiveResult, positive, vector
+from .evo import EvoActionFailed
 
 
 @dataclass(frozen=True)
@@ -30,8 +31,24 @@ class CabinRideSettings:
     max_pressure_span_pa: float = 2.0
     height_tolerance_m: float = 0.75
     air_temperature_k: float = 293.15
+    origin_floor_views: tuple = ()
+    destination_floor_views: tuple = ()
+    floor_rest_joints: dict = field(default_factory=dict)
 
     def validate(self):
+        neck = {"neck_yaw_joint", "neck_pitch_joint"}
+        configured = bool(self.origin_floor_views or self.destination_floor_views)
+        if not isinstance(self.floor_rest_joints, dict) or (set(self.floor_rest_joints) != neck if configured else bool(self.floor_rest_joints)):
+            raise ValueError("floor views require an explicit two-joint neck rest posture")
+        for views in (self.origin_floor_views, self.destination_floor_views):
+            if not isinstance(views, tuple) or len(views) > 4:
+                raise ValueError("configure at most four ordered floor views as a tuple")
+            for targets in views:
+                if not isinstance(targets, dict) or set(targets) != neck:
+                    raise ValueError("each floor view must specify both neck joints only")
+                vector(targets.values(), 2)
+        if configured:
+            vector(self.floor_rest_joints.values(), 2)
         if not isinstance(self.origin_floor, str) or self.origin_floor not in self.floor_heights_m:
             raise ValueError("origin floor must have a configured height")
         if not isinstance(self.hall_call_label, str) or not self.hall_call_label:
@@ -80,6 +97,9 @@ class CabinRide:
         self._baseline = None
         self._turn_pose = None
         self._used = False
+        self._floor_scan_count = 0
+        if settings.origin_floor_views or settings.destination_floor_views:
+            self._validate_floor_view_targets()
 
     def _fresh(self, stamp, max_age_s, *, post_motion=False):
         if type(stamp) is not int or not 0 <= time.time()-stamp/1e6 <= max_age_s:
@@ -316,20 +336,147 @@ class CabinRide:
                                {"arm": side, "activation": activation.outcome,
                                 "arm_candidates": selection.candidates})
 
-    def _floor_observation(self):
+    def _validate_floor_view_targets(self):
+        source = self.base.capabilities.get("model", {}).get("limits", {})
+        admitted = self.base.capabilities.get("joint_limits", {})
+        for targets in (*self.settings.origin_floor_views, *self.settings.destination_floor_views,
+                        self.settings.floor_rest_joints):
+            for name, target in targets.items():
+                if name not in source or name not in admitted:
+                    raise PrimitiveError("floor view joint has no source limit or actuator admission", self.evidence)
+                limits = source[name]
+                low, high = vector((limits.get("lower"), limits.get("upper")), 2)
+                positive(admitted[name].get("tolerance"), "floor view joint tolerance")
+                if not low <= target <= high:
+                    raise PrimitiveError("floor view target exceeds its source joint limit", self.evidence)
+
+    def _move_floor_view(self, targets, *, purpose, view_index, motion, restoring=False):
+        record = {"stage": "floor_view_action", "purpose": purpose, "view_index": view_index,
+                  "restoring": restoring, "targets": dict(targets), "state": "checking"}
+        self.evidence.append(record)
+        try:
+            self.base.check_cancel()
+            if self.task._contact is not None:
+                raise PrimitiveError("retract before a floor-view motion", self.evidence)
+            state = self.task._state()  # Motion admission requires fresh measured joints.
+            record["initial_joints"] = {name: vector((state["positions"].get(name),), 1)[0] for name in targets}
+            before = vector(self._scene()["pose"])
+            record["base_pose_before"] = before
+            action = {"kind": "move_joints", "targets": dict(targets)}
+            preview = self.context.value("evo_preview", action=action)
+            record["preview"] = preview
+            if preview.get("valid") is not True:
+                record["state"] = "preview_refused"
+                raise PrimitiveError("floor view preview refused", self.evidence)
+            self.base.check_cancel()
+            # Any dispatch exception can leave the physical outcome uncertain.
+            motion.update(safe=False, dirty=True)
+            started = self.context.value("evo_move_joints", targets=dict(targets))
+            record["action_id"] = started.get("action_id")
+            try:
+                result = self.task.evo.wait(started, cancelled=self.base.cancelled)
+            except EvoActionFailed as error:
+                result = error.result
+                record["result"] = result
+                motion["safe"] = result.get("physical_stop_verified") is True
+                if motion["safe"]:
+                    self._last_motion_us = self.task._last_stop_us = time.time_ns()//1000
+                raise
+            record["result"] = result
+            motion["safe"] = result.get("physical_stop_verified") is True
+            if motion["safe"]:
+                self._last_motion_us = self.task._last_stop_us = time.time_ns()//1000
+            if result.get("state") != "succeeded" or not motion["safe"]:
+                raise EvoActionFailed(result)
+            # A stop bit alone cannot authorize another motion if feedback or
+            # the base pose is missing. Endpoint errors with fresh stopped state
+            # may restore through a new, explicit preview.
+            motion["safe"] = False
+            measured = self.task._state()["positions"]
+            actual = {name: vector((measured.get(name),), 1)[0] for name in targets}
+            after = vector(self._scene()["pose"])
+            record["base_pose_after"] = after
+            yaw = math.atan2(math.sin(after[2]-before[2]), math.cos(after[2]-before[2]))
+            if (math.dist(after[:2], before[:2]) > self.base.settings["position_tolerance_m"]
+                    or abs(yaw) > self.base.settings["angle_tolerance_rad"]):
+                raise PrimitiveError("base moved during the floor-view action", self.evidence)
+            motion["safe"] = True
+            record["measured_joints"] = actual
+            for name, target in targets.items():
+                if abs(actual[name]-target) > self.base.capabilities["joint_limits"][name]["tolerance"]:
+                    raise PrimitiveError("floor view joint endpoint was not reached", self.evidence)
+            record.update(state="succeeded", stopped_wall_us=self._last_motion_us)
+            if restoring:
+                motion["dirty"] = False
+        except BaseException as error:
+            if record["state"] != "preview_refused":
+                record["state"] = "failed"
+            record["reason"] = str(error)
+            raise
+
+    def _scan_floor(self, purpose, *, deadline=None):
+        views = getattr(self.settings, purpose+"_floor_views")
+        if not views:
+            return self._floor_observation()
+        self._floor_scan_count += 1
+        scan = {"stage": "floor_view_scan", "purpose": purpose, "scan_id": self._floor_scan_count,
+                "configured_view_count": len(views), "state": "started"}
+        self.evidence.append(scan)
+        motion = {"safe": True, "dirty": False}
+        accepted_capture = False
+        try:
+            for index, targets in enumerate(views):
+                if deadline is not None and self.base.clock.monotonic() >= deadline:
+                    raise PrimitiveError("floor view scan exceeded the arrival deadline", self.evidence)
+                self._move_floor_view(targets, purpose=purpose, view_index=index, motion=motion)
+                value, scene = self._floor_observation(allow_unreadable=True)
+                readable = (value["ocr"]["text_readable"] is True
+                            and value["ocr"]["confidence"] >= self.settings.min_ocr_confidence)
+                self.evidence.append({"stage": "floor_view_observation", "purpose": purpose,
+                                      "view_index": index, "readable": readable, "observation": value})
+                if deadline is not None and self.base.clock.monotonic() >= deadline:
+                    raise PrimitiveError("floor view scan exceeded the arrival deadline", self.evidence)
+                if readable:
+                    scan.update(state="observed", selected_view_index=index)
+                    accepted_capture = True
+                    return value, scene
+            raise PrimitiveError("configured floor views did not produce qualified landing text", self.evidence)
+        except BaseException as error:
+            scan.update(state="failed", reason=str(error))
+            raise
+        finally:
+            if motion["dirty"]:
+                if motion["safe"] and not self.base.cancelled():
+                    try:
+                        self._move_floor_view(self.settings.floor_rest_joints, purpose=purpose,
+                                              view_index="rest", motion=motion, restoring=True)
+                        scan["restoration"] = "verified"
+                    except BaseException as error:
+                        scan.update(state="failed", restoration="failed", restoration_reason=str(error))
+                        raise PrimitiveError("floor view restoration was not verified", self.evidence) from error
+                else:
+                    scan.update(state="failed", restoration="not_attempted",
+                                restoration_reason="motion or cancellation state is uncertain")
+                    if accepted_capture:
+                        raise PrimitiveError("floor view return-to-rest is unconfirmed", self.evidence)
+            else:
+                scan["restoration"] = "not_needed"
+
+    def _floor_observation(self, *, allow_unreadable=False):
         self.base.check_cancel()
         value = self.context.value("rax_floor_observation", doorway_id=self._doorway_id)
         if not isinstance(value, dict) or not value.get("observation_id"):
             raise PrimitiveError("floor observation identity is unavailable", self.evidence)
         self._fresh(value.get("capture_us"), self.settings.floor_max_age_s, post_motion=True)
         ocr, baro = value.get("ocr", {}), value.get("barometer", {})
-        if (ocr.get("source") != "image_ocr" or ocr.get("text_readable") is not True
-                or not isinstance(ocr.get("text"), str) or not ocr["text"]
+        if (ocr.get("source") != "image_ocr" or type(ocr.get("text_readable")) is not bool
+                or not allow_unreadable and ocr.get("text_readable") is not True
+                or ocr.get("text_readable") is True and (not isinstance(ocr.get("text"), str) or not ocr["text"])
                 or not self._image_hash(ocr.get("image_sha256"))
                 or ocr.get("location") != "landing_door_jamb" or ocr.get("doorway_id") != self._doorway_id):
             raise PrimitiveError("fresh landing-jamb image OCR is unavailable", self.evidence)
         score = vector((ocr.get("confidence"),), 1)[0]
-        if not self.settings.min_ocr_confidence <= score <= 1:
+        if not 0 <= score <= 1 or not allow_unreadable and score < self.settings.min_ocr_confidence:
             raise PrimitiveError("floor OCR confidence is insufficient", self.evidence)
         expected_source = "simulated_barometer" if self.base.capabilities.get("simulated") is True else "barometer"
         if baro.get("source") != expected_source or baro.get("stable") is not True or type(baro.get("sample_count")) is not int or baro["sample_count"] < 3:
@@ -367,13 +514,14 @@ class CabinRide:
         return door.get("id") == self._doorway_id and door.get("state") == "open" and door.get("stable_samples", 0) >= 3
 
     def capture_origin(self):
-        value, scene = self._floor_observation()
+        value, scene = self._scan_floor("origin", deadline=self.base.clock.monotonic()+self.settings.arrival_timeout_s)
         if (value["ocr"]["text"] != self.settings.origin_floor
                 or scene.get("doorway", {}).get("id") != self._doorway_id):
             raise PrimitiveError("origin floor OCR and doorway identity are unconfirmed", self.evidence)
         self._baseline = value
         self.evidence.append({"stage": "origin_verified", "observation": value})
-        return PrimitiveResult("origin_verified", "succeeded", measured=value)
+        return PrimitiveResult("origin_verified", "succeeded",
+                               tuple(self.evidence) if self.settings.origin_floor_views else (), measured=value)
 
     def call_elevator(self):
         if self.hall_task is None:
@@ -405,7 +553,7 @@ class CabinRide:
             scene = self._scene()
             self._inside(scene)
             if self._open(scene):
-                value, observed_scene = self._floor_observation()
+                value, observed_scene = self._scan_floor("destination", deadline=deadline)
                 height, interval = self._height(value)
                 matches = (value["ocr"]["text"] == floor
                            and max(abs(x-expected) for x in interval) <= self.settings.height_tolerance_m)
@@ -416,6 +564,8 @@ class CabinRide:
                 if last["accepted"]:
                     self._inside(observed_scene)
                     return PrimitiveResult("destination_verified", "succeeded", tuple(self.evidence), last)
+                if self.settings.destination_floor_views:
+                    raise PrimitiveError("configured floor scan did not verify the destination", self.evidence)
             self.base.clock.sleep(0.05)
         raise PrimitiveError("destination OCR, barometer and open doorway did not agree before timeout", self.evidence)
 
