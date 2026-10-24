@@ -196,7 +196,7 @@ def test_wait_timeout_cancels_job():
 
 
 def test_shared_sam_protocol_requests():
-    fixtures = json.loads(Path("services/evo_v3/protocol_fixtures.json").read_text())
+    fixtures = json.loads(Path("services/evo/protocol_fixtures.json").read_text())
     from services.evo_v3.backend import BY_NAME, validate_value
 
     for request in fixtures["sam_requests"]:

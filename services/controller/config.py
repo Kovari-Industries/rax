@@ -46,8 +46,8 @@ class Configuration:
         if self.agent_python is not None and not (isinstance(self.agent_python, str)
                                                   and Path(self.agent_python).is_absolute()):
             raise ValueError('agent_python must be an absolute path to a python executable')
-        if self.robot == 'evo-v3' and self.observation_profile != 'rgb-only':
-            raise ValueError('Evo v3 currently provides RGB-only observations')
+        if self.robot in ('evo-v3', 'evo-v4') and self.observation_profile != 'rgb-only':
+            raise ValueError('Evo profiles currently provide RGB-only observations')
         if self.observation_profile not in PROFILES:
             raise ValueError(f'observation_profile must be one of {PROFILES}')
         if self.agent_provider not in PROVIDERS:

@@ -1,3 +1,7 @@
+# RAX Evo v4 development
+
+The separate `evo-v4` robot profile is described in [EVO_V4.md](EVO_V4.md).
+
 # RAX for Kovari Evo v3
 
 This branch adds the Evo v3 backend. Read [EVO_V3.md](EVO_V3.md) for tools, tested limits, and rollout status. The inherited Rainbow documentation below is a reference, not Evo operating guidance.

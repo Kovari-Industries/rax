@@ -2,7 +2,7 @@
 import threading
 from types import SimpleNamespace
 
-from services.evo_v3.elevator import ElevatorRuntime
+from services.evo.elevator import ElevatorRuntime
 
 
 def runtime(step, *, stopped=True, drive=None):

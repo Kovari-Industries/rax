@@ -17,8 +17,8 @@ The adapter exposes discovery, RGB observation and history, FK, IK, preview, cam
 rays, arm motion, grippers, carriage, neck, bounded base velocity, action status,
 cancellation, and hold. Optional calibrated scene control adds measured base moves,
 button detections, and local doorway traversal. See [elevator primitives](docs/evo/ELEVATOR_PRIMITIVES.md)
-for the API, configuration, and qualification limits. RAX task schemas are in `services/evo_v3/elevator_tools.json`.
-`services/evo_v3/tools.json` contains the generic Evo schema. It is
+for the API, configuration, and qualification limits. RAX task schemas are in `services/evo/elevator_tools.json`.
+`services/evo/tools.json` contains the generic Evo schema. It is
 identical to Evo's `evo_agent_backend/contract/tools.json`. The old towel socket and
 EVJ1 transport are removed; there is no fallback.
 

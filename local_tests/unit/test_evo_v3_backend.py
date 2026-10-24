@@ -202,7 +202,7 @@ def test_partial_observation_is_saved_without_invented_geometry(tmp_path):
 
 
 def test_shared_contract_fixture():
-    fixtures = json.loads(Path("services/evo_v3/protocol_fixtures.json").read_text())
+    fixtures = json.loads(Path("services/evo/protocol_fixtures.json").read_text())
     assert fixtures["capabilities_request"]["version"] == 1
     assert fixtures["accepted_response"]["result"]["state"] == "accepted"
     names = {tool["name"] for tool in TOOLS}
@@ -582,7 +582,7 @@ def test_socket_stop_timeout_withdraws_lease(tmp_path, stop_tool):
 
 
 def test_cloth_action_fixtures_cross_the_adapter_with_session_ownership(tmp_path):
-    fixtures = json.loads(Path("services/evo_v3/protocol_fixtures.json").read_text())
+    fixtures = json.loads(Path("services/evo/protocol_fixtures.json").read_text())
     with service(tmp_path, lambda r: {"action_id": r["id"], "state": "accepted"}) as (
         client,
         received,

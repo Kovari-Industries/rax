@@ -94,3 +94,32 @@ def test_tool_rotation_still_requires_sweep_clearance():
     button = task.observe_button('2', 'right')
     with pytest.raises(PrimitiveError, match='insufficient gap'):
         task.prepare_press_arm(ArmSelection('right', 'selected', (), button, 0.))
+
+
+def test_v4_hip_is_part_of_measured_travel_posture():
+    context = SimulationContext()
+    context.joints['hip_pitch_joint'] = .2
+    context.scene_cfg['travel_joints']['hip_pitch_joint'] = 0.
+    context.capabilities['joint_limits']['hip_pitch_joint'] = {'tolerance': .01}
+    task = SimulationElevator(context, settings())
+    task.stow_arms()
+    assert context.joints['hip_pitch_joint'] == 0.
+    moves = [a for name, a in context.calls if name == 'evo_move_joints']
+    assert moves[-1]['targets']['hip_pitch_joint'] == 0.
+
+
+def test_v4_stow_refuses_a_hip_that_did_not_reach_target():
+    class UnreachedHip(SimulationContext):
+        def value(self, tool, **args):
+            result = super().value(tool, **args)
+            if tool == 'evo_status':
+                result['state']['positions']['hip_pitch_joint'] = .2
+            return result
+    context = UnreachedHip()
+    context.joints['hip_pitch_joint'] = .2
+    context.scene_cfg['travel_joints']['hip_pitch_joint'] = 0.
+    context.capabilities['joint_limits']['hip_pitch_joint'] = {'tolerance': .01}
+    task = SimulationElevator(context, settings())
+    with pytest.raises(PrimitiveError, match='travel posture'):
+        task.stow_arms()
+    assert not context.base_calls

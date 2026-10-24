@@ -199,7 +199,7 @@ class Sessions:
                    '--agent-effort', str(form.get('effort') or 'max'),
                    '--agent-provider', str(form.get('provider') or 'claude-login'),
                    '--session-hours', str(float(form.get('session_hours') or 4)),
-                   '--observation-profile', str(form.get('observation_profile') or ('rgb-only' if self.robot_kind == 'evo-v3' else 'rgbd')),
+                   '--observation-profile', str(form.get('observation_profile') or ('rgb-only' if self.robot_kind in ('evo-v3', 'evo-v4') else 'rgbd')),
                    '--subagents', str(int(form['subagents']) if form.get('subagents') not in (None, '') else 2)]
         if form.get('model'):
             command += ['--agent-model', str(form['model'])]

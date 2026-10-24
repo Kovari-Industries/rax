@@ -1,6 +1,6 @@
 """The facts a workspace is generated from; roles live in recipes, not here."""
 from dataclasses import dataclass
-from services.evo_v3.backend import CLIENT_TOOLS as EVO_TOOLS
+from services.evo.backend import CLIENT_TOOLS as EVO_TOOLS
 
 # Words shared sources use for the robot instead of branching on it. Tool names are the
 # backend's MCP tools (services/backends.py); keep them in sync with the backend.
@@ -110,6 +110,20 @@ ROBOT_FACTS = {
              'first_reads': (('robot-interface', 'tools, frames, action results and model limits'), ('cloth-handling', 'towel routines, metric perception, grasp and pile checks')),
              'model_dir': None, 'model_note': 'Use Evo FK, IK and preview tools.',
              'read_tools': ('evo_capabilities', 'evo_status', 'evo_observe', 'evo_history', 'evo_fk', 'evo_ik', 'evo_preview', 'evo_camera_ray', 'evo_camera_geometry', 'rax_scene', 'rax_base_preview', 'rax_camera_ray', 'rax_detect_buttons', 'evo_sam_segment', 'evo_sam_track', 'evo_sam_result', 'evo_sam_cancel')},
+    'evo-v4': {'name': 'Kovari Evo v4', 'status': 'evo_status', 'observe': 'evo_observe',
+             'move': 'evo_move_eef', 'gripper': 'evo_gripper', 'pixel': 'evo_camera_ray',
+             'tools': tuple(t['name'] for t in EVO_TOOLS),
+             'overview_camera': 'base', 'overview': 'head RGB camera',
+             'cameras': ('base', 'left_arm', 'right_arm'),
+             'body': 'mobile two-arm robot with carriage, hip pitch and neck', 'move_joints': 'evo_move_joints',
+             'neutral': 'read measured joints; no automatic home command',
+             'motion_example': 'Use evo_preview, then an action tool, then evo_action_status until measured completion.',
+             'grasp_example': 'Use evo_set_grip with side, position_rad and retain for cloth; verify grasp from fresh images.',
+             'stream': 'evo_history', 'look_around': 'Use bounded neck moves and inspect fresh observations.',
+             'safety': ('Evo owns motion. Operator arming and a live client lease are required. A stop request is not proof of physical stop.',),
+             'first_reads': (('robot-interface', 'tools, frames, action results and model limits'), ('elevator-navigation', 'v4 hip, carriage, travel posture and elevator observations')),
+             'model_dir': None, 'model_note': 'Use the loaded v4 model limits and FK. Include hip_pitch_joint in the travel posture; never reuse v3 carriage limits.',
+             'read_tools': ('evo_capabilities', 'evo_status', 'evo_observe', 'evo_history', 'evo_fk', 'evo_ik', 'evo_preview', 'evo_camera_ray', 'evo_camera_geometry', 'rax_scene', 'rax_base_preview', 'rax_camera_ray', 'rax_detect_buttons', 'evo_sam_segment', 'evo_sam_track', 'evo_sam_result', 'evo_sam_cancel')},
     'mock': {'name': 'mock robot', 'status': 'status', 'observe': 'mock_observe', 'move': 'mock_move',
              'gripper': 'mock_move', 'pixel': 'mock_observe', 'tools': ('mock_observe', 'mock_move'),
              'overview_camera': 'none', 'overview': 'no camera', 'cameras': (),
@@ -133,8 +147,8 @@ class Setup:
     def __post_init__(self):
         if self.robot not in ROBOT_FACTS:
             raise ValueError(f'Unknown robot {self.robot!r}')
-        if self.robot == 'evo-v3' and self.observation_profile != 'rgb-only':
-            raise ValueError('Evo v3 currently provides RGB-only observations')
+        if self.robot in ('evo-v3', 'evo-v4') and self.observation_profile != 'rgb-only':
+            raise ValueError(f'{ROBOT_FACTS[self.robot]["name"]} currently provides RGB-only observations')
         if self.cli not in CLIS:
             raise ValueError('Unknown agent CLI')
         if self.observation_profile not in ('rgbd', 'rgb-only'):

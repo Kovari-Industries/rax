@@ -133,8 +133,8 @@ def protected_paths(config):
     credentials = [Path(relay[key]).expanduser().resolve() for key in ('key_file', 'gemini_key_file')
                    if relay.get(key)]
     evo_paths = []
-    if getattr(config, 'robot', None) == 'evo-v3':
-        from services.evo_v3.backend import DEFAULTS
+    if getattr(config, 'robot', None) in ('evo-v3', 'evo-v4'):
+        from services.evo.backend import DEFAULTS
         evo_socket = Path(config.backend_options.get('control_socket', DEFAULTS['control_socket']))
         runtime = evo_socket.parent.parent if evo_socket.parent.name == 'agent' else evo_socket.parent
         if config.root.resolve().is_relative_to(runtime.resolve()):
@@ -147,7 +147,7 @@ def protected_paths(config):
 def denied_hosts(config):
     """DENIED_HOSTS plus the host of the session's controller address (backend option `address`)."""
     hosts = list(DENIED_HOSTS)
-    if getattr(config, 'robot', None) == 'evo-v3':
+    if getattr(config, 'robot', None) in ('evo-v3', 'evo-v4'):
         local = {'localhost', '127.0.0.1', '::1', socket.gethostname()}
         try:
             local.update(item[4][0] for item in socket.getaddrinfo(socket.gethostname(), None))
