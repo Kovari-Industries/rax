@@ -14,9 +14,31 @@ visible alignment -> fresh image target -> complete preview -> freshness gate
 Use `FinalContactPolicy(visible_gap_m, max_inward_travel_m,
 occlusion_qualification_id)` as `ElevatorSettings.final_contact`. The runtime must
 advertise both `evo_capabilities.scene.guarded_contact = true` and the
-`evo_guarded_contact` tool. The qualification must bind the camera, pressing tool,
-source profile, and visibility at the initial and withdrawal gaps. Configure no
-policy until that qualification exists.
+`evo_guarded_contact` tool. It must also advertise exact records in
+`evo_capabilities.scene.guarded_contact_profiles`:
+
+```json
+[{"panel_id":"cabin-panel","camera":"right_arm","occlusion_qualification_id":"reviewed-right-id"}]
+```
+
+The policy qualification ID can be the existing string, or an explicit mapping
+such as `{"left": "reviewed-left-id", "right": "reviewed-right-id"}`. Mapping keys
+must be `left` or `right`; an absent side has no fallback. Each selected side must
+match the configured panel ID, wrist camera, and configured qualification ID.
+Missing, malformed, or duplicate advertisement records are refused. A string
+still requires a matching camera record for each eligible arm.
+
+Search and arm selection exclude unqualified arms before viewing motion or reach
+preview. Fresh capability reads check admission again before preparation and
+after each preparation preview, then after the complete contact preview. The
+final action contains the selected arm's scalar qualification ID. Hall and cabin
+tasks have distinct panel IDs; the adapter must keep a durable attempt latch per
+panel across images and arm choices. Changing arms cannot retry an uncertain
+contact on that panel.
+
+The qualification must bind the camera, pressing tool, source profile, and
+visibility at the initial and withdrawal gaps. Configure no policy until that
+qualification exists.
 
 The guarded route finishes orientation, carriage, and tangential alignment while
 outside the visible gap. It preserves the existing orientation sweep check. It

@@ -18,6 +18,9 @@ class GuardContext(RobotContext):
     def __init__(self):
         super().__init__()
         self.capabilities['scene']['guarded_contact'] = True
+        self.capabilities['scene']['guarded_contact_profiles'] = [
+            dict(panel_id='test-panel', camera=side+'_arm', occlusion_qualification_id=POLICY.occlusion_qualification_id)
+            for side in ('left', 'right')]
         self.capabilities['tools'].append({'name': 'evo_guarded_contact'})
         self.guards = []
         self.guard_change = None
@@ -290,6 +293,10 @@ def test_cabin_contact_composition_selects_guarded_route_and_stows():
     from auto_research_agent.api.base import PrimitiveResult
     context, cabin = ride()
     cabin.task.settings = replace(cabin.task.settings,final_contact=POLICY)
+    context.capabilities['scene'].update(guarded_contact=True,guarded_contact_profiles=[
+        dict(panel_id='test-panel',camera=side+'_arm',occlusion_qualification_id=POLICY.occlusion_qualification_id)
+        for side in ('left','right')])
+    context.capabilities['tools'].append({'name':'evo_guarded_contact'})
     called = []
     def guarded(selection):
         called.append(selection.side)
@@ -358,3 +365,130 @@ def test_uncertain_visible_preparation_also_blocks_retry_stow_and_generic_recove
             function()
     assert len(context.calls) == before
     assert next(e for e in task.evidence if e.get('stage')=='guarded_contact')['state']=='failed'
+
+
+@pytest.mark.parametrize('identity', [{}, {'other':'id'}, {'left':''}, {'right':None}, {'left':7}])
+def test_guarded_policy_mapping_requires_explicit_nonempty_arm_ids(identity):
+    with pytest.raises(ValueError,match='mapping'):
+        Elevator(GuardContext(),settings(final_contact=replace(POLICY,occlusion_qualification_id=identity)))
+
+
+@pytest.mark.parametrize('change',['absent','empty','malformed','wrong_panel','wrong_id','duplicate'])
+def test_guarded_mode_requires_exact_advertised_records_before_motion(change):
+    context=GuardContext()
+    scene=context.capabilities['scene']
+    records=scene['guarded_contact_profiles']
+    if change=='absent': del scene['guarded_contact_profiles']
+    elif change=='empty': scene['guarded_contact_profiles']=[]
+    elif change=='malformed': records[0]['camera']='unrecognized_camera'
+    elif change=='duplicate': records.append(deepcopy(records[0]))
+    else:
+        for row in records:
+            row['panel_id' if change=='wrong_panel' else 'occlusion_qualification_id']='different'
+    with pytest.raises(PrimitiveError):
+        Elevator(context,settings(final_contact=POLICY))
+    assert not any(name.startswith('evo_move') or name=='evo_follow_path' for name,_ in context.calls)
+
+
+@pytest.mark.parametrize('eligible_side',['left','right'])
+def test_auto_search_and_selection_exclude_unqualified_arm_before_any_view_motion(eligible_side):
+    context=GuardContext()
+    context.capabilities['scene']['guarded_contact_profiles']=[row for row in
+        context.capabilities['scene']['guarded_contact_profiles'] if row['camera']==eligible_side+'_arm']
+    task=Elevator(context,settings(final_contact=POLICY))
+    observations=task.search_button('2')
+    selection=task.select_press_arm(observations)
+    assert selection.side==eligible_side
+    other='left' if eligible_side=='right' else 'right'
+    assert any(c['side']==other and not c['feasible'] and 'qualification' in c['reason'] for c in selection.candidates)
+    assert all(not n.startswith(other+'_joint') for tool,args in context.calls
+               if tool=='evo_move_joints' for n in args['targets'])
+    assert all(args['camera']==eligible_side+'_arm' for tool,args in context.calls if tool=='rax_detect_buttons')
+
+
+def test_explicit_missing_side_has_no_mapping_fallback_or_task_motion():
+    context=GuardContext()
+    policy=replace(POLICY,occlusion_qualification_id={'right':POLICY.occlusion_qualification_id})
+    task=Elevator(context,settings(final_contact=policy))
+    with pytest.raises(PrimitiveError,match='qualification'):
+        task.press_elevator_button('2','left')
+    assert not any(name.startswith('evo_move') or name in ('evo_follow_path','rax_move_base') for name,_ in context.calls)
+
+
+@pytest.mark.parametrize('side',['left','right'])
+def test_explicit_arm_id_mapping_selects_the_exact_advertised_transaction(side):
+    context=GuardContext()
+    identities={'left':'left-proof','right':'right-proof'}
+    for row in context.capabilities['scene']['guarded_contact_profiles']:
+        row['occlusion_qualification_id']=identities[row['camera'].removesuffix('_arm')]
+    task=Elevator(context,settings(final_contact=replace(POLICY,occlusion_qualification_id=identities)))
+    selection=task.select_press_arm(task.search_button('2',side),side)
+    assert task.guarded_press_button(selection).outcome=='succeeded'
+    assert context.guards[0]['occlusion_qualification_id']==identities[side]
+
+
+def test_changed_advertisement_after_selection_refuses_before_visible_preparation():
+    context,task,selection=task_and_selection()
+    records=context.capabilities['scene']['guarded_contact_profiles']
+    records[:]=[r for r in records if r['camera']!=selection.side+'_arm']
+    before=len(context.calls)
+    with pytest.raises(PrimitiveError,match='qualification'):
+        task.guarded_press_button(selection)
+    assert all(tool=='evo_capabilities' for tool,_ in context.calls[before:])
+    assert not task._guarded_sequence_started and not context.guards
+
+
+@pytest.mark.parametrize('preview_kind',['follow_path','guarded_contact'])
+def test_changed_advertisement_after_preview_cannot_dispatch_that_motion(preview_kind):
+    context,task,selection=task_and_selection()
+    original=context.value
+    invalidated=[False]
+    def changing(tool,**args):
+        result=original(tool,**args)
+        if tool=='evo_preview' and args['action']['kind']==preview_kind and not invalidated[0]:
+            invalidated[0]=True
+            rows=context.capabilities['scene']['guarded_contact_profiles']
+            rows[:]=[r for r in rows if r['camera']!=selection.side+'_arm']
+        return result
+    context.value=changing
+    before=len(context.calls)
+    with pytest.raises(PrimitiveError,match='qualification'):
+        task.guarded_press_button(selection)
+    assert invalidated[0] and not context.guards
+    assert not any(tool=='evo_'+preview_kind for tool,_ in context.calls[before:])
+    assert task._contact is not None and task._guarded_sequence_started
+
+
+def test_shared_context_keeps_hall_and_interior_eligibility_separate():
+    context=GuardContext()
+    context.capabilities['scene']['guarded_contact_profiles']=[
+        dict(panel_id='hall-call',camera='right_arm',occlusion_qualification_id='hall-right-proof'),
+        dict(panel_id='cabin-panel',camera='left_arm',occlusion_qualification_id='cabin-left-proof')]
+    hall=Elevator(context,settings(panel_id='hall-call',final_contact=replace(POLICY,
+        occlusion_qualification_id={'right':'hall-right-proof'})))
+    cabin=Elevator(context,settings(panel_id='cabin-panel',final_contact=replace(POLICY,
+        occlusion_qualification_id={'left':'cabin-left-proof'})))
+    assert hall._guarded_require()=={'right':'hall-right-proof'}
+    assert cabin._guarded_require()=={'left':'cabin-left-proof'}
+    with pytest.raises(PrimitiveError,match='qualification'):
+        hall._guarded_require(('left',))
+    with pytest.raises(PrimitiveError,match='qualification'):
+        cabin._guarded_require(('right',))
+
+
+@pytest.mark.parametrize('synchronized',[False,True])
+def test_changed_view_advertisement_after_preview_refuses_before_initial_preparation(synchronized):
+    context=GuardContext()
+    task=Elevator(context,settings(final_contact=POLICY,synchronized_view=synchronized))
+    original=context.value
+    def changing(tool,**args):
+        result=original(tool,**args)
+        if tool=='evo_preview':
+            rows=context.capabilities['scene']['guarded_contact_profiles']
+            rows[:]=[r for r in rows if r['camera']=='right_arm']
+        return result
+    context.value=changing
+    with pytest.raises(PrimitiveError,match='qualification'):
+        task.search_button('2','left')
+    assert not any(tool.startswith('evo_move') for tool,_ in context.calls)
+    assert not any(tool=='rax_detect_buttons' for tool,_ in context.calls)
