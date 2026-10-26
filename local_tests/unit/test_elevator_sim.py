@@ -123,3 +123,27 @@ def test_v4_stow_refuses_a_hip_that_did_not_reach_target():
     with pytest.raises(PrimitiveError, match='travel posture'):
         task.stow_arms()
     assert not context.base_calls
+
+
+def test_image_simulation_behavior_refuses_real_adapter():
+    from auto_research_agent.api.elevator_sim import ImageSimulationElevator
+    with pytest.raises(PrimitiveError, match='simulated image'):
+        ImageSimulationElevator(RobotContext(), settings())
+
+
+@pytest.mark.parametrize('event,expected', [
+    ({'source': 'simulator_ground_truth', 'target': '2', 'single_correct_press': True, 'released': True}, 'succeeded'),
+    ({'source': 'unqualified', 'target': '2', 'single_correct_press': True, 'released': True}, 'unknown'),
+    ({'source': 'simulator_ground_truth', 'target': '2', 'single_correct_press': True, 'released': False}, 'unknown'),
+    ({'source': 'simulator_ground_truth', 'target': '1', 'single_correct_press': True, 'released': True}, 'unknown'),
+])
+def test_image_activation_decision_is_in_rax_and_requires_source_and_release(event, expected):
+    from auto_research_agent.api.elevator_sim import ImageSimulationElevator
+    context = SimulationContext()
+    context.capabilities['scene']['button_observation_source'] = 'image_panel_recognition'
+    context.activation = event
+    task = ImageSimulationElevator(context, settings())
+    task.observe_button = lambda label, side: object()
+    assert task.verify_button_activation('2', 'right').outcome == expected
+    task.observe_button = lambda label, side: None
+    assert task.verify_button_activation('2', 'right').outcome == 'unknown'

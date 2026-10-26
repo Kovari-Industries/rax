@@ -47,3 +47,27 @@ class SimulationElevator(Elevator):
                  and value.get("single_correct_press") is True and value.get("released") is True)
         return PrimitiveResult("verify_button_activation", "succeeded" if valid else "unknown",
                                tuple(self.evidence), value)
+
+
+class ImageSimulationElevator(Elevator):
+    """Real image selection with explicitly simulated activation evidence.
+
+    Task decisions stay in Rax. The ML adapter supplies raw observations only.
+    This class cannot authorize use of simulator activation on a real robot.
+    """
+    def __init__(self, context, settings, **kwargs):
+        caps = context.value("evo_capabilities")
+        if (caps.get("simulated") is not True or
+                caps.get("scene", {}).get("button_observation_source") != "image_panel_recognition"):
+            raise PrimitiveError("ImageSimulationElevator requires explicit simulated image observations")
+        kwargs.setdefault("clock", context.simulation_clock)
+        super().__init__(context, settings, **kwargs)
+
+    def verify_button_activation(self, label, side):
+        observation = self.observe_button(label, side)
+        event = self.context.value("sim_button_activation", label=label)
+        passed = (observation is not None and event.get("source") == "simulator_ground_truth"
+                  and event.get("target") == label and event.get("single_correct_press") is True
+                  and event.get("released") is True)
+        return PrimitiveResult("verify_button_activation", "succeeded" if passed else "unknown",
+                               tuple(self.evidence), event)
