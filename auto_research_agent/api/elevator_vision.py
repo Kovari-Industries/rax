@@ -17,6 +17,19 @@ def localize_right_round_face_low_contrast(rgb, box):
     return _localize_right_round_face(rgb,box,edge_threshold=20,method='right-round-face-v2')
 
 
+def localize_right_round_face_denoised(rgb, box):
+    """Explicit median-noise mode; all original geometric/stability gates remain."""
+    import cv2
+    import numpy as np
+    image=np.asarray(rgb)
+    if image.ndim!=3 or image.shape[2]!=3 or image.dtype!=np.uint8:
+        raise ValueError('Expected an RGB uint8 image')
+    result=_localize_right_round_face(cv2.medianBlur(image,5),box,
+        edge_threshold=20,method='right-round-face-v3')
+    result['median_kernel']=5
+    return result
+
+
 def _localize_right_round_face(rgb, box, *, edge_threshold, method):
     import cv2
     import numpy as np

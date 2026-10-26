@@ -111,7 +111,7 @@ class ElevatorSettings:
     button_target_method: str | None = None
 
     def validate(self):
-        if self.button_target_method not in (None, "right-round-face-v1", "right-round-face-v2"):
+        if self.button_target_method not in (None, "right-round-face-v1", "right-round-face-v2", "right-round-face-v3"):
             raise ValueError("Unknown image button target method")
         # Cartesian waypoint duration is constrained by the shared Evo API.
         for name in ("segment_s", "approach_segment_s", "retract_segment_s"):
