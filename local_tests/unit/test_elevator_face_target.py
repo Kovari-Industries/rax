@@ -51,3 +51,14 @@ def test_failed_waypoint_stop_prevents_view_dispatch():
     c=RobotContext();c.fail_action='evo_move_joints';e=Elevator(c,staged_settings())
     with pytest.raises(Exception):e.prepare_button_view(('right',))
     assert len([x for x in c.calls if x[0]=='evo_move_joints'])==1
+
+
+def test_low_contrast_target_requires_exact_explicit_mode():
+    c=FaceContext(lambda target:target.update(method='right-round-face-v2'))
+    e=Elevator(c,settings(button_target_method='right-round-face-v2'))
+    assert e.observe_button('2','right')
+    assert [args for tool,args in c.calls if tool=='rax_detect_buttons'][-1]['target_method']=='right-round-face-v2'
+    c=FaceContext(lambda target:target.update(method='right-round-face-v2'))
+    e=Elevator(c,settings(button_target_method='right-round-face-v1'))
+    with pytest.raises(PrimitiveError):e.observe_button('2','right')
+    assert not any(tool=='rax_camera_ray' for tool,args in c.calls)

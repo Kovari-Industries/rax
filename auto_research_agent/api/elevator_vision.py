@@ -9,6 +9,15 @@ METHOD = 'right-round-face-v1'
 
 
 def localize_right_round_face(rgb, box):
+    return _localize_right_round_face(rgb,box,edge_threshold=50,method=METHOD)
+
+
+def localize_right_round_face_low_contrast(rgb, box):
+    """Explicit low-contrast mode; never a fallback after a refused target."""
+    return _localize_right_round_face(rgb,box,edge_threshold=20,method='right-round-face-v2')
+
+
+def _localize_right_round_face(rgb, box, *, edge_threshold, method):
     import cv2
     import numpy as np
     image=np.asarray(rgb)
@@ -26,7 +35,7 @@ def localize_right_round_face(rgb, box):
     for kernel in (5,7,9):
         smooth=cv2.GaussianBlur(gray,(kernel,kernel),0)
         circles=cv2.HoughCircles(smooth,cv2.HOUGH_GRADIENT,1,max(12,int(.28*h)),
-            param1=50,param2=12,minRadius=int(.25*h),maxRadius=int(.55*h))
+            param1=edge_threshold,param2=12,minRadius=int(.25*h),maxRadius=int(.55*h))
         valid=[]
         for x,y,r in (() if circles is None else circles[0]):
             x,y,r=float(x+left),float(y+top),float(r)
@@ -41,6 +50,6 @@ def localize_right_round_face(rgb, box):
     radius_spread=max(abs(c[2]-median[2]) for c in candidates)
     if spread>3. or radius_spread>3.:
         raise ValueError('Button face is unstable across smoothing scales')
-    return dict(method=METHOD,pixel=median[:2].tolist(),radius_px=float(median[2]),
+    return dict(method=method,edge_threshold=edge_threshold,pixel=median[:2].tolist(),radius_px=float(median[2]),
         center_spread_px=spread,radius_spread_px=float(radius_spread),candidates=candidates,
         smoothing_kernels=[5,7,9],detection_box=list(box),opencv_version=cv2.__version__)

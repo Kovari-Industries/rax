@@ -111,7 +111,7 @@ class ElevatorSettings:
     button_target_method: str | None = None
 
     def validate(self):
-        if self.button_target_method not in (None, "right-round-face-v1"):
+        if self.button_target_method not in (None, "right-round-face-v1", "right-round-face-v2"):
             raise ValueError("Unknown image button target method")
         # Cartesian waypoint duration is constrained by the shared Evo API.
         for name in ("segment_s", "approach_segment_s", "retract_segment_s"):
@@ -392,7 +392,8 @@ class Elevator:
         if label not in self.settings.press_offsets:
             raise PrimitiveError("the panel has no calibrated press offset for this label")
         self.base.check_cancel()
-        observation = self.context.value("rax_detect_buttons", camera=side+"_arm", score_threshold=self.settings.min_score)
+        options={} if self.settings.button_target_method is None else {"target_method":self.settings.button_target_method}
+        observation = self.context.value("rax_detect_buttons", camera=side+"_arm", score_threshold=self.settings.min_score, **options)
         self.base.check_cancel()
         camera = observation.get("cameras", {}).get(side+"_arm", {})
         stamp = camera.get("capture_us")

@@ -50,6 +50,13 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1
+        },
+        "target_method": {
+          "enum": [
+            "right-round-face-v1",
+            "right-round-face-v2"
+          ],
+          "description": "Optional explicit image-only button-face method. Unsupported or missing target evidence must refuse; no default fallback."
         }
       },
       "required": [
