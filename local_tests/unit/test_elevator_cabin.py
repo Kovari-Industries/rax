@@ -644,3 +644,39 @@ def test_explicit_missing_profile_refuses_before_motion(arm):
     with pytest.raises(ValueError,match='no calibrated profile'):
         CabinRide(task, original.settings)
     assert not any(t in ('evo_move_joints','evo_follow_path','rax_move_base') for t,_ in context.calls)
+
+
+@pytest.mark.parametrize("button_stage", ["hall_call", "button"])
+@pytest.mark.parametrize("clock_failure", [False, True])
+def test_failed_full_button_keeps_timing_and_original_refusal(button_stage, clock_failure):
+    context, task = ride(full_button_timeout_s=20.)
+    if button_stage == "hall_call":
+        context.door_state = "closed"
+    refusal = RuntimeError("contact geometry refused")
+    def failed_action(*args):
+        context.simulation_clock.t += 8.25
+        if clock_failure:
+            def failed_clock():
+                raise RuntimeError("clock unavailable")
+            context.simulation_clock.monotonic = failed_clock
+        raise refusal
+    if button_stage == "hall_call":
+        task.call_elevator = failed_action
+    else:
+        task.press_cabin_button = failed_action
+    events = []
+    with pytest.raises(RuntimeError) as error:
+        task.run("2", on_stage=events.append)
+    assert error.value is refusal
+    receipts = [e for e in task.evidence if e.get("check") == "full_button_deadline"]
+    assert len(receipts) == 1
+    receipt = receipts[0]
+    assert receipt["stage"] == button_stage and receipt["passed"] is False
+    assert receipt["error"] == repr(refusal)
+    if clock_failure:
+        assert "clock unavailable" in receipt["clock_error"]
+    else:
+        assert receipt["duration_s"] == pytest.approx(8.25)
+        assert receipt["end_s"] - receipt["start_s"] == pytest.approx(8.25)
+    assert events[-1]["event"] == "failed"
+    assert not any(e["stage"] == ("entry" if button_stage == "hall_call" else "destination") for e in events)

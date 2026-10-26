@@ -753,21 +753,38 @@ class CabinRide:
             if on_stage:
                 on_stage({"stage": name, "event": "started"})
             timed = name in ("hall_call", "button") and self.settings.full_button_timeout_s is not None
-            started = self.base.clock.monotonic() if timed else None
+            receipt = None
             try:
-                if timed and not math.isfinite(started):
-                    raise PrimitiveError("button stage clock is invalid", self.evidence)
-                result = function()
                 if timed:
-                    ended = self.base.clock.monotonic()
-                    duration = ended - started
-                    passed = math.isfinite(duration) and 0 <= duration < self.settings.full_button_timeout_s
-                    self.evidence.append(dict(stage=name, check="full_button_deadline",
-                        start_s=started, end_s=ended, duration_s=duration,
-                        limit_s=self.settings.full_button_timeout_s, passed=passed,
-                        scope="context clock; full action through release and stow; no next stage after refusal"))
-                    if not passed:
-                        raise PrimitiveError("full button stage exceeded its time limit or clock is invalid", self.evidence)
+                    receipt = dict(stage=name, check="full_button_deadline", passed=False,
+                        limit_s=self.settings.full_button_timeout_s,
+                        scope="context clock; full action through release and stow; no next stage after refusal")
+                    self.evidence.append(receipt)
+                    started = self.base.clock.monotonic()
+                    receipt["start_s"] = started if math.isfinite(started) else repr(started)
+                    if not math.isfinite(started):
+                        raise PrimitiveError("button stage clock is invalid", self.evidence)
+                try:
+                    result = function()
+                except BaseException as error:
+                    if receipt is not None:
+                        receipt["error"] = repr(error)
+                    raise
+                finally:
+                    if receipt is not None:
+                        # A clock failure must not replace an original motion
+                        # refusal. Either failure prevents the next stage.
+                        try:
+                            ended = self.base.clock.monotonic()
+                            duration = ended - started
+                            receipt.update(end_s=ended if math.isfinite(ended) else repr(ended),
+                                duration_s=duration if math.isfinite(duration) else repr(duration),
+                                passed="error" not in receipt and math.isfinite(duration)
+                                    and 0 <= duration < self.settings.full_button_timeout_s)
+                        except Exception as error:
+                            receipt.update(clock_error=repr(error), passed=False)
+                if receipt is not None and not receipt["passed"]:
+                    raise PrimitiveError("full button stage exceeded its time limit or clock is invalid", self.evidence)
             except Exception as error:
                 if on_stage:
                     on_stage({"stage": name, "event": "failed", "reason": str(error)})
