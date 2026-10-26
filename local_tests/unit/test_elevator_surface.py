@@ -77,3 +77,30 @@ def test_overflow_geometry_refuses():
 def test_partial_face_cannot_be_admitted_as_complete():
     fs=faces();fs[0]['observed_complete']=False
     with pytest.raises(ValueError,match='visibility'):associate_panel(labels(),fs)
+
+
+def test_starred_floor_keeps_raw_meaning():
+    from api.elevator_surface import floor_control,panel_floor_inventory
+    assert floor_control('star1',readable=True,score=.84)==dict(kind='floor',floor='1',main_floor_marker=True,raw_text='star1')
+    assert floor_control('4',readable=True,score=.93)['floor']=='4'
+    ds=[dict(text=t,text_readable=True,score=.9) for t in ('star1','1','4','alarm','><')]
+    inventory=panel_floor_inventory(ds)
+    assert inventory['conflicts']=={'1':[0,1]} and not inventory['unambiguous']
+    assert len(inventory['floors'])+len(inventory['excluded'])==len(ds)
+
+
+@pytest.mark.parametrize('text', ['star2','blur','hazy','alarm','01',' 1','1?','１','door_open'])
+def test_floor_semantics_does_not_guess(text):
+    from api.elevator_surface import floor_control
+    with pytest.raises(ValueError):floor_control(text,readable=True,score=.99)
+
+
+def test_unreadable_number_cannot_be_recovered_from_layout():
+    from api.elevator_surface import panel_floor_inventory
+    r=panel_floor_inventory([dict(text='6',text_readable=False,score=.94)])
+    assert not r['floors'] and len(r['excluded'])==1
+
+
+def test_association_refuses_competing_main_floor_aliases():
+    ls=labels();ls[0]['text']='star1';ls[1]['text']='1'
+    with pytest.raises(ValueError,match='Conflicting floor aliases'):associate_panel(ls,faces())

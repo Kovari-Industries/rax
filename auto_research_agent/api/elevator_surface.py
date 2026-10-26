@@ -89,6 +89,11 @@ def associate_panel(labels, faces):
     if len({x['id'] for x in labels})!=len(labels) or len({x['id'] for x in faces})!=len(faces):
         raise ValueError('Duplicate candidate identity')
     if len({x.get('text') for x in labels})!=len(labels):raise ValueError('Duplicate panel labels')
+    floor_keys=[]
+    for label in labels:
+        try:floor_keys.append(floor_control(label.get('text'),readable=label.get('readable'),score=label.get('score'))['floor'])
+        except ValueError:pass
+    if len(set(floor_keys))!=len(floor_keys):raise ValueError('Conflicting floor aliases')
     if any(f.get('observed_complete') is not True for f in faces):
         raise ValueError('Face boundary visibility is unverified')
     polygons={f['id']:_polygon(f['polygon_px']) for f in faces}
@@ -115,3 +120,33 @@ def associate_panel(labels, faces):
     if len(solutions)!=1:raise ValueError('Missing or ambiguous panel association')
     return dict(assignment=solutions[0],candidate_edges=edges,contact_authorized=False,
                 scope='Unique association of supplied observations; no metric pose or contact qualification')
+
+
+def floor_control(text, *, readable, score):
+    """Interpret explicit released floor tokens; never infer from row position.
+
+    Preserve the raw token and the main-floor marker. Service controls and
+    unreadable outputs are not floor-selection candidates.
+    """
+    if readable is not True or not .6<=_number(score)<=1 or not isinstance(text,str):
+        raise ValueError('Unresolved floor label')
+    main=False;token=text
+    if text=='star1':token='1';main=True
+    if not token or not token.isascii() or not token.isdecimal() or (len(token)>1 and token.startswith('0')):
+        raise ValueError('Not an explicit supported floor token')
+    return dict(kind='floor',floor=token,main_floor_marker=main,raw_text=text)
+
+
+def panel_floor_inventory(detections):
+    """Account for every detector output without treating every text as a floor."""
+    accepted=[];excluded=[];by_floor={}
+    for index,detection in enumerate(detections):
+        try:
+            control=floor_control(detection.get('text'),readable=detection.get('text_readable'),score=detection.get('score'))
+            record=dict(index=index,**control)
+            accepted.append(record);by_floor.setdefault(control['floor'],[]).append(index)
+        except ValueError as error:
+            excluded.append(dict(index=index,raw_text=detection.get('text'),reason=str(error)))
+    conflicts={floor:indices for floor,indices in by_floor.items() if len(indices)>1}
+    return dict(floors=accepted,excluded=excluded,conflicts=conflicts,
+                unambiguous=not conflicts,contact_authorized=False)
