@@ -86,3 +86,41 @@ def test_button_subtask_keeps_failure_time_and_refuses(duration):
     with pytest.raises(PrimitiveError):t.press_with_deadline('CALL')
     assert t.evidence[-1]['passed'] is False and 'duration_s' in t.evidence[-1]
     assert not t.entries
+
+
+@pytest.mark.parametrize('fault', [None, 'stale_door', 'closing_door', 'failed_stow'])
+def test_button_handoff_uses_real_entry_freshness_and_stop_gates(fault):
+    """Only the completed button is stubbed; entry uses actual Rax primitives."""
+    from auto_research_agent.api.evo import EvoActionFailed
+    context = RobotContext()
+    task = Elevator(context, settings(direct_doorway_staging=True))
+    clock = NS(now=0.)
+    clock.monotonic = lambda: clock.now
+    def sleep(seconds):
+        clock.now += seconds
+    clock.sleep = sleep
+    task.base.clock = clock
+    def completed_button(*args):
+        clock.now = 19.
+        if fault == 'stale_door':
+            context.stale = True
+        elif fault == 'closing_door':
+            context.door_state = 'closing'
+        elif fault == 'failed_stow':
+            context.fail_action = 'evo_move_joints'
+        return PrimitiveResult('press_elevator_button', 'succeeded', (), {'activation': 'succeeded'})
+    task.press_elevator_button = completed_button
+    if fault is None:
+        result = task.press_and_enter('2', doorway_id='door-1', goal_depth_m=.5)
+        assert result.measured['entry']['location'] == 'inside'
+        assert result.measured['button_timing']['duration_s'] == 19.
+        assert context.pose[0] == pytest.approx(1.5)
+        assert context.joints == context.scene_cfg['travel_joints']
+        assert context.base_calls and all(x['doorway_id'] == 'door-1' for x in context.base_calls)
+    else:
+        expected = {'stale_door': 'stale', 'closing_door': 'timeout', 'failed_stow': 'injected failure'}[fault]
+        with pytest.raises((PrimitiveError, EvoActionFailed), match=expected):
+            task.press_and_enter('2', doorway_id='door-1', goal_depth_m=.5)
+        assert not context.base_calls
+        assert context.pose == [0., 0., 0.]
+        assert next(x for x in task.evidence if x.get('stage') == 'hall_button_deadline')['passed']
