@@ -536,3 +536,44 @@ def test_forward_exit_orients_stable_door_normal_after_turn(reported_normal_sign
     goal = [center[i]+normal[i]*task.settings.exit_depth_m for i in range(2)]
     assert goal[0] > center[0]
     assert goal[1] == pytest.approx(0., abs=1e-12)
+
+
+@pytest.mark.parametrize("elapsed", [20., 20.01, -1., float("nan")])
+@pytest.mark.parametrize("button_stage", ["hall_call", "button"])
+def test_full_button_deadline_refuses_next_stage_without_runner(elapsed, button_stage):
+    from auto_research_agent.api.base import PrimitiveResult
+    context, task = ride(full_button_timeout_s=20.)
+    if button_stage == "hall_call":
+        context.door_state = "closed"
+    def delayed_action(*args):
+        context.simulation_clock.t += elapsed
+        return PrimitiveResult("press_elevator_button", "succeeded")
+    if button_stage == "hall_call":
+        task.call_elevator = delayed_action
+    else:
+        task.press_cabin_button = delayed_action
+    events = []
+    with pytest.raises(PrimitiveError, match="time limit|clock"):
+        task.run("2", on_stage=events.append)
+    assert events[-1]["stage"] == button_stage and events[-1]["event"] == "failed"
+    assert not any(e["stage"] == ("entry" if button_stage == "hall_call" else "destination") for e in events)
+    assert not task.evidence[-1]["passed"]
+
+
+@pytest.mark.parametrize("limit", [0., -1., float("nan"), float("inf"), True])
+def test_invalid_full_button_timeout_is_refused(limit):
+    with pytest.raises(ValueError):
+        ride(full_button_timeout_s=limit)
+
+
+def test_full_button_deadline_accepts_completed_action_below_limit():
+    context, task = ride(full_button_timeout_s=20.)
+    original = task.press_cabin_button
+    def measured_action(label):
+        result = original(label)
+        context.simulation_clock.t += 19.9
+        return result
+    task.press_cabin_button = measured_action
+    assert task.run("2").outcome == "succeeded"
+    receipt = next(e for e in task.evidence if e.get("check") == "full_button_deadline")
+    assert receipt["passed"] and 19.9 <= receipt["duration_s"] < 20.
