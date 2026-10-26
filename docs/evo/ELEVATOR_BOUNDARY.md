@@ -99,3 +99,12 @@ the original orientation-sweep check, and limits correction distance to the
 existing approach step and remaining travel budget. It cannot follow a press
 attempt, change labels, or remove the recovery reference after a failed path.
 The default remains disabled until a robot/profile is qualified.
+
+`ElevatorSettings.reacquire_low_confidence_once` defaults to false. When enabled,
+Rax may take one additional stationary wrist capture per task instance after a
+single readable matching label falls below the configured confidence threshold.
+A prior measured stop is required. An unpressed approach also retains its base
+and carriage checks. Missing/ambiguous labels, invalid geometry, reused capture
+identity and attempted contact do not qualify for this recovery. The second
+image must pass the same score, freshness and geometry checks. Both attempts
+remain in evidence; this option does not dispatch motion or change a deadline.

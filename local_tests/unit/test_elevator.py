@@ -618,3 +618,101 @@ def test_direct_preparation_rechecks_gap_after_carriage_alignment():
     with pytest.raises(PrimitiveError, match="insufficient gap"):
         task.prepare_press_arm(choice)
     assert not any(t == "evo_follow_path" for t, _ in context.calls[before:])
+
+
+def low_confidence_context(scores):
+    context = RobotContext()
+    original = context.value
+    remaining = iter(scores)
+    def value(tool, **arguments):
+        result = original(tool, **arguments)
+        if tool == 'rax_detect_buttons':
+            for detection in result['detections']:
+                detection['score'] = next(remaining)
+        return result
+    context.value = value
+    return context
+
+
+def test_one_stationary_reacquisition_keeps_confidence_and_no_motion():
+    context = low_confidence_context([.52, .9, .52])
+    task = Elevator(context, settings(reacquire_low_confidence_once=True))
+    task.prepare_button_view(['left'])
+    start = len(context.calls)
+    assert task._look('2', 'left').score == .9
+    assert context.detect_count == 2
+    assert not any(tool in ('evo_move_joints','evo_follow_path','evo_preview') for tool, _ in context.calls[start:])
+    assert next(e for e in task.evidence if e.get('stage') == 'low_confidence_reacquisition')['failed_capture']['score'] == .52
+    with pytest.raises(PrimitiveError, match='lost'):
+        task._look('2', 'left')
+    assert context.detect_count == 3  # One retry total, not one per observation.
+
+
+@pytest.mark.parametrize('mode', ['default', 'no_stop', 'press_attempted', 'guarded_attempted', 'missing', 'ambiguous'])
+def test_stationary_reacquisition_never_overrides_existing_refusals(mode):
+    context = low_confidence_context([.52, .52])
+    task = Elevator(context, settings(reacquire_low_confidence_once=mode != 'default'))
+    if mode != 'no_stop':
+        task.prepare_button_view(['left'])
+    if mode in ('press_attempted','guarded_attempted'):
+        task._contact = dict(stage=mode, side='left', label='2')
+    if mode == 'missing':context.present['left'] = False
+    if mode == 'ambiguous':context.duplicate_label = True
+    with pytest.raises(PrimitiveError, match='lost'):
+        task._look('2', 'left')
+    assert context.detect_count == 1
+
+
+def test_reacquisition_rejects_reused_capture_identity():
+    context = low_confidence_context([.52, .9])
+    original = context.value
+    def value(tool, **arguments):
+        result = original(tool, **arguments)
+        if tool == 'rax_detect_buttons':result['observation_id'] = 'same-capture'
+        return result
+    context.value = value
+    task = Elevator(context, settings(reacquire_low_confidence_once=True))
+    task.prepare_button_view(['left'])
+    with pytest.raises(PrimitiveError, match='new capture'):
+        task._look('2', 'left')
+
+
+def test_reacquisition_does_not_catch_bad_geometry():
+    context = low_confidence_context([.52, .9])
+    task = Elevator(context, settings(reacquire_low_confidence_once=True))
+    task.prepare_button_view(['left'])
+    context.calibrated = False
+    with pytest.raises(PrimitiveError, match='calibration'):
+        task._look('2', 'left')
+    assert context.detect_count == 1
+
+
+@pytest.mark.parametrize('stage', ['approaching', 'prepress'])
+def test_reacquisition_can_observe_unpressed_approach_without_moving(stage):
+    context = low_confidence_context([.52, .9])
+    task = Elevator(context, settings(reacquire_low_confidence_once=True))
+    task.prepare_button_view(['left'])
+    task._contact = dict(stage=stage, side='left', label='2', pose=context.pose.copy(), carriage=0.)
+    before = len(context.calls)
+    assert task._look('2', 'left').score == .9
+    assert task._contact['stage'] == stage
+    assert not any(tool in ('evo_move_joints','evo_follow_path','evo_preview') for tool, _ in context.calls[before:])
+
+
+def test_reacquisition_refuses_if_base_moved_during_approach():
+    context = low_confidence_context([.52, .9])
+    task = Elevator(context, settings(reacquire_low_confidence_once=True))
+    task.prepare_button_view(['left'])
+    task._contact = dict(stage='approaching', side='left', label='2', pose=[.1,0,0], carriage=0.)
+    with pytest.raises(PrimitiveError, match='base moved'):
+        task._look('2', 'left')
+    assert context.detect_count == 1
+
+
+def test_second_low_confidence_capture_refuses_without_another_attempt():
+    context = low_confidence_context([.52, .59])
+    task = Elevator(context, settings(reacquire_low_confidence_once=True))
+    task.prepare_button_view(['left'])
+    with pytest.raises(PrimitiveError, match='lost'):
+        task._look('2', 'left')
+    assert context.detect_count == 2

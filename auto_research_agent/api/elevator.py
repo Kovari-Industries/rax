@@ -105,6 +105,7 @@ class ElevatorSettings:
     coarse_panel_lateral_offset_m: float | None = None
     retract_segment_s: float | None = None
     approach_segment_s: float | None = None
+    reacquire_low_confidence_once: bool = False
 
     def validate(self):
         # Cartesian waypoint duration is constrained by the shared Evo API.
@@ -112,7 +113,7 @@ class ElevatorSettings:
             value=getattr(self,name)
             if value is not None and not .1<=positive(value,name)<=10:
                 raise ValueError(name+" must be .1..10 seconds under the Evo contract")
-        for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment", "tangent_approach_correction"):
+        for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment", "tangent_approach_correction", "reacquire_low_confidence_once"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be boolean")
         if not self.arms or len({p.side for p in self.arms}) != len(self.arms) or not self.panel_id:
@@ -181,6 +182,8 @@ class Elevator:
         self._selected = None
         self._contact = None
         self._last_stop_us = 0
+        self._low_confidence_retry_used = False
+        self._missing_capture = None
         self._guarded_attempted = False
         self._guarded_sequence_started = False
         if not self.base.capabilities.get("scene", {}).get("button_detection"):
@@ -361,6 +364,7 @@ class Elevator:
             raise PrimitiveError("base moved after button observation", self.evidence)
 
     def observe_button(self, label, side):
+        self._missing_capture = None
         profile = self._profile(side)
         if label not in self.settings.press_offsets:
             raise PrimitiveError("the panel has no calibrated press offset for this label")
@@ -385,6 +389,16 @@ class Elevator:
         candidates = [d for d in observation.get("detections", []) if d.get("text") == label
                       and d.get("text_readable") is True and d.get("score", 0) >= self.settings.min_score]
         if len(candidates) != 1:
+            readable = [d for d in observation.get("detections", [])
+                        if d.get("text") == label and d.get("text_readable") is True]
+            # Only one readable but low-confidence label can be reacquired.
+            # Missing labels, competing labels and invalid geometry still refuse.
+            if (not candidates and len(readable) == 1
+                    and type(readable[0].get("score")) in (int, float)
+                    and math.isfinite(readable[0]["score"])
+                    and 0 <= readable[0]["score"] < self.settings.min_score):
+                self._missing_capture = dict(observation_id=observation.get("observation_id"),
+                    capture_us=stamp, score=readable[0]["score"], label=label, side=side)
             return None  # Missing and ambiguous labels never become press targets.
         detection = candidates[0]
         x0, y0, x1, y1 = vector(detection["box"], 4)
@@ -519,6 +533,23 @@ class Elevator:
 
     def _look(self, label, side):
         button = self.observe_button(label, side)
+        missing = self._missing_capture
+        if (button is None and missing is not None and self.settings.reacquire_low_confidence_once
+                and not self._low_confidence_retry_used and self._last_stop_us > 0
+                and (self._contact is None or (self._contact.get("stage") in ("approaching", "prepress")
+                     and self._contact.get("side") == side and self._contact.get("label") == label))):
+            # One stationary reacquisition per task instance. No motion, cached
+            # target, score change or geometry exception is allowed here.
+            self._low_confidence_retry_used = True
+            self.evidence.append({"stage": "low_confidence_reacquisition", "failed_capture": missing})
+            if self._contact is not None:
+                self._contact_state(side)
+            else:
+                self._state()
+            button = self.observe_button(label, side)
+            if button is not None and (button.capture_us <= missing["capture_us"]
+                    or button.observation_id == missing["observation_id"]):
+                raise PrimitiveError("reacquisition did not provide a new capture", self.evidence)
         if button is None:
             raise PrimitiveError("selected button was lost or became ambiguous", self.evidence)
         return button
