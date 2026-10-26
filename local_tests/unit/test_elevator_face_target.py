@@ -53,7 +53,7 @@ def test_failed_waypoint_stop_prevents_view_dispatch():
     assert len([x for x in c.calls if x[0]=='evo_move_joints'])==1
 
 
-@pytest.mark.parametrize('method',['right-round-face-v2','right-round-face-v3'])
+@pytest.mark.parametrize('method',['right-round-face-v2','right-round-face-v3','right-round-face-v4'])
 def test_low_contrast_target_requires_exact_explicit_mode(method):
     c=FaceContext(lambda target:target.update(method=method))
     e=Elevator(c,settings(button_target_method=method))

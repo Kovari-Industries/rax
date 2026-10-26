@@ -30,7 +30,20 @@ def localize_right_round_face_denoised(rgb, box):
     return result
 
 
-def _localize_right_round_face(rgb, box, *, edge_threshold, method):
+def localize_right_round_face_consensus(rgb, box):
+    """Require one complete face track across all three smoothing scales."""
+    import cv2
+    import numpy as np
+    image=np.asarray(rgb)
+    if image.ndim!=3 or image.shape[2]!=3 or image.dtype!=np.uint8:
+        raise ValueError('Expected an RGB uint8 image')
+    result=_localize_right_round_face(cv2.medianBlur(image,5),box,
+        edge_threshold=20,method='right-round-face-v4',consensus=True)
+    result['median_kernel']=5
+    return result
+
+
+def _localize_right_round_face(rgb, box, *, edge_threshold, method, consensus=False):
     import cv2
     import numpy as np
     image=np.asarray(rgb)
@@ -45,6 +58,7 @@ def _localize_right_round_face(rgb, box, *, edge_threshold, method):
     crop=image[top:min(image.shape[0],math.ceil(y1)+pad),left:min(image.shape[1],math.ceil(x1)+pad)]
     gray=cv2.cvtColor(crop,cv2.COLOR_RGB2GRAY)
     candidates=[]
+    scale_candidates=[]
     for kernel in (5,7,9):
         smooth=cv2.GaussianBlur(gray,(kernel,kernel),0)
         circles=cv2.HoughCircles(smooth,cv2.HOUGH_GRADIENT,1,max(12,int(.28*h)),
@@ -55,14 +69,32 @@ def _localize_right_round_face(rgb, box, *, edge_threshold, method):
             # The entire face must fit inside the detection; no clipped rim.
             if x>=x0+w/2 and x-r>=x0 and x+r<=x1 and y-r>=y0 and y+r<=y1:
                 valid.append([x,y,r])
-        if len(valid)!=1:
+        if not valid or (not consensus and len(valid)!=1) or len(valid)>16:
             raise ValueError('Missing or ambiguous round button face')
+        scale_candidates.append(valid)
         candidates.append(valid[0])
+    if consensus:
+        from itertools import product
+        tracks=[]
+        for track in product(*scale_candidates):
+            center=np.median(track,axis=0)
+            if (max(float(np.linalg.norm(np.asarray(c[:2])-center[:2])) for c in track)<=3.
+                    and max(abs(c[2]-center[2]) for c in track)<=3.):
+                tracks.append(track)
+        if not tracks:
+            raise ValueError('Button face is unstable across smoothing scales')
+        if len(tracks)!=1:
+            raise ValueError('Missing or ambiguous round button face')
+        candidates=list(tracks[0])
     median=np.median(candidates,axis=0)
     spread=max(float(np.linalg.norm(np.asarray(c[:2])-median[:2])) for c in candidates)
     radius_spread=max(abs(c[2]-median[2]) for c in candidates)
     if spread>3. or radius_spread>3.:
         raise ValueError('Button face is unstable across smoothing scales')
-    return dict(method=method,edge_threshold=edge_threshold,pixel=median[:2].tolist(),radius_px=float(median[2]),
+    if consensus and not (median[0]-median[2]>=x0 and median[0]+median[2]<=x1
+                          and median[1]-median[2]>=y0 and median[1]+median[2]<=y1):
+        raise ValueError("Consensus face is clipped by the detection")
+    evidence=dict(scale_candidates=scale_candidates,unique_complete_tracks=1) if consensus else {}
+    return dict(**evidence,method=method,edge_threshold=edge_threshold,pixel=median[:2].tolist(),radius_px=float(median[2]),
         center_spread_px=spread,radius_spread_px=float(radius_spread),candidates=candidates,
         smoothing_kernels=[5,7,9],detection_box=list(box),opencv_version=cv2.__version__)
