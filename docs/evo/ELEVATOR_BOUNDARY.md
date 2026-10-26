@@ -108,3 +108,14 @@ and carriage checks. Missing/ambiguous labels, invalid geometry, reused capture
 identity and attempted contact do not qualify for this recovery. The second
 image must pass the same score, freshness and geometry checks. Both attempts
 remain in evidence; this option does not dispatch motion or change a deadline.
+
+
+`CabinRideSettings.cabin_press_arm` defaults to `auto`. An explicit `left` or
+`right` setting restricts cabin viewing, image search and press selection to
+that arm. A preview, observation or contact refusal does not fall back to the
+other arm. Both configured arm profiles are still required; ordinary travel
+stow remains in place. Fresh RGB/geometry, source preview, stationary panel,
+activation/release, measured stops and the full-button deadline are unchanged.
+ML may pass this configuration but does not select a fallback or bypass Rax.
+Synthetic journey tests cover both explicit choices; these do not qualify a
+physical arm profile or a simulator trajectory.

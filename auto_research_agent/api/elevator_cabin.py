@@ -37,8 +37,11 @@ class CabinRideSettings:
     floor_rest_joints: dict = field(default_factory=dict)
     retain_destination_view: bool = False
     full_button_timeout_s: float | None = None
+    cabin_press_arm: str = "auto"
 
     def validate(self):
+        if self.cabin_press_arm not in ("auto", "left", "right"):
+            raise ValueError("cabin_press_arm must be auto, left or right")
         if self.full_button_timeout_s is not None:
             if isinstance(self.full_button_timeout_s, bool):
                 raise ValueError("full_button_timeout_s must be a positive duration")
@@ -359,10 +362,10 @@ class CabinRide:
         if label not in self.task.settings.press_offsets:
             raise PrimitiveError("unknown calibrated cabin press point")
         self._stationary_panel()
-        observations = self.task.search_button(label, "auto")
+        observations = self.task.search_button(label, self.settings.cabin_press_arm)
         self._stationary_panel()
-        selection = self.task.select_press_arm(observations, "auto")
-        self.evidence.append({"stage": "select_cabin_arm", "selection": asdict(selection)})
+        selection = self.task.select_press_arm(observations, self.settings.cabin_press_arm)
+        self.evidence.append({"stage": "select_cabin_arm", "configured_arm": self.settings.cabin_press_arm, "selection": asdict(selection)})
         if selection.side is None:
             raise PrimitiveError("neither arm has a checked cabin approach", selection.candidates)
         side = selection.side

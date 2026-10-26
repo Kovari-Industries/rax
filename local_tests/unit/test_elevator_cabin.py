@@ -577,3 +577,40 @@ def test_full_button_deadline_accepts_completed_action_below_limit():
     assert task.run("2").outcome == "succeeded"
     receipt = next(e for e in task.evidence if e.get("check") == "full_button_deadline")
     assert receipt["passed"] and 19.9 <= receipt["duration_s"] < 20.
+
+
+@pytest.mark.parametrize('arm',['left','right'])
+def test_explicit_cabin_arm_uses_only_its_view_and_contact(arm):
+    context,task=ride(cabin_press_arm=arm)
+    result=task.run('2')
+    assert result.measured['stages']['button']['measured']['arm']==arm
+    captures=[a for t,a in context.calls if t=='sim_button_observation']
+    assert captures and {a['side'] for a in captures}=={arm}
+    other='left' if arm=='right' else 'right'
+    for tool,args in context.calls:
+        if tool=='evo_move_joints':
+            assert all(value==context.scene_cfg['travel_joints'][name]
+                       for name,value in args['targets'].items() if name.startswith(other+'_joint'))
+        if tool=='evo_follow_path':
+            assert all(other not in waypoint for waypoint in args['waypoints'])
+    assert context.joints==context.scene_cfg['travel_joints']
+    assert any(e.get('configured_arm')==arm for e in task.evidence)
+
+
+@pytest.mark.parametrize('arm',['left','right'])
+def test_explicit_cabin_arm_refusal_does_not_fall_back(arm):
+    context,task=ride(cabin_press_arm=arm)
+    context.preview_refused.add(arm)
+    with pytest.raises(PrimitiveError,match='checked cabin approach'):
+        task.run('2')
+    assert not any(t=='evo_follow_path' for t,_ in context.calls)
+    assert {a['side'] for t,a in context.calls if t=='sim_button_observation'}=={arm}
+    assert context.floor_reads==1
+
+
+@pytest.mark.parametrize('arm',[None,True,'either','RIGHT',[],{}])
+def test_invalid_cabin_arm_refuses_before_motion(arm):
+    context=CabinContext()
+    with pytest.raises(ValueError,match='cabin_press_arm'):
+        ride(context,cabin_press_arm=arm)
+    assert not any(t in ('evo_move_joints','evo_follow_path','rax_move_base') for t,_ in context.calls)
