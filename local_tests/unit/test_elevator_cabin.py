@@ -614,3 +614,33 @@ def test_invalid_cabin_arm_refuses_before_motion(arm):
     with pytest.raises(ValueError,match='cabin_press_arm'):
         ride(context,cabin_press_arm=arm)
     assert not any(t in ('evo_move_joints','evo_follow_path','rax_move_base') for t,_ in context.calls)
+
+
+@pytest.mark.parametrize('arm',['left','right'])
+def test_explicit_single_profile_runs_same_ride_and_stows_full_robot(arm):
+    context, original = ride(cabin_press_arm=arm)
+    selected = original.task.profiles[arm]
+    task = CabinRide(SimulationElevator(context, replace(original.task.settings, arms=(selected,))),
+                     original.settings)
+    result = task.run('2')
+    assert result.outcome == 'succeeded'
+    assert result.measured['stages']['button']['measured']['arm'] == arm
+    assert {a['side'] for t,a in context.calls if t=='sim_button_observation'} == {arm}
+    stows = [a['targets'] for t,a in context.calls if t=='evo_move_joints'
+             and a['targets']==context.scene_cfg['travel_joints']]
+    assert stows and context.joints == context.scene_cfg['travel_joints']
+    assert any(n.startswith('left_joint') for n in stows[-1])
+    assert any(n.startswith('right_joint') for n in stows[-1])
+    other = 'left' if arm=='right' else 'right'
+    assert all(other not in waypoint for tool,args in context.calls if tool=='evo_follow_path'
+               for waypoint in args['waypoints'])
+
+
+@pytest.mark.parametrize('arm',['left','right'])
+def test_explicit_missing_profile_refuses_before_motion(arm):
+    context, original = ride(cabin_press_arm=arm)
+    other = 'left' if arm=='right' else 'right'
+    task = SimulationElevator(context, replace(original.task.settings, arms=(original.task.profiles[other],)))
+    with pytest.raises(ValueError,match='no calibrated profile'):
+        CabinRide(task, original.settings)
+    assert not any(t in ('evo_move_joints','evo_follow_path','rax_move_base') for t,_ in context.calls)

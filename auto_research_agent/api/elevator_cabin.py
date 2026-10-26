@@ -97,8 +97,11 @@ class CabinRide:
             if set(hall_task.settings.press_offsets) != {settings.hall_call_label}:
                 raise ValueError("hall panel must have exactly one call button")
         self.base, self.context = task.base, task.context
-        if set(task.profiles) != {"left", "right"}:
-            raise ValueError("cabin arm selection requires both calibrated arms")
+        if settings.cabin_press_arm == "auto":
+            if set(task.profiles) != {"left", "right"}:
+                raise ValueError("automatic cabin arm selection requires both calibrated arms")
+        elif settings.cabin_press_arm not in task.profiles:
+            raise ValueError("selected cabin press arm has no calibrated profile")
         if task.settings.search_turns_rad:
             raise ValueError("cabin button search must not turn the base")
         self.evidence = []

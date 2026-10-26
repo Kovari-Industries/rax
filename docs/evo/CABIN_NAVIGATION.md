@@ -2,7 +2,9 @@
 
 `api.elevator_cabin.CabinRide` is a separate, opt-in controller. It composes an
 `Elevator` or `SimulationElevator` instance. Existing outside-panel and reverse-exit
-routines keep their behavior. The cabin task requires both arm profiles.
+routines keep their behavior. Automatic arm selection requires both press
+profiles. An explicit `cabin_press_arm` requires only the selected profile;
+full-robot travel stow and all measured stop checks remain required.
 
 ```mermaid
 flowchart TD

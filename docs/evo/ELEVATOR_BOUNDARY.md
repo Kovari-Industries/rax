@@ -113,8 +113,9 @@ remain in evidence; this option does not dispatch motion or change a deadline.
 `CabinRideSettings.cabin_press_arm` defaults to `auto`. An explicit `left` or
 `right` setting restricts cabin viewing, image search and press selection to
 that arm. A preview, observation or contact refusal does not fall back to the
-other arm. Both configured arm profiles are still required; ordinary travel
-stow remains in place. Fresh RGB/geometry, source preview, stationary panel,
+other arm. Automatic selection requires both profiles; an explicit selection
+requires that arm's profile and refuses if it is absent. Full-robot travel
+stow remains in place, including the opposite arm and carriage. Fresh RGB/geometry, source preview, stationary panel,
 activation/release, measured stops and the full-button deadline are unchanged.
 ML may pass this configuration but does not select a fallback or bypass Rax.
 Synthetic journey tests cover both explicit choices; these do not qualify a
