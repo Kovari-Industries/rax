@@ -88,7 +88,7 @@ def test_original_too_close_gap_still_refuses_without_motion():
     assert not t.paths
 
 
-@pytest.mark.parametrize('duration',[None,.04])
+@pytest.mark.parametrize('duration',[None,.1])
 def test_optional_approach_duration_only_changes_approach_requests(duration):
     t,b=fixture();t.settings=settings(tangent_approach_correction=True,approach_segment_s=duration)
     t._selected='right';b.uncertainty_m=.0001
@@ -102,6 +102,17 @@ def test_optional_approach_duration_only_changes_approach_requests(duration):
     assert t.settings.dwell_s==settings().dwell_s
 
 
-@pytest.mark.parametrize('duration',[0.,-1.,float('nan'),float('inf'),11.])
+@pytest.mark.parametrize('duration',[.04,.099,0.,-1.,float('nan'),float('inf'),11.])
 def test_invalid_approach_duration_is_refused(duration):
     with pytest.raises(ValueError):settings(approach_segment_s=duration).validate()
+
+
+@pytest.mark.parametrize('field',['segment_s','approach_segment_s','retract_segment_s'])
+def test_cartesian_duration_configuration_matches_shared_evo_minimum(field):
+    from services.evo.contracts import validate_request
+    with pytest.raises(ValueError):settings(**{field:.04}).validate()
+    settings(**{field:.1}).validate()
+    args=dict(frame='base_link',waypoints=[dict(duration_s=.1,right=dict(position=[.4,0.,1.],quaternion_xyzw=[0.,0.,0.,1.]))])
+    validate_request('evo_follow_path',args)
+    args['waypoints'][0]['duration_s']=.04
+    with pytest.raises(ValueError):validate_request('evo_follow_path',args)

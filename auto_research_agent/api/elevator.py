@@ -107,10 +107,11 @@ class ElevatorSettings:
     approach_segment_s: float | None = None
 
     def validate(self):
-        if self.approach_segment_s is not None and positive(self.approach_segment_s,"approach_segment_s")>10:
-            raise ValueError("approach segment exceeds supported duration")
-        if self.retract_segment_s is not None and positive(self.retract_segment_s,"retract_segment_s")>10:
-            raise ValueError("retract segment exceeds supported duration")
+        # Cartesian waypoint duration is constrained by the shared Evo API.
+        for name in ("segment_s", "approach_segment_s", "retract_segment_s"):
+            value=getattr(self,name)
+            if value is not None and not .1<=positive(value,name)<=10:
+                raise ValueError(name+" must be .1..10 seconds under the Evo contract")
         for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment", "tangent_approach_correction"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be boolean")
