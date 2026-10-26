@@ -34,6 +34,8 @@ class ArmProfile:
     minimum_elbow_bend_rad: float
     lateral_offset_m: float = 0.0
     search_joints: tuple = ()
+    preparation_joints: tuple = ()
+    stow_joints: tuple = ()
 
     def validate(self):
         if self.side not in {"left", "right"} or not self.calibration_id:
@@ -42,7 +44,7 @@ class ArmProfile:
         if self.elbow_joint not in required:
             raise ValueError("elbow joint must belong to this arm")
         positive(self.minimum_elbow_bend_rad, "minimum_elbow_bend_rad")
-        for pose in (self.view_joints, *self.search_joints):
+        for pose in (self.view_joints, *self.search_joints, *self.preparation_joints, *self.stow_joints):
             if set(pose) != required:
                 raise ValueError("viewing posture must name exactly the arm joints")
             vector(pose.values(), 7)
@@ -106,8 +108,11 @@ class ElevatorSettings:
     retract_segment_s: float | None = None
     approach_segment_s: float | None = None
     reacquire_low_confidence_once: bool = False
+    button_target_method: str | None = None
 
     def validate(self):
+        if self.button_target_method not in (None, "right-round-face-v1"):
+            raise ValueError("Unknown image button target method")
         # Cartesian waypoint duration is constrained by the shared Evo API.
         for name in ("segment_s", "approach_segment_s", "retract_segment_s"):
             value=getattr(self,name)
@@ -180,6 +185,7 @@ class Elevator:
         self.profiles = {p.side: p for p in settings.arms}
         self.evidence = []
         self._selected = None
+        self._viewing_arms = set()
         self._contact = None
         self._last_stop_us = 0
         self._low_confidence_retry_used = False
@@ -288,12 +294,16 @@ class Elevator:
     def stow_arms(self):
         if self._contact is not None:
             raise PrimitiveError("retract before changing the travel posture", self.evidence)
+        for side in sorted(self._viewing_arms):
+            for posture in self._profile(side).stow_joints:
+                self._checked_view_waypoint(side,posture)
         self._run("evo_move_joints", targets=dict(self.base.settings["travel_joints"]))
         measured = self._state()["positions"]
         for joint, target in self.base.settings["travel_joints"].items():
             if abs(measured[joint]-target) > self.base.capabilities["joint_limits"][joint]["tolerance"]:
                 raise PrimitiveError("travel posture was not reached", self.evidence)
         self._selected = None
+        self._viewing_arms.clear()
         return PrimitiveResult("stow_arms", "succeeded", tuple(self.evidence))
 
     def orient_base_to_panel(self, panel_hint=None):
@@ -322,6 +332,10 @@ class Elevator:
         if self.settings.final_contact is not None:
             eligible = self._guarded_require(sides if arms is not None else None)
             sides = tuple(side for side in sides if side in eligible)
+        self._viewing_arms.update(sides)
+        for side in sides:
+            for posture in self._profile(side).preparation_joints:
+                self._checked_view_waypoint(side,posture)
         if self.settings.synchronized_view:
             targets = {"carriage_joint": self.settings.viewing_carriage_m}
             for side in sides:
@@ -342,6 +356,15 @@ class Elevator:
                 self._run("evo_move_joints", guarded_sides=(side,), targets=dict(profile.view_joints))
                 self._verify_view(side, profile.view_joints)
         return PrimitiveResult("prepare_button_view", "succeeded", tuple(self.evidence))
+
+    def _checked_view_waypoint(self,side,posture):
+        targets={"carriage_joint":self.settings.viewing_carriage_m,**posture}
+        self._run("evo_move_joints",guarded_sides=(side,),targets=targets)
+        state=self._state()["positions"]
+        tolerance=self.base.capabilities["joint_limits"]["carriage_joint"]["tolerance"]
+        if abs(state["carriage_joint"]-self.settings.viewing_carriage_m)>tolerance:
+            raise PrimitiveError("waypoint carriage height not reached",self.evidence)
+        self._verify_view(side,posture)
 
     def _verify_view(self, side, targets):
         state = self._state()["positions"]
@@ -407,6 +430,23 @@ class Elevator:
             raise PrimitiveError("invalid detected label box", self.evidence)
         du, dv = self.settings.press_offsets[label]
         pixel = ((x0+x1)/2+du*(x1-x0), (y0+y1)/2+dv*(y1-y0))
+        if self.settings.button_target_method is not None:
+            target=detection.get("press_target",{})
+            if (target.get("method")!=self.settings.button_target_method
+                    or target.get("image_sha256")!=camera.get("image_sha256")
+                    or not isinstance(target.get("image_sha256"),str) or len(target["image_sha256"])!=64
+                    or target.get("processed_image_sha256")!=camera.get("processed_image_sha256",camera.get("image_sha256"))
+                    or target.get("capture_us")!=stamp
+                    or target.get("detection_box")!=list(detection["box"])
+                    or any(type(target.get(k)) not in (int,float) or not math.isfinite(target[k])
+                           or not 0<=target[k]<=3 for k in ("center_spread_px","radius_spread_px"))):
+                raise PrimitiveError("missing or invalid image button-face evidence", self.evidence)
+            pixel=vector(target.get("pixel"),2)
+            radius=positive(target.get("radius_px"),"button face radius")
+            if not (x0<=pixel[0]-radius and pixel[0]+radius<=x1
+                    and y0<=pixel[1]-radius and pixel[1]+radius<=y1 and pixel[0]>(x0+x1)/2):
+                raise PrimitiveError("button face leaves its detected region",self.evidence)
+
         ray = self.context.value("rax_camera_ray", observation_id=observation["observation_id"], camera=side+"_arm", pixel=list(pixel))
         if ray.get("frame") != "base_link" or ray.get("capture_us") != stamp:
             raise PrimitiveError("ray does not identify the detected capture", self.evidence)
