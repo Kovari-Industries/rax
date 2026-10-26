@@ -46,6 +46,8 @@ class CabinRideSettings:
             if isinstance(self.full_button_timeout_s, bool):
                 raise ValueError("full_button_timeout_s must be a positive duration")
             positive(self.full_button_timeout_s, "full_button_timeout_s")
+            if self.full_button_timeout_s > 20.:
+                raise ValueError("Full cabin button action must remain under 20 seconds")
         neck = {"neck_yaw_joint", "neck_pitch_joint"}
         if type(self.retain_destination_view) is not bool:
             raise ValueError("retain_destination_view must be a boolean")

@@ -560,7 +560,7 @@ def test_full_button_deadline_refuses_next_stage_without_runner(elapsed, button_
     assert not task.evidence[-1]["passed"]
 
 
-@pytest.mark.parametrize("limit", [0., -1., float("nan"), float("inf"), True])
+@pytest.mark.parametrize("limit", [0., -1., 20.000001, 30., float("nan"), float("inf"), True])
 def test_invalid_full_button_timeout_is_refused(limit):
     with pytest.raises(ValueError):
         ride(full_button_timeout_s=limit)
