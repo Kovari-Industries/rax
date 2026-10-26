@@ -798,7 +798,18 @@ class CabinRide:
             record["error"] = repr(error)
             raise
 
+    def select_floor(self, destination_floor, doorway_id=None, *, on_stage=None, entry_handoff=None):
+        """End after checked floor-button release/stow; do not claim arrival or exit."""
+        if self.settings.full_button_timeout_s is None:
+            raise ValueError("Floor selection requires an explicit full button deadline")
+        return self._run(destination_floor, doorway_id, on_stage=on_stage,
+                         entry_handoff=entry_handoff, stop_after_button=True)
+
     def run(self, destination_floor, doorway_id=None, *, on_stage=None, entry_handoff=None):
+        return self._run(destination_floor, doorway_id, on_stage=on_stage,
+                         entry_handoff=entry_handoff, stop_after_button=False)
+
+    def _run(self, destination_floor, doorway_id=None, *, on_stage, entry_handoff, stop_after_button):
         if entry_handoff is not None and not callable(entry_handoff):
             raise ValueError("entry_handoff must be an explicit operator handoff callback")
         if self._used:
@@ -873,6 +884,10 @@ class CabinRide:
                 stage("cabin_staging", self.stage_inside)
             stage("turn", self.turn_inside)
         stage("button", lambda: self.press_cabin_button(destination_floor))
+        if stop_after_button:
+            return PrimitiveResult("select_floor", "succeeded", tuple(self.evidence+self.task.evidence+self.base.evidence),
+                                   {"origin_floor": self.settings.origin_floor, "selected_floor": destination_floor,
+                                    "location": "inside", "stages": results})
         stage("destination", lambda: self.wait_for_destination(destination_floor))
         stage("exit", lambda: self.exit_forward(destination_floor))
         return PrimitiveResult("ride_elevator", "succeeded", tuple(self.evidence+self.task.evidence+self.base.evidence),

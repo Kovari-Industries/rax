@@ -96,3 +96,12 @@ checks. Fresh image recognition and reach preview still select the arm. This
 option skips the later legacy lateral reposition and second search. It does not
 infer a label or physical button center. `CabinRide` retains its separate checked
 inside-cabin staging route.
+
+`CabinRide.select_floor(...)` runs the same origin, entry or measured operator
+handoff, and cabin button stages as `CabinRide.run(...)`. It stops after verified
+button release and stow. It requires an explicit `full_button_timeout_s` no
+greater than 20 seconds; the complete button stage must finish strictly below
+that value. Origin and entry are separate stages. Its result reports the
+selected floor and location `inside`; it does not report arrival or exit.
+The instance remains single-use. This API does not supply missing optical
+qualification, origin evidence, or a fabricated entry handoff.

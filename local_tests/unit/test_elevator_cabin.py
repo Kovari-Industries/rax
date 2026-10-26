@@ -680,3 +680,40 @@ def test_failed_full_button_keeps_timing_and_original_refusal(button_stage, cloc
         assert receipt["end_s"] - receipt["start_s"] == pytest.approx(8.25)
     assert events[-1]["event"] == "failed"
     assert not any(e["stage"] == ("entry" if button_stage == "hall_call" else "destination") for e in events)
+
+
+def test_floor_selection_ends_after_verified_release_and_stow():
+    context, task = ride(full_button_timeout_s=20.)
+    events = []
+    result = task.select_floor('2', on_stage=events.append)
+    assert result.outcome == 'succeeded' and result.measured['location'] == 'inside'
+    assert result.measured['selected_floor'] == '2'
+    assert list(result.measured['stages'])[-1] == 'button'
+    assert not {'destination', 'exit'} & set(result.measured['stages'])
+    assert result.measured['stages']['button']['measured']['activation'] == 'succeeded'
+    assert events[-1]['stage'] == 'button' and events[-1]['event'] == 'finished'
+    assert context.floor_reads == 1
+    assert not task.task._viewing_arms and task.task._contact is None
+    assert next(e for e in task.evidence if e.get('check') == 'full_button_deadline')['passed']
+    with pytest.raises(PrimitiveError, match='cannot repeat'):
+        task.run('2')
+
+
+def test_floor_selection_requires_deadline_before_any_action():
+    context, task = ride()
+    context.calls.clear()
+    with pytest.raises(ValueError, match='explicit full button deadline'):
+        task.select_floor('2')
+    assert not context.calls
+
+
+def test_floor_selection_preserves_deadline_refusal():
+    from auto_research_agent.api.base import PrimitiveResult
+    context, task = ride(full_button_timeout_s=20.)
+    def late(label):
+        context.simulation_clock.t += 20.
+        return PrimitiveResult('press_cabin_button', 'succeeded')
+    task.press_cabin_button = late
+    with pytest.raises(PrimitiveError, match='time limit'):
+        task.select_floor('2')
+    assert not next(e for e in task.evidence if e.get('check') == 'full_button_deadline')['passed']
