@@ -38,8 +38,17 @@ class CabinRideSettings:
     retain_destination_view: bool = False
     full_button_timeout_s: float | None = None
     cabin_press_arm: str = "auto"
+    # Optional panel-normal distance and tangent offset, in metres.
+    # Commission with the wrist view; this is not a button target.
+    cabin_panel_target_m: tuple | None = None
+    destination_floor_ocr_location: str = "landing_door_jamb"
 
     def validate(self):
+        if self.destination_floor_ocr_location not in ("landing_door_jamb", "cabin_floor_display"):
+            raise ValueError("Unsupported destination floor OCR location")
+        if self.cabin_panel_target_m is not None:
+            distance, _ = vector(self.cabin_panel_target_m, 2)
+            positive(distance, "cabin panel distance")
         if self.cabin_press_arm not in ("auto", "left", "right"):
             raise ValueError("cabin_press_arm must be auto, left or right")
         if self.full_button_timeout_s is not None:
@@ -341,6 +350,90 @@ class CabinRide:
             raise PrimitiveError("button panel lies outside the cabin", self.evidence)
         return scene
 
+    def position_for_panel_view(self):
+        """One bounded translation from fresh panel geometry, before wrist search.
+
+        Native preview retains obstacle/floor and compact-arm admission. Convex
+        cabin endpoint containment additionally checks the entire translation
+        sweep. This does not establish camera calibration or contact permission.
+        """
+        target = self.settings.cabin_panel_target_m
+        if target is None:
+            return
+        if self.task._contact is not None:
+            raise PrimitiveError("retract before panel view positioning", self.evidence)
+        self._stationary_panel()
+        self.task.stow_arms()
+        scene = self._stationary_panel()
+        start = vector(scene["pose"])
+        panel = scene["panel"]
+        uncertainty = positive(panel.get("uncertainty_m"), "panel uncertainty")
+        if uncertainty > self.settings.max_geometry_uncertainty_m:
+            raise PrimitiveError("panel view geometry is too uncertain", self.evidence)
+        point, raw = vector(panel["point"]), vector(panel["normal"])
+        length = math.sqrt(sum(v*v for v in raw))
+        if length < 1e-9 or abs(raw[2])/length > .05:
+            raise PrimitiveError("panel view requires a vertical panel normal", self.evidence)
+        normal = (raw[0]/math.hypot(*raw[:2]), raw[1]/math.hypot(*raw[:2]))
+        tangent = (-normal[1], normal[0])
+        errors = (sum(point[i]*normal[i] for i in (0, 1))-target[0],
+                  sum(point[i]*tangent[i] for i in (0, 1))-target[1])
+        delta = tuple(errors[0]*normal[i]+errors[1]*tangent[i] for i in (0, 1))
+        if math.hypot(*delta) > self.base.settings["max_step_m"]:
+            raise PrimitiveError("panel view positioning exceeds existing translation bound", self.evidence)
+        _, _, clearance = self._cabin(scene, center_offset_m=delta)
+        if clearance < 0:
+            raise PrimitiveError("panel view translation envelope leaves cabin", self.evidence)
+        record = dict(stage="panel_view_positioning", passed=False,
+                      target_panel_coordinates_m=list(target), delta_m=delta,
+                      start_pose=start, minimum_target_clearance_m=clearance)
+        self.evidence.append(record)
+        if math.hypot(*delta) <= self.base.settings["position_tolerance_m"]:
+            record.update(passed=True, moved=False)
+            return
+
+        def admit():
+            current = self._stationary_panel()
+            pose = vector(current["pose"])
+            if math.dist(pose, start) > 1e-6 or math.dist(vector(current["panel"]["point"]), point) > 1e-6 or math.dist(vector(current["panel"]["normal"]), raw) > 1e-6:
+                raise PrimitiveError("panel view geometry changed before dispatch", self.evidence)
+            if self._cabin(current, center_offset_m=delta)[2] < 0:
+                raise PrimitiveError("panel view translation envelope changed", self.evidence)
+            # Invalidate selected/retained observations before any base motion.
+            self.task._selected = None
+            self.task._missing_capture = None
+            self.task._viewing_arms.clear()
+            self.task._last_stop_us = time.time_ns()//1000
+
+        try:
+            result = self.base.translate_base(*delta, before_dispatch=admit)
+            self._last_motion_us = time.time_ns()//1000
+            self.task._last_stop_us = self._last_motion_us
+            final_scene = self._scene()
+            self._inside(final_scene)
+            final = vector(final_scene["pose"])
+            expected = (start[0]+math.cos(start[2])*delta[0]-math.sin(start[2])*delta[1],
+                        start[1]+math.sin(start[2])*delta[0]+math.cos(start[2])*delta[1])
+            yaw_error = math.atan2(math.sin(final[2]-start[2]), math.cos(final[2]-start[2]))
+            if math.dist(final[:2], expected) > self.base.settings["position_tolerance_m"] or abs(yaw_error) > self.base.settings["angle_tolerance_rad"]:
+                raise PrimitiveError("panel view positioning endpoint was not reached", self.evidence)
+            final_panel = final_scene.get("panel", {})
+            final_point = vector(final_panel["point"])
+            # Compare against the predicted panel coordinates, not the request
+            # alone: a moving panel must not authorize a new stationary anchor.
+            expected_point = (point[0]-delta[0], point[1]-delta[1], point[2])
+            if (final_panel.get("id") != panel.get("id")
+                    or math.dist(final_point, expected_point) > self.base.settings["position_tolerance_m"]
+                    or math.dist(vector(final_panel["normal"]), raw) > self.base.settings["angle_tolerance_rad"]):
+                raise PrimitiveError("panel geometry changed during positioning", self.evidence)
+            # Change the stationary anchor only after measured endpoint and stop.
+            self._turn_pose = final
+            self._stationary_panel()
+            record.update(passed=True, moved=True, final_pose=final, base_result=result.measured)
+        except BaseException as error:
+            record["error"] = repr(error)
+            raise
+
     def press_cabin_button(self, label):
         # Reuse each detector's just-captured RGB evidence. The image tool can
         # return that receipt without another render or OCR inference. Geometry
@@ -366,6 +459,7 @@ class CabinRide:
     def _press_cabin_button(self, label):
         if label not in self.task.settings.press_offsets:
             raise PrimitiveError("unknown calibrated cabin press point")
+        self.position_for_panel_view()
         self._stationary_panel()
         observations = self.task.search_button(label, self.settings.cabin_press_arm)
         self._stationary_panel()
@@ -581,8 +675,8 @@ class CabinRide:
                 or not allow_unreadable and ocr.get("text_readable") is not True
                 or ocr.get("text_readable") is True and (not isinstance(ocr.get("text"), str) or not ocr["text"])
                 or not self._image_hash(ocr.get("image_sha256"))
-                or ocr.get("location") != "landing_door_jamb" or ocr.get("doorway_id") != self._doorway_id):
-            raise PrimitiveError("fresh landing-jamb image OCR is unavailable", self.evidence)
+                or ocr.get("location") not in {"landing_door_jamb", self.settings.destination_floor_ocr_location} or ocr.get("doorway_id") != self._doorway_id):
+            raise PrimitiveError("fresh identified floor image OCR is unavailable", self.evidence)
         score = vector((ocr.get("confidence"),), 1)[0]
         if not 0 <= score <= 1 or not allow_unreadable and score < self.settings.min_ocr_confidence:
             raise PrimitiveError("floor OCR confidence is insufficient", self.evidence)
@@ -606,6 +700,8 @@ class CabinRide:
             if scene.get("frame") != "base_link" or scene.get("heading_source") != self.base.heading_source or not scene.get("observation_id"):
                 raise PrimitiveError("floor scene frame is unqualified", self.evidence)
             vector(scene["pose"])
+        if ocr.get("location") == "cabin_floor_display" and (not self._cabin_id or ocr.get("cabin_id") != self._cabin_id):
+            raise PrimitiveError("floor display does not belong to the identified cabin", self.evidence)
         if abs(scene["capture_us"]-value["capture_us"])/1e6 > self.settings.floor_max_skew_s:
             raise PrimitiveError("floor sensors and door state are not synchronized", self.evidence)
         if self._light_receipt is not None:
@@ -650,6 +746,8 @@ class CabinRide:
         return measured, (low, high)
 
     def _destination_receipt(self, value, floor):
+        if value.get("ocr", {}).get("location") != self.settings.destination_floor_ocr_location:
+            raise PrimitiveError("destination floor requires the configured OCR location", self.evidence)
         # This is a new decision about the original capture, not a new capture
         # timestamp. Repeat every age/post-motion/skew/sensor check at use time.
         value, observed_scene = self._validate_floor_observation(value)

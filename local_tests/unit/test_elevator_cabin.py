@@ -717,3 +717,92 @@ def test_floor_selection_preserves_deadline_refusal():
     with pytest.raises(PrimitiveError, match='time limit'):
         task.select_floor('2')
     assert not next(e for e in task.evidence if e.get('check') == 'full_button_deadline')['passed']
+
+
+def test_panel_positioning_precedes_search_and_complete_ride():
+    context, task = ride(cabin_panel_target_m=(.7, .25))
+    assert task.run('2').outcome == 'succeeded'
+    record = next(e for e in task.evidence if e.get('stage') == 'panel_view_positioning')
+    assert record['passed'] and record['moved']
+    assert record['delta_m'] == pytest.approx([.1, .1])
+    moves = [i for i,(t,a) in enumerate(context.calls) if t == 'rax_move_base' and abs(a['delta'][1]) > .01]
+    assert moves[0] < next(i for i,(t,a) in enumerate(context.calls) if t == 'sim_button_observation')
+
+
+@pytest.mark.parametrize('target', [(2., 0.), (.7, 2.)])
+def test_panel_positioning_refuses_excessive_travel(target):
+    context, task = ride(cabin_panel_target_m=target)
+    with pytest.raises(PrimitiveError, match='translation bound|leaves cabin'):
+        task.run('2')
+    assert not any(t == 'sim_button_observation' for t,a in context.calls)
+
+
+@pytest.mark.parametrize('failure', ['preview', 'stop', 'endpoint', 'geometry'])
+def test_panel_positioning_failure_does_not_search_or_press(failure):
+    context, task = ride(cabin_panel_target_m=(.7, .25))
+    original = context.value
+    def value(tool, **args):
+        delta = args.get('delta', [0, 0, 0])
+        positioning = abs(delta[1]-.1) < 1e-6 and abs(delta[0]-.1) < 1e-6
+        if positioning and tool == 'rax_base_preview' and failure == 'preview':
+            return {'valid': False}
+        result = original(tool, **args)
+        if positioning and tool == 'rax_base_preview' and failure == 'geometry':
+            context.panel_y += .02
+        if positioning and tool == 'rax_move_base':
+            if failure == 'stop':context.last_result['physical_stop_verified'] = False
+            if failure == 'endpoint':context.pose[1] += .02
+        return result
+    context.value = value
+    with pytest.raises(RuntimeError):task.run('2')
+    assert not any(t == 'sim_button_observation' for t,a in context.calls)
+    assert context.floor_reads == 1
+
+
+def test_required_display_does_not_accept_landing_jamb_substitute():
+    context, task=ride(destination_floor_ocr_location='cabin_floor_display')
+    with pytest.raises(PrimitiveError,match='configured OCR location'):task.run('2')
+    assert context.pose[0] > 1.  # No exit after the floor-source refusal.
+
+
+def test_display_ocr_complete_synthetic_ride():
+    context, task=ride(destination_floor_ocr_location='cabin_floor_display')
+    original=context.value
+    def value(tool,**args):
+        result=original(tool,**args)
+        if tool=='rax_floor_observation' and task._cabin_id:
+            result['ocr'].update(location='cabin_floor_display',cabin_id='cabin-1')
+        return result
+    context.value=value
+    assert task.run('2').outcome=='succeeded'
+
+
+def test_panel_positioning_refuses_cabin_boundary_within_step_budget():
+    context, task=ride(cabin_panel_target_m=(.05,.25))
+    with pytest.raises(PrimitiveError,match='envelope leaves cabin'):task.run('2')
+    assert not any(t=='sim_button_observation' for t,a in context.calls)
+
+
+def test_panel_positioning_time_counts_against_full_button_deadline():
+    context, task=ride(cabin_panel_target_m=(.7,.25),full_button_timeout_s=20.)
+    original=context.value
+    def value(tool,**args):
+        r=original(tool,**args)
+        if tool=='rax_move_base' and abs(args['delta'][1]-.1)<1e-6:
+            context.simulation_clock.sleep(20.)
+        return r
+    context.value=value
+    with pytest.raises(PrimitiveError,match='full button stage'):task.run('2')
+    assert context.floor_reads==1
+
+
+def test_display_from_wrong_cabin_refuses():
+    context, task=ride(destination_floor_ocr_location='cabin_floor_display')
+    original=context.value
+    def value(tool,**args):
+        r=original(tool,**args)
+        if tool=='rax_floor_observation' and task._cabin_id:
+            r['ocr'].update(location='cabin_floor_display',cabin_id='other-cabin')
+        return r
+    context.value=value
+    with pytest.raises(PrimitiveError,match='identified cabin'):task.run('2')
