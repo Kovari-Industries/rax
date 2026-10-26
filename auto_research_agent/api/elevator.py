@@ -96,6 +96,7 @@ class ElevatorSettings:
     min_score: float = 0.6
     search_turns_rad: tuple = ()
     max_search_rotation_rad: float = math.pi
+    tangent_approach_correction: bool = False
     direct_doorway_staging: bool = False
     reverse_exit: bool = False
     synchronized_view: bool = False
@@ -107,7 +108,7 @@ class ElevatorSettings:
     def validate(self):
         if self.retract_segment_s is not None and positive(self.retract_segment_s,"retract_segment_s")>10:
             raise ValueError("retract segment exceeds supported duration")
-        for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment"):
+        for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment", "tangent_approach_correction"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be boolean")
         if not self.arms or len({p.side for p in self.arms}) != len(self.arms) or not self.panel_id:
@@ -578,6 +579,32 @@ class Elevator:
         self._path(side, target)
         return self._look(label, side)
 
+    def _correct_approach_aim(self, button, side, remaining_budget_m):
+        """Correct tangential image drift without moving carriage or going inward."""
+        if not self.settings.tangent_approach_correction:
+            raise PrimitiveError("tangential approach correction is not enabled", self.evidence)
+        contact=self._contact_state(side)
+        if contact.get("stage")!="approaching" or contact.get("label")!=button.label:
+            raise PrimitiveError("aim correction requires the same unpressed approach", self.evidence)
+        self._fresh_button(button)
+        if math.dist(contact["normal"],button.normal)>self.base.settings["angle_tolerance_rad"]:
+            raise PrimitiveError("panel normal changed during approach", self.evidence)
+        # Preserve the existing tool-offset orientation sweep and gap check.
+        before=self._preparation_tip(button,side)
+        gap=dot(add(button.position,scale(before,-1)),button.normal)
+        target=add(button.position,scale(button.normal,-gap))
+        distance=math.dist(before,target)
+        if distance>min(self.settings.approach_step_m,remaining_budget_m):
+            raise PrimitiveError("approach aim correction exceeds the existing step or travel budget", self.evidence)
+        self._path(side,target)
+        travelled=math.dist(before,self._tip(side))
+        self.evidence.append(dict(stage="tangent_approach_correction",gap_m=gap,
+                                  requested_m=distance,measured_travel_m=travelled,carriage_held=True))
+        # Keep the recovery reference until this checked arm path succeeds.
+        self._contact={**contact,"point":button.position,"normal":button.normal,
+                       "pose":button.scene_pose}
+        return travelled
+
     def approach_button(self, label, side, standoff_m=None):
         if self._selected != side:
             raise PrimitiveError("prepare the selected arm before approach")
@@ -591,7 +618,12 @@ class Elevator:
                 raise PrimitiveError("arm is closer to the panel than the approach target", self.evidence)
             lateral = add(add(button.position, scale(tip, -1)), scale(button.normal, -gap))
             if math.sqrt(dot(lateral, lateral)) > self.settings.position_tolerance_m:
-                self.align_arm_to_button(label, side)
+                if self._contact is not None and self.settings.tangent_approach_correction:
+                    travelled+=self._correct_approach_aim(button,side,self.settings.approach_budget_m-travelled)
+                    if travelled>self.settings.approach_budget_m:
+                        raise PrimitiveError("arm approach travel budget exceeded", self.evidence)
+                else:
+                    self.align_arm_to_button(label, side)
                 continue
             # Target gap includes uncertainty. No minimum inward step can overshoot it.
             remaining = gap-gap_target-button.uncertainty_m

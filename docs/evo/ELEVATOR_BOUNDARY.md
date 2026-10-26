@@ -91,3 +91,11 @@ deadline check, not an in-flight cancellation guarantee.
 `ElevatorSettings.retract_segment_s` can select a separate withdrawal duration.
 Its default is `None`, which retains `segment_s`. This does not change clearance,
 stroke, dwell, source limits, preview checks or required measured stops.
+
+The opt-in `tangent_approach_correction` policy belongs to Rax. During an
+unpressed approach it can correct a fresh image's tangential offset with an
+arm-only Cartesian path. It keeps the measured normal gap and carriage, retains
+the original orientation-sweep check, and limits correction distance to the
+existing approach step and remaining travel budget. It cannot follow a press
+attempt, change labels, or remove the recovery reference after a failed path.
+The default remains disabled until a robot/profile is qualified.
