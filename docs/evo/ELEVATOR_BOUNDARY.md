@@ -120,3 +120,21 @@ activation/release, measured stops and the full-button deadline are unchanged.
 ML may pass this configuration but does not select a fallback or bypass Rax.
 Synthetic journey tests cover both explicit choices; these do not qualify a
 physical arm profile or a simulator trajectory.
+
+### Checked teleoperation entry handoff
+
+`CabinRide.run(..., entry_handoff=callback)` is opt-in. Origin OCR and the
+pressure baseline run before the callback. The callback returns a
+`CabinEntryHandoff` with the receiving native owner, final action ID and
+configured expected pose. Rax then checks native ownership/arming, no active
+action, successful final action and physical stop, fresh joint and odometry
+samples, travel posture, cabin identity, lighting and inside clearance. It
+requires five distinct stopped samples before and after the image check.
+Only then can the interior button stage run. This is not a turn or autonomous
+entry claim. A failed handoff consumes the one-shot ride and prevents contact.
+
+The callback must arrange ownership through the existing native service; this
+API does not acquire a lease or cancel teleoperation. Dispatch remains subject
+to native authority checks. The current ML status adapter lacks these ownership
+and raw feedback fields, so it must refuse this handoff until that interface is
+implemented and tested. CPU synthetic tests do not qualify hardware handoff.

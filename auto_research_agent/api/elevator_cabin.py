@@ -735,7 +735,70 @@ class CabinRide:
                                {"floor": floor, "location": "outside", "destination": destination.measured,
                                 **result.measured})
 
-    def run(self, destination_floor, doorway_id=None, *, on_stage=None):
+    def accept_teleoperated_entry(self, handoff):
+        """Verify an inside, oriented, stopped handoff; never claim a turn."""
+        from .elevator_handoff import CabinEntryHandoff, check_handoff_status
+        if not isinstance(handoff, CabinEntryHandoff):
+            raise ValueError("explicit CabinEntryHandoff is required")
+        handoff.validate()
+        if self._baseline is None or self._doorway_id is None or self.task._contact is not None:
+            raise PrimitiveError("handoff requires origin evidence and no active contact", self.evidence)
+        record = {"stage": "teleoperated_entry_admission", "passed": False, "samples": [],
+                  "scope": "Measured inside handoff; no autonomous entry or turn claim"}
+        self.evidence.append(record)
+        def stopped_samples():
+            start = self.base.clock.monotonic()
+            if not math.isfinite(start):
+                raise PrimitiveError("invalid handoff clock", self.evidence)
+            previous = None
+            accepted = 0
+            while accepted < 5:
+                self.base.check_cancel()
+                now = self.base.clock.monotonic()
+                if not math.isfinite(now) or not 0 <= now-start < 1.:
+                    raise PrimitiveError("handoff stop samples timed out", self.evidence)
+                sample = check_handoff_status(self.context.value("evo_status"), handoff,
+                    self.base.settings["travel_joints"], self.base.capabilities["joint_limits"])
+                stamps = (sample["source_us"], sample["odometry_source_us"])
+                if previous is not None and any(a < b for a, b in zip(stamps, previous)):
+                    raise PrimitiveError("handoff feedback time went backwards", self.evidence)
+                if previous is None or all(a > b for a, b in zip(stamps, previous)):
+                    record["samples"].append(sample)
+                    previous = stamps
+                    accepted += 1
+                if accepted < 5:
+                    self.base.clock.sleep(.02)
+        try:
+            stopped_samples()
+            self._last_motion_us = time.time_ns()//1000
+            self._refresh_lighting("teleoperated_entry")
+            scene = self._scene()
+            self._inside(scene)
+            pose = vector(scene["pose"])
+            expected = vector(handoff.expected_pose)
+            yaw = math.atan2(math.sin(pose[2]-expected[2]), math.cos(pose[2]-expected[2]))
+            if (math.dist(pose[:2], expected[:2]) > self.base.settings["position_tolerance_m"]
+                    or abs(yaw) > self.base.settings["angle_tolerance_rad"]):
+                raise PrimitiveError("teleoperated entry pose differs from configured pose", self.evidence)
+            stopped_samples()
+            # Re-read geometry after the stop sampling interval.
+            final = self._scene()
+            self._inside(final)
+            final_pose = vector(final["pose"])
+            yaw = math.atan2(math.sin(final_pose[2]-expected[2]), math.cos(final_pose[2]-expected[2]))
+            if (math.dist(final_pose[:2], expected[:2]) > self.base.settings["position_tolerance_m"]
+                    or abs(yaw) > self.base.settings["angle_tolerance_rad"]):
+                raise PrimitiveError("base moved during teleoperated entry admission", self.evidence)
+            self._turn_pose = final_pose
+            record.update(passed=True, expected_pose=expected, final_pose=final_pose)
+            return PrimitiveResult("teleoperated_entry", "succeeded", tuple(self.evidence), record)
+        except BaseException as error:
+            record["error"] = repr(error)
+            raise
+
+    def run(self, destination_floor, doorway_id=None, *, on_stage=None, entry_handoff=None):
+        if entry_handoff is not None and not callable(entry_handoff):
+            raise ValueError("entry_handoff must be an explicit operator handoff callback")
         if self._used:
             raise PrimitiveError("a cabin ride instance cannot repeat a press or resume an uncertain ride")
         if destination_floor not in self.settings.floor_heights_m or destination_floor == self.settings.origin_floor:
@@ -795,15 +858,18 @@ class CabinRide:
             return result
 
         stage("origin", self.capture_origin)
-        if not self._open(self._scene()):
-            stage("hall_call", self.call_elevator)
-        self.base.wait_for_door_open(self._doorway_id, self.settings.arrival_timeout_s)
-        self._refresh_lighting("admission")  # One fresh RGB check before entry.
-        stage("entry", lambda: self.task.navigate_into_elevator(self._doorway_id, goal_depth_m=self.settings.entry_depth_m))
-        self._last_motion_us = time.time_ns()//1000
-        if self.settings.cabin_staging_lateral_m:
-            stage("cabin_staging", self.stage_inside)
-        stage("turn", self.turn_inside)
+        if entry_handoff is not None:
+            stage("entry_handoff", lambda: self.accept_teleoperated_entry(entry_handoff()))
+        else:
+            if not self._open(self._scene()):
+                stage("hall_call", self.call_elevator)
+            self.base.wait_for_door_open(self._doorway_id, self.settings.arrival_timeout_s)
+            self._refresh_lighting("admission")  # One fresh RGB check before entry.
+            stage("entry", lambda: self.task.navigate_into_elevator(self._doorway_id, goal_depth_m=self.settings.entry_depth_m))
+            self._last_motion_us = time.time_ns()//1000
+            if self.settings.cabin_staging_lateral_m:
+                stage("cabin_staging", self.stage_inside)
+            stage("turn", self.turn_inside)
         stage("button", lambda: self.press_cabin_button(destination_floor))
         stage("destination", lambda: self.wait_for_destination(destination_floor))
         stage("exit", lambda: self.exit_forward(destination_floor))
