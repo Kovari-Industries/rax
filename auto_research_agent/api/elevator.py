@@ -104,8 +104,11 @@ class ElevatorSettings:
     final_contact: FinalContactPolicy | None = None
     coarse_panel_lateral_offset_m: float | None = None
     retract_segment_s: float | None = None
+    approach_segment_s: float | None = None
 
     def validate(self):
+        if self.approach_segment_s is not None and positive(self.approach_segment_s,"approach_segment_s")>10:
+            raise ValueError("approach segment exceeds supported duration")
         if self.retract_segment_s is not None and positive(self.retract_segment_s,"retract_segment_s")>10:
             raise ValueError("retract segment exceeds supported duration")
         for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment", "tangent_approach_correction"):
@@ -596,7 +599,7 @@ class Elevator:
         distance=math.dist(before,target)
         if distance>min(self.settings.approach_step_m,remaining_budget_m):
             raise PrimitiveError("approach aim correction exceeds the existing step or travel budget", self.evidence)
-        self._path(side,target)
+        self._path(side,target,duration_s=self.settings.approach_segment_s)
         travelled=math.dist(before,self._tip(side))
         self.evidence.append(dict(stage="tangent_approach_correction",gap_m=gap,
                                   requested_m=distance,measured_travel_m=travelled,carriage_held=True))
@@ -632,7 +635,11 @@ class Elevator:
                                  "normal": button.normal, "pose": button.scene_pose,
                                  "carriage": self._state()["positions"]["carriage_joint"], "stage": "prepress"}
                 return button
-            step = min(self.settings.approach_step_m, remaining)
+            # Aim inside the existing acceptance band, not at its near edge.
+            # Endpoint error can otherwise cross the unchanged minimum gap
+            # even when the motion itself finishes within its tolerance.
+            step = min(self.settings.approach_step_m,
+                       remaining - .5*self.settings.position_tolerance_m)
             if travelled+step > self.settings.approach_budget_m:
                 raise PrimitiveError("arm approach travel budget exceeded", self.evidence)
             before = tip
@@ -640,7 +647,8 @@ class Elevator:
             self._contact = {"side": side, "label": label, "point": button.position,
                              "normal": button.normal, "pose": button.scene_pose,
                              "carriage": self._state()["positions"]["carriage_joint"], "stage": "approaching"}
-            self._path(side, add(tip, scale(button.normal, step)))
+            self._path(side, add(tip, scale(button.normal, step)),
+                       duration_s=self.settings.approach_segment_s)
             travelled += math.dist(before, self._tip(side))
         raise PrimitiveError("button approach did not converge", self.evidence)
 

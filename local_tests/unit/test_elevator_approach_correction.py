@@ -15,7 +15,7 @@ def fixture(**changes):
     t._fresh_button=lambda b:None
     t._tip=lambda side:tuple(point)
     t._preparation_tip=lambda b,s:tuple(point)
-    def path(side,target):t.paths.append(target);point[:]=target
+    def path(side,target,**kwargs):t.paths.append(target);point[:]=target
     t._path=path
     button=NS(label='2',position=(.15,.006,.003),normal=(1.,0.,0.),scene_pose=(0.,0.,0.))
     return t,button
@@ -44,7 +44,7 @@ def test_correction_bounds_and_failures_keep_original_recovery_reference():
         if change=='step':b.position=(.15,.021,0.)
         if change=='budget':budget=.001
         if change=='disabled':t.settings=settings()
-        def refused(*args):raise PrimitiveError('original bound refused')
+        def refused(*args,**kwargs):raise PrimitiveError('original bound refused')
         if change=='state':t._contact_state=refused
         if change=='sweep':t._preparation_tip=refused
         if change=='path':t._path=refused
@@ -60,3 +60,48 @@ def test_approach_uses_arm_only_correction_then_original_inward_steps():
     assert all(0<q[0]-p[0]<=.020000001 for p,q in zip(t.paths,t.paths[1:]))
     assert t._contact['stage']=='prepress'
     assert b.position[0]-t._tip('right')[0]>=t.settings.prepress_gap_m
+
+
+@pytest.mark.parametrize('inward_error',[0.,.000213,.002])
+def test_final_approach_aims_inside_existing_gap_band(inward_error):
+    t,b=fixture();t._selected='right';b.uncertainty_m=.0001
+    b.position=(.0601,0.,0.)
+    t._look=lambda *args:b;t._state=lambda:{'positions':{'carriage_joint':.2}}
+    original=t._path
+    def measured_path(side,target,**kwargs):
+        original(side,(target[0]+inward_error,target[1],target[2]))
+    t._path=measured_path
+    t.approach_button('2','right')
+    gap=b.position[0]-t._tip('right')[0]
+    assert gap==pytest.approx(t.settings.prepress_gap_m+b.uncertainty_m+
+                              .5*t.settings.position_tolerance_m-inward_error)
+    assert gap>=t.settings.prepress_gap_m-b.uncertainty_m
+    assert t._contact['stage']=='prepress'
+
+
+def test_original_too_close_gap_still_refuses_without_motion():
+    t,b=fixture();t._selected='right';b.uncertainty_m=.0001
+    b.position=(.039887161025153044,0.,0.)
+    t._look=lambda *args:b
+    with pytest.raises(PrimitiveError,match='closer to the panel'):
+        t.approach_button('2','right')
+    assert not t.paths
+
+
+@pytest.mark.parametrize('duration',[None,.04])
+def test_optional_approach_duration_only_changes_approach_requests(duration):
+    t,b=fixture();t.settings=settings(tangent_approach_correction=True,approach_segment_s=duration)
+    t._selected='right';b.uncertainty_m=.0001
+    t._look=lambda *args:b;t._state=lambda:{'positions':{'carriage_joint':.2}}
+    original=t._path;durations=[]
+    def path(side,target,**kwargs):
+        durations.append(kwargs.get('duration_s'));original(side,target)
+    t._path=path;t.approach_button('2','right')
+    assert len(durations)>1 and all(x==duration for x in durations)
+    assert t.settings.segment_s==settings().segment_s
+    assert t.settings.dwell_s==settings().dwell_s
+
+
+@pytest.mark.parametrize('duration',[0.,-1.,float('nan'),float('inf'),11.])
+def test_invalid_approach_duration_is_refused(duration):
+    with pytest.raises(ValueError):settings(approach_segment_s=duration).validate()
