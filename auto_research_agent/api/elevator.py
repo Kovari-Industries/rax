@@ -926,18 +926,14 @@ class Elevator:
                                "succeeded" if activation.outcome == "succeeded" else "stroke_complete_unconfirmed",
                                tuple(self.evidence+self.base.evidence), {"arm": side, "activation": activation.outcome})
 
-    def press_and_enter(self, label, arm="auto", *, doorway_id=None,
-                        goal_depth_m=.9, button_timeout_s=20.):
-        """Run the same checked hall prefix on simulation or the real adapter.
+    def press_with_deadline(self, label, arm="auto", *, button_timeout_s=20.):
+        """Press, release and stow under the full button-action deadline.
 
-        The deadline is checked after the complete button action. This does
-        not add an in-flight cancellation guarantee to a blocking adapter.
+        The deadline is checked after the complete action. A blocking adapter
+        does not provide in-flight cancellation through this check.
         """
         timeout=positive(button_timeout_s,"button_timeout_s")
         if timeout>20.:raise ValueError("Full button action must remain under 20 seconds")
-        positive(goal_depth_m,"goal_depth_m")
-        if goal_depth_m<=self.base.settings["footprint"][0]+self.base.settings["margin_m"]:
-            raise ValueError("Entry goal must clear the complete robot before pressing")
         start=self.base.clock.monotonic()
         if not math.isfinite(start):raise PrimitiveError("Invalid button start clock",self.evidence)
         record=dict(stage="hall_button_deadline",start_s=start,limit_s=timeout,passed=False)
@@ -958,11 +954,21 @@ class Elevator:
                           passed=valid and "error" not in record)
         if not record["passed"]:
             raise PrimitiveError("Full hall button action exceeded its deadline or clock is invalid",self.evidence)
+        return PrimitiveResult("press_with_deadline","succeeded",tuple(self.evidence+self.base.evidence),
+                               {**button.measured,"button_timing":dict(record)})
+
+    def press_and_enter(self, label, arm="auto", *, doorway_id=None,
+                        goal_depth_m=.9, button_timeout_s=20.):
+        """Use the checked button action, then the normal fresh-door entry."""
+        positive(goal_depth_m,"goal_depth_m")
+        if goal_depth_m<=self.base.settings["footprint"][0]+self.base.settings["margin_m"]:
+            raise ValueError("Entry goal must clear the complete robot before pressing")
+        button=self.press_with_deadline(label,arm,button_timeout_s=button_timeout_s)
         entry=self.navigate_into_elevator(doorway_id,goal_depth_m=goal_depth_m)
         if entry.outcome!="succeeded":
             raise PrimitiveError("Timed entry was not confirmed",self.evidence)
         return PrimitiveResult("press_and_enter","succeeded",tuple(self.evidence+self.base.evidence),
-                               {"button":button.measured,"button_timing":dict(record),"entry":entry.measured})
+                               {"button":button.measured,"button_timing":button.measured["button_timing"],"entry":entry.measured})
 
     def observe_doorway(self):
         return self.base.observe_scene().get("doorway")

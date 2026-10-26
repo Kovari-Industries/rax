@@ -71,3 +71,18 @@ def test_invalid_entry_goal_refuses_before_press():
     t=task()
     with pytest.raises(ValueError,match='before pressing'):t.press_and_enter('CALL',goal_depth_m=.1)
     assert not t.evidence and t.base.clock.now==0.
+
+
+def test_button_subtask_uses_same_full_deadline_without_entry():
+    t=task();r=t.press_with_deadline('CALL')
+    assert r.outcome=='succeeded' and r.measured['activation']=='succeeded'
+    assert r.measured['button_timing']['duration_s']==19.
+    assert not t.entries
+
+
+@pytest.mark.parametrize('duration',[20.,float('nan'),-1.])
+def test_button_subtask_keeps_failure_time_and_refuses(duration):
+    t=task(duration)
+    with pytest.raises(PrimitiveError):t.press_with_deadline('CALL')
+    assert t.evidence[-1]['passed'] is False and 'duration_s' in t.evidence[-1]
+    assert not t.entries
