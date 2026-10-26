@@ -102,8 +102,11 @@ class ElevatorSettings:
     direct_press_alignment: bool = False
     final_contact: FinalContactPolicy | None = None
     coarse_panel_lateral_offset_m: float | None = None
+    retract_segment_s: float | None = None
 
     def validate(self):
+        if self.retract_segment_s is not None and positive(self.retract_segment_s,"retract_segment_s")>10:
+            raise ValueError("retract segment exceeds supported duration")
         for name in ("direct_doorway_staging", "reverse_exit", "synchronized_view", "direct_press_alignment"):
             if type(getattr(self, name)) is not bool:
                 raise ValueError(f"{name} must be boolean")
@@ -657,7 +660,7 @@ class Elevator:
         tip = self._tip(side)
         current_gap = dot(add(contact["point"], scale(tip, -1)), contact["normal"])
         target = add(tip, scale(contact["normal"], -max(0, gap-current_gap)))
-        self._path(side, target)
+        self._path(side, target, duration_s=self.settings.retract_segment_s)
         self._contact = None
         return PrimitiveResult("retract_arm", "succeeded", tuple(self.evidence), {"clearance_m": gap})
 
@@ -922,6 +925,44 @@ class Elevator:
         return PrimitiveResult("press_elevator_button",
                                "succeeded" if activation.outcome == "succeeded" else "stroke_complete_unconfirmed",
                                tuple(self.evidence+self.base.evidence), {"arm": side, "activation": activation.outcome})
+
+    def press_and_enter(self, label, arm="auto", *, doorway_id=None,
+                        goal_depth_m=.9, button_timeout_s=20.):
+        """Run the same checked hall prefix on simulation or the real adapter.
+
+        The deadline is checked after the complete button action. This does
+        not add an in-flight cancellation guarantee to a blocking adapter.
+        """
+        timeout=positive(button_timeout_s,"button_timeout_s")
+        if timeout>20.:raise ValueError("Full button action must remain under 20 seconds")
+        positive(goal_depth_m,"goal_depth_m")
+        if goal_depth_m<=self.base.settings["footprint"][0]+self.base.settings["margin_m"]:
+            raise ValueError("Entry goal must clear the complete robot before pressing")
+        start=self.base.clock.monotonic()
+        if not math.isfinite(start):raise PrimitiveError("Invalid button start clock",self.evidence)
+        record=dict(stage="hall_button_deadline",start_s=start,limit_s=timeout,passed=False)
+        self.evidence.append(record)
+        try:
+            button=self.press_elevator_button(label,arm)
+            if button.outcome!="succeeded" or button.measured.get("activation")!="succeeded":
+                raise PrimitiveError("Hall activation, release and stow are unconfirmed",self.evidence)
+        except BaseException as error:
+            record["error"]=repr(error)
+            raise
+        finally:
+            end=self.base.clock.monotonic()
+            duration=end-start
+            valid=math.isfinite(duration) and 0<=duration<timeout
+            record.update(end_s=end if math.isfinite(end) else repr(end),
+                          duration_s=duration if math.isfinite(duration) else repr(duration),
+                          passed=valid and "error" not in record)
+        if not record["passed"]:
+            raise PrimitiveError("Full hall button action exceeded its deadline or clock is invalid",self.evidence)
+        entry=self.navigate_into_elevator(doorway_id,goal_depth_m=goal_depth_m)
+        if entry.outcome!="succeeded":
+            raise PrimitiveError("Timed entry was not confirmed",self.evidence)
+        return PrimitiveResult("press_and_enter","succeeded",tuple(self.evidence+self.base.evidence),
+                               {"button":button.measured,"button_timing":dict(record),"entry":entry.measured})
 
     def observe_doorway(self):
         return self.base.observe_scene().get("doorway")

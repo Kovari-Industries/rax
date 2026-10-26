@@ -80,3 +80,14 @@ Report simulation duration and wall duration separately.
 
 Keep original bounds and failed evidence. Add a separate qualification record
 for each completed requirement; do not infer hardware readiness from a video.
+
+`Elevator.press_and_enter()` is the Rax hall prefix. It calls the existing full
+button sequence, requires confirmed activation/release/stow and a duration
+strictly below the selected deadline (at most 20 seconds), then calls the
+existing fresh-door entry routine. Failure prevents entry. It validates that
+the entry goal clears the full robot before pressing. This remains a stage-end
+deadline check, not an in-flight cancellation guarantee.
+
+`ElevatorSettings.retract_segment_s` can select a separate withdrawal duration.
+Its default is `None`, which retains `segment_s`. This does not change clearance,
+stroke, dwell, source limits, preview checks or required measured stops.
