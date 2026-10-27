@@ -733,3 +733,47 @@ def test_base_capture_freshness_uses_injected_clock(age_s, accepted):
         with pytest.raises(PrimitiveError, match='stale or invalid'):
             base.observe_scene()
     assert not context.base_calls
+
+
+class AutomaticButtonContext(RobotContext):
+    def value(self, tool, **args):
+        result = super().value(tool, **args)
+        if tool == "rax_detect_buttons":
+            assert args["target_method"] == "visible-button-face-v1"
+            camera = result["cameras"][args["camera"]]
+            camera["image_sha256"] = "a"*64
+            for detection in result["detections"]:
+                detection["press_target"] = dict(method="visible-button-face-v1",
+                    pixel=[450.,240.], radius_px=12., detection_box=list(detection["box"]),
+                    capture_us=camera["capture_us"], image_sha256="a"*64,
+                    processed_image_sha256="a"*64)
+        return result
+
+
+def test_automatic_face_can_be_outside_label_without_any_panel_offset():
+    context = AutomaticButtonContext()
+    task = Elevator(context, settings(press_offsets={},button_target_method="visible-button-face-v1"))
+    button = task.observe_button("2","left")
+    assert button is not None
+    rays = [args for tool,args in context.calls if tool == "rax_camera_ray"]
+    assert rays[-1]["pixel"] == [450.,240.]
+
+
+def test_automatic_face_requires_current_image_evidence():
+    context = AutomaticButtonContext()
+    original = context.value
+    def bad(tool, **args):
+        result = original(tool,**args)
+        if tool == "rax_detect_buttons":
+            result["detections"][0]["press_target"]["capture_us"] -= 1
+        return result
+    context.value = bad
+    task = Elevator(context,settings(press_offsets={},button_target_method="visible-button-face-v1"))
+    with pytest.raises(PrimitiveError,match="image button-face evidence"):
+        task.observe_button("2","left")
+    assert not any(tool == "rax_camera_ray" for tool,_ in context.calls)
+
+
+def test_automatic_mode_rejects_panel_offsets():
+    with pytest.raises(ValueError,match="empty press_offsets"):
+        settings(button_target_method="visible-button-face-v1").validate()
