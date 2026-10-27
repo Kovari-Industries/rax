@@ -42,3 +42,29 @@ continues to use native previews and measured stops. There is no task-side polic
 setter or fallback around a refused obstacle, observed drop, raised sill, or
 closing door. Poisson/CBF obstacle avoidance is deferred until the assembled
 journey is qualified; the existing obstacle refusal remains active.
+
+### Read-only sensor preparation
+
+Use `api.sensor_probe.probe_sensors` through the existing `Context` before any
+hardware motion. It calls only `evo_capabilities`, `evo_status`, `evo_observe`,
+and optionally `rax_scene`. Pass an emitter that writes and flushes each JSON
+row. Both started and finished rows are retained; an unavailable scene does not
+prevent recording the next RGB sample. Use `include_scene=False` for an RGB-only
+session, and record that depth is untested.
+
+```python
+import json
+from api.runtime import Context
+from api.sensor_probe import probe_sensors
+with open('sensor-receipt.jsonl', 'x') as output, Context() as context:
+    def emit(row):
+        output.write(json.dumps(row, allow_nan=False) + '\n')
+        output.flush()
+    result = probe_sensors(context, emit, samples=10)
+```
+
+Call duration uses the client monotonic clock. Exposure times remain unchanged
+inside the raw response. Do not calculate sensor age from client wall time until
+the capture clock domain and offset are checked. A successful reply is not a
+calibration result. This probe does not enable, disarm, move or configure the
+robot, and does not claim RGB replies include raw depth.
