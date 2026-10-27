@@ -270,3 +270,26 @@ a complete isolated runtime replay with moving doors, and supervised physical
 trials remain qualification work. No physical robot runtime was started for this
 implementation. The current detector identifies labels; it does not confirm
 button activation. There is no automatic retry after an uncertain press.
+
+
+## Automatic physical button targets
+
+Set `button_target_method="visible-button-face-v1"` and `press_offsets={}` to
+use the shared Evo physical-face localizer through the matching image adapter.
+This mode rejects a nonempty offset map. It permits the physical target to lie
+outside the printed label box, but requires a positive interior radius, image
+bounds, capture time, and matching source/processed image hashes before it
+requests a camera ray. The detector and its association code live in Evo; Rax
+does not implement a second button detector.
+
+```mermaid
+flowchart LR
+    A[Current camera image] --> B[Evo physical face target]
+    B --> C[Rax checks image identity and bounds]
+    C --> D[Camera ray and measured approach]
+```
+
+The companion Isaac adapter uses the same localizer as the Evo robot node. The
+method does not prove that a visible rim is a mechanical switch. Robot geometry,
+pressing-tip calibration, depth uncertainty, and motion checks still apply.
+Previous contact qualifications do not qualify this new perception method.
