@@ -111,8 +111,10 @@ class ElevatorSettings:
     button_target_method: str | None = None
 
     def validate(self):
-        if self.button_target_method not in (None, "right-round-face-v1", "right-round-face-v2", "right-round-face-v3", "right-round-face-v4"):
+        if self.button_target_method not in (None, "visible-button-face-v1", "right-round-face-v1", "right-round-face-v2", "right-round-face-v3", "right-round-face-v4"):
             raise ValueError("Unknown image button target method")
+        if self.button_target_method == "visible-button-face-v1" and self.press_offsets:
+            raise ValueError("Automatic physical targets require empty press_offsets")
         # Cartesian waypoint duration is constrained by the shared Evo API.
         for name in ("segment_s", "approach_segment_s", "retract_segment_s"):
             value=getattr(self,name)
@@ -389,7 +391,7 @@ class Elevator:
     def observe_button(self, label, side):
         self._missing_capture = None
         profile = self._profile(side)
-        if label not in self.settings.press_offsets:
+        if self.settings.button_target_method != "visible-button-face-v1" and label not in self.settings.press_offsets:
             raise PrimitiveError("the panel has no calibrated press offset for this label")
         self.base.check_cancel()
         options={} if self.settings.button_target_method is None else {"target_method":self.settings.button_target_method}
@@ -429,8 +431,11 @@ class Elevator:
         width, height = camera["width"], camera["height"]
         if not (0 <= x0 < x1 <= width and 0 <= y0 < y1 <= height):
             raise PrimitiveError("invalid detected label box", self.evidence)
-        du, dv = self.settings.press_offsets[label]
-        pixel = ((x0+x1)/2+du*(x1-x0), (y0+y1)/2+dv*(y1-y0))
+        automatic = self.settings.button_target_method == "visible-button-face-v1"
+        pixel = None
+        if not automatic:
+            du, dv = self.settings.press_offsets[label]
+            pixel = ((x0+x1)/2+du*(x1-x0), (y0+y1)/2+dv*(y1-y0))
         if self.settings.button_target_method is not None:
             target=detection.get("press_target",{})
             if (target.get("method")!=self.settings.button_target_method
@@ -439,12 +444,15 @@ class Elevator:
                     or target.get("processed_image_sha256")!=camera.get("processed_image_sha256",camera.get("image_sha256"))
                     or target.get("capture_us")!=stamp
                     or target.get("detection_box")!=list(detection["box"])
-                    or any(type(target.get(k)) not in (int,float) or not math.isfinite(target[k])
-                           or not 0<=target[k]<=3 for k in ("center_spread_px","radius_spread_px"))):
+                    or (not automatic and any(type(target.get(k)) not in (int,float) or not math.isfinite(target[k])
+                           or not 0<=target[k]<=3 for k in ("center_spread_px","radius_spread_px")))):
                 raise PrimitiveError("missing or invalid image button-face evidence", self.evidence)
             pixel=vector(target.get("pixel"),2)
             radius=positive(target.get("radius_px"),"button face radius")
-            if not (x0<=pixel[0]-radius and pixel[0]+radius<=x1
+            if automatic:
+                if not (radius <= pixel[0] < width-radius and radius <= pixel[1] < height-radius):
+                    raise PrimitiveError("physical button face leaves the captured image",self.evidence)
+            elif not (x0<=pixel[0]-radius and pixel[0]+radius<=x1
                     and y0<=pixel[1]-radius and pixel[1]+radius<=y1 and pixel[0]>(x0+x1)/2):
                 raise PrimitiveError("button face leaves its detected region",self.evidence)
 
@@ -476,7 +484,7 @@ class Elevator:
 
     def search_button(self, label, arm="auto"):
         sides = self._guarded_search_sides(arm)
-        if label not in self.settings.press_offsets:
+        if self.settings.button_target_method != "visible-button-face-v1" and label not in self.settings.press_offsets:
             raise PrimitiveError("unknown panel press offset")
         self.prepare_button_view(sides)
         turns = iter(self.settings.search_turns_rad)
@@ -999,7 +1007,7 @@ class Elevator:
                               "base_result": result.measured})
 
     def press_elevator_button(self, label, arm="auto", *, panel_bearing_rad=None):
-        if label not in self.settings.press_offsets:
+        if self.settings.button_target_method != "visible-button-face-v1" and label not in self.settings.press_offsets:
             raise PrimitiveError("unknown calibrated press point")
         if self.settings.final_contact is not None:
             self._guarded_search_sides(arm)  # Refuse unmatched requests before any task motion.
