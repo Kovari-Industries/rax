@@ -82,7 +82,7 @@ class Base:
         self.check_cancel()
         value = self.context.value("rax_scene")
         stamp = value.get("capture_us")
-        if type(stamp) is not int or not 0 <= time.time() - stamp/1e6 <= self.settings["max_age_s"]:
+        if type(stamp) is not int or not 0 <= getattr(self.clock, "time", time.time)() - stamp/1e6 <= self.settings["max_age_s"]:
             raise PrimitiveError("stale or invalid point-cloud capture", self.evidence)
         if value.get("frame") != "base_link" or value.get("heading_source") != self.heading_source:
             raise PrimitiveError("unqualified scene frame or heading source", self.evidence)

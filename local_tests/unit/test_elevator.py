@@ -716,3 +716,20 @@ def test_second_low_confidence_capture_refuses_without_another_attempt():
     with pytest.raises(PrimitiveError, match='lost'):
         task._look('2', 'left')
     assert context.detect_count == 2
+
+
+@pytest.mark.parametrize('age_s, accepted', [(0.1, True), (0.6, False), (-0.1, False)])
+def test_base_capture_freshness_uses_injected_clock(age_s, accepted):
+    class CaptureClock:
+        def time(self):
+            return 10.0
+    context = RobotContext()
+    snapshot = context.scene(stamp=round((10.0-age_s)*1e6))
+    context.scene = lambda: snapshot
+    base = Base(context, clock=CaptureClock())
+    if accepted:
+        assert base.observe_scene()['capture_us'] == snapshot['capture_us']
+    else:
+        with pytest.raises(PrimitiveError, match='stale or invalid'):
+            base.observe_scene()
+    assert not context.base_calls
