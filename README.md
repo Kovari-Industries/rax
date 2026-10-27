@@ -1,5 +1,12 @@
 # RAX Evo v4 development
 
+The sensor-only journey now has an Evo-owned primitive contract.
+`services/evo/journey.py` delegates start, feedback, cancellation and results to
+Evo's existing `PrimitiveClient`; it does not choose elevator stages or change
+motion limits. This service wrapper is not advertised as an agent tool until a
+qualified runtime provider is connected. The legacy fixture routines remain
+separate and do not establish sensor-only journey success.
+
 The separate `evo-v4` robot profile is described in [EVO_V4.md](EVO_V4.md).
 
 # RAX for Kovari Evo v3
