@@ -34,3 +34,11 @@ workspace. Do not start an agent provider to execute a stored elevator routine.
 The v4 profile and elevator task tests also run under ML's existing
 `run_offline.py` launcher, which blocks IPv4 and IPv6 sockets and permits the
 private Unix-domain Evo interface. Native simulation uses the same boundary.
+
+The native scene configuration now requires an explicit floor policy. A trusted
+operator can select `expected_level_indoor` with a recorded site/basis; otherwise
+select `measured`. Rax records the backend policy in base-action evidence and
+continues to use native previews and measured stops. There is no task-side policy
+setter or fallback around a refused obstacle, observed drop, raised sill, or
+closing door. Poisson/CBF obstacle avoidance is deferred until the assembled
+journey is qualified; the existing obstacle refusal remains active.

@@ -806,3 +806,16 @@ def test_display_from_wrong_cabin_refuses():
         return r
     context.value=value
     with pytest.raises(PrimitiveError,match='identified cabin'):task.run('2')
+
+
+def test_floor_policy_is_recorded_through_complete_ride_without_task_override():
+    context=CabinContext()
+    policy={'kind':'expected_level_indoor','provenance':'operator-confirmed synthetic indoor test'}
+    context.scene_cfg['floor_policy']=policy
+    _,task=ride(context)
+    result=task.run('2')
+    assert result.outcome=='succeeded'
+    evidence=next(e for e in task.base.evidence if e.get('check')=='backend_floor_policy')
+    assert evidence['policy']==policy
+    context.scene_cfg['floor_policy']['provenance']='changed after completion'
+    assert evidence['policy']['provenance']=='operator-confirmed synthetic indoor test'

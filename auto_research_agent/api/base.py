@@ -3,6 +3,7 @@
 Evo supplies lidar pose and calibrated point-cloud geometry. A duration
 or command acknowledgement is never treated as an arrival measurement.
 """
+from copy import deepcopy
 from dataclasses import dataclass, field
 import math
 import time
@@ -73,6 +74,9 @@ class Base:
             self.heading_source = "simulator_ground_truth"
         self.settings = scene["settings"]
         self.evidence = []
+        if "floor_policy" in self.settings:
+            self.evidence.append({"check": "backend_floor_policy", "policy": deepcopy(self.settings["floor_policy"]),
+                "scope": "Backend configuration; no task-side override of obstacle, sill, drop or stop checks"})
 
     def check_cancel(self):
         if self.cancelled():
