@@ -304,3 +304,25 @@ result. A cancellation failure is reported as the cause. The helper does not
 interrupt an in-flight synchronous socket call; use a separate `Context` for
 urgent cancellation. Cancelling an already completed job does not erase its
 successful terminal state.
+
+### Inspect a recorded pickup
+
+Use the trial directory that contains `events.jsonl` and the two recorded EVR1 wrist captures for the selected phase. Use an environment with NumPy and OpenCV.
+
+```bash
+python scripts/evo_trial_views.py trials/pickup pickup.jpg --phase after \
+  --sensors trials/contact-stream/sensors.jsonl --joint-output pickup-joints.json
+python scripts/evo_trial_joints.py trials/contact-stream/sensors.jsonl
+```
+
+The image shows head RGB, left and right wrist RGB, and registered depth. The viewer selects the head observation referenced by the wrist annotations and checks the recorded image digests. The optional joint panel shows each arm's position, velocity and measured torque at its wrist capture. It reports the time difference for each sample. The second command prints the most recent recorded joint sample. These tools operate offline. A torque change can also result from gravity, acceleration or tracking error. Inspect the fingertip and the table in the paired images when assessing contact.
+
+To capture the paired inputs, call the helper after a head observation in the same `TrialContext`. Use `"before"` before dispatch and `"after"` after measured feedback. Each wrist producer must publish complete EVR1 files by atomic replacement.
+
+```python
+from auto_research_agent.api.evo_wrist_capture import record_wrist_pair
+
+head = trial.value("evo_observe")
+record_wrist_pair(trial, "before", left=left_capture, right=right_capture,
+                  head_observation_id=head["observation_id"])
+```
