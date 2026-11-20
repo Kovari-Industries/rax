@@ -16,7 +16,7 @@ def artifacts(value):
     """Only documented capture and SAM result artifact fields are files."""
     yield from value.get("cameras", {}).values()
     frame = value.get("frame")
-    if frame:
+    if isinstance(frame, dict) and frame:
         yield frame["overlay"]
         for obj in frame["objects"]:
             yield obj["mask"]
