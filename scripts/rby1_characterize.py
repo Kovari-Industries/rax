@@ -312,7 +312,7 @@ def main():
     folder.mkdir(parents=True, exist_ok=True)
     try:
         if set(parts) != {'refusals'} and not arming.read(config.root)['armed']:
-            print('not armed: the operator arms first (rby1 arm 30)', flush=True)
+            print('not armed: the operator arms first (rax-operator arm 30)', flush=True)
             return
         if camera:
             deadline = time.time() + 30

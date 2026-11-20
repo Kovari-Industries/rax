@@ -32,9 +32,18 @@ leaves metric image geometry unavailable.
 The operator must start Evo's explicit exclusive agent profile and set its trusted
 `session_root` to the directory that directly contains RAX sessions. The usual RAX
 layout is `$RAX_ARTIFACT_ROOT/sessions/<session>`. Keep this artifact root outside
-the private Evo runtime directory; the sandbox hides that complete directory. The existing dashboard and operator
-arm/disarm controls write `<session>/operator/armed.json`. Evo reads this file
-independently. Neither arming nor controller configuration is an agent tool.
+the private Evo runtime directory. The sandbox hides the private runtime. The
+dashboard and `scripts/rax-operator` write `<session>/operator/armed.json`. Evo
+reads this file independently. Use the operator controls to arm or disarm a session.
+
+Run these commands from the RAX repository on the Evo host. Set
+`RAX_ARTIFACT_ROOT` to the same directory used to create the session.
+
+```bash
+scripts/rax-operator status
+scripts/rax-operator arm     # With the workspace clear and an operator at the stop, type ARM.
+scripts/rax-operator disarm
+```
 
 Operator `backend_options` are `control_socket` and `socket_timeout_s`.
 Optional elevator services are configured in Evo under `evo_agent_backend.elevator`. The default

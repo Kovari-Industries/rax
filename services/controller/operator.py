@@ -1,4 +1,4 @@
-"""Agent -> operator requests (help, scene reset) answered from the dashboard or `rby1 reply`.
+"""Agent -> operator requests (help, scene reset) answered from the dashboard or `rax-operator reply`.
 
 Files live in the session root, outside the agent's writable workspace:
 
