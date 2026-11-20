@@ -244,6 +244,20 @@ def test_trial_replay_preserves_images_without_live_connection(tmp_path):
         replay.value("evo_observe")
 
 
+def test_trial_replays_fk_coordinate_frame(tmp_path):
+    result = {"frame": "base_link", "poses": {"left_palm": {"position": [0, 0, 0]}}}
+
+    class Kinematics:
+        def value(self, tool, **args):
+            return result
+
+    directory = tmp_path / "trial"
+    trial = TrialContext(Kinematics(), directory)
+    assert trial.value("evo_fk", links=["left_palm"]) == result
+    trial.close()
+    assert ReplayContext(directory).value("evo_fk", links=["left_palm"]) == result
+
+
 def test_trial_failure_latches_and_incomplete_log_refused(tmp_path):
     class Fails:
         def value(self, tool, **args):
