@@ -3,7 +3,7 @@
     $PY scripts/configure_session.py --task motion_check --task-text "motion check" --robot rby1
     $PY scripts/rby1_motion_check.py <session_root> <step>
 
-It connects, waits up to 5 minutes for the operator to arm the session (`rby1 arm 5`, a
+It connects, waits up to 5 minutes for the operator to arm the session (`rax-operator arm 5`, a
 person at the e-stop), runs one step and closes. Every move is small and returns to the
 pose the step started from; a move that does not arrive stops the step. Nothing moves
 before the operator arms; the first armed step powers the drives on (they then hold).
@@ -24,7 +24,7 @@ Steps:
   ik           each arm's end effector up 2 cm and back, forward 2 cm and back (rby1_move_eef)
   gripper      home both grippers (each is pushed fully closed, then fully open), then close and
                open each fully through rby1_gripper
-  disarm_test  head tilt towards +0.3 rad at 0.1 rad/s; `rby1 disarm` mid-motion must stop it
+  disarm_test  head tilt towards +0.3 rad at 0.1 rad/s; `rax-operator disarm` mid-motion must stop it
                (PASS = cancelled, stopped short, then held within 0.005 rad from 0.5 s to 3 s)
   disarm_arm   the same with the right elbow (right_arm_3) +0.5 rad at the arms' normal 0.3 rad/s
 """
@@ -99,10 +99,10 @@ def disarm_test(backend, config, start, name='head', index=1, delta=0.3):
     while worker.is_alive() and abs(joint() - origin) < 0.05 and time.monotonic() - t0 < 10:
         time.sleep(0.01)
     q_disarm, t_disarm = joint(), time.monotonic()
-    print(f'{name} joint {index} moved {q_disarm - origin:+.3f} rad after {t_disarm - t0:.2f} s; running rby1 disarm',
+    print(f'{name} joint {index} moved {q_disarm - origin:+.3f} rad after {t_disarm - t0:.2f} s; running rax-operator disarm',
           flush=True)
-    cli = subprocess.run([str(PROJECT/'scripts'/'rby1'), 'disarm'], capture_output=True, text=True, timeout=30)
-    print('rby1 disarm:', (cli.stdout + cli.stderr).strip(), flush=True)
+    cli = subprocess.run([str(PROJECT/'scripts'/'rax-operator'), 'disarm'], capture_output=True, text=True, timeout=30)
+    print('rax-operator disarm:', (cli.stdout + cli.stderr).strip(), flush=True)
     worker.join(30)
     error = outcome.get('error')
     print(f"backend call returned {time.monotonic() - t_disarm:.2f} s after disarm started: "
@@ -193,7 +193,7 @@ def main():
             except PermissionError as exc:
                 print('OK refused while disarmed:', exc, flush=True)
             return
-        print(f'waiting for the operator to arm {config.root.name} (rby1 arm 5) ...', flush=True)
+        print(f'waiting for the operator to arm {config.root.name} (rax-operator arm 5) ...', flush=True)
         deadline = time.time() + 300
         while not arming.read(config.root)['armed']:
             if time.time() > deadline:

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Short operator command for the Rainbow RB-Y1. Symlink it onto PATH, e.g. ~/.local/bin/rby1.
-#   rby1 arm [minutes]      arm the newest session until the run ends or `disarm` (no time limit
+# RAX operator command. Works with any configured robot. Symlink it onto PATH, e.g. ~/.local/bin/rax-operator.
+#   rax-operator arm [minutes]      arm the newest session until the run ends or `disarm` (no time limit
 #                           unless minutes are given; asks you to confirm the e-stop)
-#   rby1 disarm             disarm EVERY session (a running motion stops and the robot holds)
-#   rby1 status             arming state of recent sessions
-#   rby1 requests           what the agent is asking the operator for
-#   rby1 reply [text]       answer the oldest open request ("done" for a reset)
-#   rby1 ship [--dry-run]   zip and ship finished sessions now (services.runtime_ship --sweep;
+#   rax-operator disarm             disarm EVERY session (a running motion stops and the robot holds)
+#   rax-operator status             arming state of recent sessions
+#   rax-operator requests           what the agent is asking the operator for
+#   rax-operator reply [text]       answer the oldest open request ("done" for a reset)
+#   rax-operator ship [--dry-run]   zip and ship finished sessions now (services.runtime_ship --sweep;
 #                           needs RAX_SHIP_DEST)
 set -euo pipefail
 SCRIPT="$(readlink -f "${BASH_SOURCE[0]}")"
@@ -77,8 +77,8 @@ elif action in ('requests', 'reply'):
         text = ' '.join(sys.argv[2:]) or ('Scene reset done.' if r['kind'] == 'reset' else '')
         if not text:
             text = ask(f"{r['kind'].upper()}: {r['message']}\nYour answer: ")
-        operator.reply(root, r['id'], text, by='rby1-cli')
+        operator.reply(root, r['id'], text, by='rax-operator')
         print(f"answered {r['kind']} request {r['id']}")
 else:
-    sys.exit('usage: rby1 arm [minutes] | disarm | status | requests | reply [text] | ship [--dry-run]')
+    sys.exit('usage: rax-operator arm [minutes] | disarm | status | requests | reply [text] | ship [--dry-run]')
 PY

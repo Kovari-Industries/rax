@@ -51,7 +51,7 @@ System map and setup lessons: [docs/rby1/SETUP_NOTES.md](docs/rby1/SETUP_NOTES.m
   (`google/gemini-3.8-flash`, for checking images) is brokered by the robot service with a
   $10 cap per session.
 - **Motion needs the operator.** Every motion tool refuses until the operator arms the
-  session (`rby1 arm`, typing ARM). `rby1 disarm` stops a running motion within one
+  session (`rax-operator arm`, typing ARM). `rax-operator disarm` stops a running motion within one
   control period, and the robot holds.
 
 ## Requirements
@@ -154,7 +154,7 @@ option); a firewall rule for the agent's traffic is the stronger fix.
 ### 6. Install the operator command
 
 ```bash
-ln -s "$PWD/scripts/rby1" ~/.local/bin/rby1
+ln -s "$PWD/scripts/rax-operator" ~/.local/bin/rax-operator
 ```
 
 ## Check the robot first
@@ -167,7 +167,7 @@ person at the emergency stop:
 "$RAX_PYTHON" scripts/configure_session.py --task motion_check --task-text "motion check"
 "$RAX_PYTHON" scripts/rby1_motion_check.py <session_root> status     # connects; nothing moves or powers on
 "$RAX_PYTHON" scripts/rby1_motion_check.py <session_root> disarmed   # motion is refused while disarmed
-rby1 arm 5                                                          # then run each motion step
+rax-operator arm 5                                                          # then run each motion step
 "$RAX_PYTHON" scripts/rby1_motion_check.py <session_root> head
 ```
 
@@ -185,9 +185,9 @@ calibration. Set `camera_serial` if more than one ZED is connected.
 ```bash
 "$RAX_PYTHON" scripts/configure_session.py --task fetch_cup --task-file task.md   # prints <session>/operator-input.json
 bash scripts/start_agent.sh --config <session>/operator-input.json               # Claude Code's terminal UI
-rby1 arm                 # person at the e-stop, workspace clear; type ARM (rby1 arm 30: 30 minutes)
-rby1 requests            # what the agent asks you for;  rby1 reply "done" answers the oldest
-rby1 disarm              # any time: running motions stop and the robot holds
+rax-operator arm                 # person at the e-stop, workspace clear; type ARM (rax-operator arm 30: 30 minutes)
+rax-operator requests            # what the agent asks you for;  rax-operator reply "done" answers the oldest
+rax-operator disarm              # any time: running motions stop and the robot holds
 ```
 
 - `configure_session.py` writes the configuration and starts nothing. Useful options:
@@ -232,7 +232,7 @@ robot state), about 145 MB per hour.
 
 To keep the robot's disk from filling, set `RAX_SHIP_DEST=host:/dir`: after each run the
 launcher zips the session, copies it with rsync over ssh, verifies its checksum and only
-then deletes the local copy (`runtime/ship.log`). `rby1 ship [--dry-run]` does it by hand.
+then deletes the local copy (`runtime/ship.log`). `rax-operator ship [--dry-run]` does it by hand.
 Nothing ships unless `RAX_SHIP_DEST` is set.
 
 ## Environment variables
@@ -270,7 +270,7 @@ services/controller/   the robot service (MCP frontend), session ledger, operato
 services/rby1/         the RB-Y1 backend: tools and checks, SDK calls (robot.py), kinematics, grippers, ZED, recorder
 services/dashboard/    the operator dashboard
 services/workspace/    the workspace generator
-scripts/               configure_session.py, start_agent.sh, rby1, run_dashboard.sh, motion check and characterization
+scripts/               configure_session.py, start_agent.sh, rax-operator, run_dashboard.sh, motion check and characterization
 local_tests/           unit tests
 ```
 

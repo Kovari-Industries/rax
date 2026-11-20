@@ -3,7 +3,7 @@
     $PY scripts/configure_session.py --task health_check --task-text "health check" --robot rby1
     $PY scripts/rby1_health_check.py <session_root> [part ...]
 
-One arming covers the whole run (`rby1 arm 30`, a person at the e-stop). Every move goes
+One arming covers the whole run (`rax-operator arm 30`, a person at the e-stop). Every move goes
 through the agent's tools and guards, while a sampler records joint position, velocity,
 torque and drive temperature at 25 Hz. Per move it prints the duration, the final error,
 the peak velocity and acceleration (smoothness) and the highest torque as a fraction of
@@ -264,7 +264,7 @@ def main():
             rest(backend)
         moving = [p for p in parts if p != 'rest']
         if moving:
-            print(f'waiting for the operator to arm {config.root.name} (rby1 arm 30) ...', flush=True)
+            print(f'waiting for the operator to arm {config.root.name} (rax-operator arm 30) ...', flush=True)
             deadline = time.time() + 600
             while not arming.read(config.root)['armed']:
                 if time.time() > deadline:

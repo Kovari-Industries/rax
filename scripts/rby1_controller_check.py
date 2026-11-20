@@ -3,7 +3,7 @@
     $PY scripts/rby1_controller_check.py <session_root> [part ...]
 
 The session must be configured with backend option controller_commands = true. One arming
-covers the run (`rby1 arm`, a person at the e-stop). Every move goes through the real backend
+covers the run (`rax-operator arm`, a person at the e-stop). Every move goes through the real backend
 and its guards, starts from `ready` and is small (a few centimetres in free space in front of
 the robot); each part ends back at `ready`. Per move it records the duration, the final
 position error, the deviation of the hand path from the straight line, how much each part

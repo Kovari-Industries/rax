@@ -96,7 +96,7 @@ Not wired in yet: a motion planner, and lidar odometry (for example the robot's 
 MID-360 with DLIO), which would replace wheel odometry for the base.
 
 Safety (outermost first): the EMO buttons and the operator; operator arming
-(`rby1 arm` / `disarm`), re-read **every control tick** (50 Hz), with the EMO state
+(`rax-operator arm` / `disarm`), re-read **every control tick** (50 Hz), with the EMO state
 polled each tick; backend limits (URDF joint limits minus 0.1 rad (head 0.05), torso squat
 torso_1 ≤ 1.2 rad, ≤ 1.2 rad per joint per call, arms 0.2 rad/s, torso 0.1 rad/s, head
 0.3 rad/s with acceleration ramps, the torso-upright rule, end effectors above
@@ -135,11 +135,11 @@ the controller behaves*:
 See [README.md](README.md) for setup. In short:
 
 ```bash
-ln -s $PWD/scripts/rby1 ~/.local/bin/rby1
+ln -s $PWD/scripts/rax-operator ~/.local/bin/rax-operator
 "$RAX_PYTHON" scripts/configure_session.py --task tidy --task-file task.md   # --robot rby1 is the default
 bash scripts/start_agent.sh --config <session>/operator-input.json
-rby1 arm 30           # person at the e-stop; arms the newest session for 30 min
-rby1 disarm           # any time: running motions stop and hold
+rax-operator arm 30           # person at the e-stop; arms the newest session for 30 min
+rax-operator disarm           # any time: running motions stop and hold
 ```
 
 Before a session, stop everything else that commands the robot or owns its devices on the
@@ -153,7 +153,7 @@ process only). Read-only processes (lidar odometry, the dashboard telemetry) may
 |---|---|---|
 | 1 | Map the system | [docs/rby1/SETUP_NOTES.md](docs/rby1/SETUP_NOTES.md) |
 | 2 | SDK versions; robot-service env; agent env without SDKs | `RAX_PYTHON`, `RAX_AGENT_PYTHON` (README) |
-| 3 | Backend, registry, ROBOT_FACTS, telemetry, `scripts/rby1` | `services/rby1/`, `services/backends.py`, `services/workspace/setup.py` |
+| 3 | Backend, registry, ROBOT_FACTS, telemetry, `scripts/rax-operator` | `services/rby1/`, `services/backends.py`, `services/workspace/setup.py` |
 | 4 | Connect without moving | `scripts/rby1_motion_check.py` steps `status`, `disarmed` |
 | 5 | Unit tests with fakes | `local_tests/unit/test_rby1_backend.py` |
 | 6 | Supervised characterization | below |
@@ -192,7 +192,7 @@ rad/s; base capped at 0.1 m/s / 0.2 rad/s here.
 | Base 0.3 m | odometry 0.295 / −0.297 m; the camera (wall below the window) 0.333 / −0.309 m; 3.7 s at 0.1 m/s |
 | Base turn 0.5 rad | odometry 0.493 rad; `base` swings 0.108 m sideways (it is 0.228 m behind the wheel axle), 3.2 s |
 | Base 5 cm / 0.1 rad | 4.55 cm / 0.094 rad (arrival tolerance 5 mm / 0.01 rad) |
-| `rby1 disarm` mid-motion | cancelled 0.08 s after the call; the controller decelerates 0.020 rad (head, 0.1 rad/s) / 0.040 rad (elbow, 0.3 rad/s) further, then holds: drift 0.0001 rad over 3 s |
+| `rax-operator disarm` mid-motion | cancelled 0.08 s after the call; the controller decelerates 0.020 rad (head, 0.1 rad/s) / 0.040 rad (elbow, 0.3 rad/s) further, then holds: drift 0.0001 rad over 3 s |
 | Refusals | every limit refuses before moving with its value in the text (`runtime/characterization/*_refusals.json`) |
 
 Findings that changed the backend: the arms' rest pose sits on joints 1 and 3's limits (no
@@ -341,7 +341,7 @@ plain git (`git -C runtime/skill-library/rby1 log --stat`).
   in the robot env when no system ffmpeg exists; option `stream_archive` turns it off.
 - Shipping finished runs off the robot (`services/runtime_ship.py`) is off unless
   `RAX_SHIP_DEST=host:/dir` is set; then the launcher ships each run after it ends,
-  and `rby1 ship [--dry-run]` does it by hand.
+  and `rax-operator ship [--dry-run]` does it by hand.
 
 ## Verify
 
